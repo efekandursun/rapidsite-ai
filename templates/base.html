@@ -16,6 +16,20 @@
         <div class="logo-container">
             <div class="logo-text">FieldFlow AI</div>
             <div class="logo-sub">Enterprise Edition</div>
+            <!-- Test button for notifications -->
+            <button onclick="showToast('This is a test notification!', 'info')" style="
+                background-color: #4CAF50; /* Green */
+                border: none;
+                color: white;
+                padding: 8px 12px;
+                text-align: center;
+                text-decoration: none;
+                display: inline-block;
+                font-size: 12px;
+                margin-top: 10px;
+                cursor: pointer;
+                border-radius: 5px;
+            ">Test Notification</button>
         </div>
 
         <nav class="nav-menu">
@@ -80,10 +94,128 @@
 
     <!-- Notification Sound (Modern 'Ding') -->
     <audio id="notification-sound" preload="auto">
+        <source src="{{ url_for('static', filename='sounds/notification.mp3') }}" type="audio/mpeg">
+        <source src="{{ url_for('static', filename='sounds/notification.ogg') }}" type="audio/ogg">
+        Your browser does not support the audio element.
+    </audio>
 
-        } catch (e) {
-        console.log('Notification check failed:', e);
+    <script>
+        // Notification System
+        let lastKnownReportIds = [];
+        let pendingCount = 0;
+        let isFirstLoad = true;
+
+        // Play notification sound
+        function playNotificationSound() {
+            try {
+                const audio = document.getElementById('notification-sound');
+                if (audio) {
+                    audio.currentTime = 0;
+                    audio.volume = 0.6;
+                    // User interaction is required for audio
+                    audio.play().catch(e => console.log('Audio play blocked (needs interaction):', e));
+                }
+            } catch (e) {
+                console.log('Sound error:', e);
+            }
         }
+
+        // Update badge (if any) - placeholder for now
+        function updateBadge(count) {
+            console.log(`Pending reports: ${count}`);
+            // Example: Update a badge on a menu item
+            // const dashboardLink = document.querySelector('.nav-item[href="{{ url_for('dashboard') }}"]');
+            // if (dashboardLink) {
+            //     let badge = dashboardLink.querySelector('.badge');
+            //     if (!badge) {
+            //         badge = document.createElement('span');
+            //         badge.className = 'badge';
+            //         dashboardLink.appendChild(badge);
+            //     }
+            //     badge.textContent = count > 0 ? count : '';
+            //     badge.style.display = count > 0 ? 'inline-block' : 'none';
+            // }
+        }
+
+        // Show toast notification
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('notification-container');
+            const toast = document.createElement('div');
+            toast.className = 'notification-toast';
+            toast.innerHTML = `
+                <div style="
+                    background: linear-gradient(135deg, #1e1e3f 0%, #2a2a5a 100%);
+                    border: 1px solid ${type === 'success' ? '#22c55e' : '#4a9eff'};
+                    border-radius: 12px;
+                    padding: 16px 20px;
+                    color: #fff;
+                    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    min-width: 300px;
+                    animation: slideIn 0.3s ease-out;
+                ">
+                    <span style="font-size: 24px;">🔔</span>
+                    <div>
+                        <div style="font-weight: 600; margin-bottom: 4px;">New Report Received!</div>
+                        <div style="font-size: 0.85rem; color: #aaa;">Refreshing dashboard...</div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(toast);
+
+            // Auto-remove toast after 5 seconds
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease-in forwards';
+                toast.addEventListener('animationend', () => toast.remove());
+            }, 5000);
+        }
+
+        // Check for new notifications
+        async function checkNotifications() {
+            try {
+                const response = await fetch('/api/v1/notifications');
+                if (!response.ok) return;
+
+                const data = await response.json();
+                if (!data.success) return;
+
+                const newPending = data.pending_count;
+                const newReports = data.latest_reports || [];
+                const currentReportIds = newReports.map(r => r.id);
+
+                // Initial Load: Just sync state
+                if (isFirstLoad) {
+                    lastKnownReportIds = currentReportIds;
+                    isFirstLoad = false;
+                    updateBadge(newPending);
+                    return;
+                }
+
+                // Subsequent Polls: Check for new items
+                // A report is new if its ID is NOT in our last known list
+                const brandNewReports = newReports.filter(r => !lastKnownReportIds.includes(r.id));
+
+                if (brandNewReports.length > 0) {
+                    console.log('New reports found:', brandNewReports);
+                    playNotificationSound();
+                    showToast('New report received');
+
+                    // Auto-refresh page after 3 seconds
+                    setTimeout(() => {
+                        window.location.reload();
+                    }, 3000);
+                }
+
+                // Update state
+                lastKnownReportIds = currentReportIds;
+                pendingCount = newPending;
+                updateBadge(newPending);
+
+            } catch (e) {
+                console.log('Notification check failed:', e);
+            }
         }
 
         // Add CSS animations
@@ -107,7 +239,7 @@
         // Start polling (every 10 seconds)
         checkNotifications(); // Initial check
         setInterval(checkNotifications, 10000);
-        </script>
+    </script>
 </body>
 
 </html>
