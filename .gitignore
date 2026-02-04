@@ -1,0 +1,38 @@
+# FieldFlow AI - Git Ignore
+
+# Environment variables (NEVER commit these!)
+.env
+.env.local
+.env.production
+
+# Database files
+data/*.db
+*.db
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+.venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Cookies
+cookies.txt
+
+# Temp files
+*.tmp
+.cache/
