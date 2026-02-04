@@ -397,13 +397,27 @@ class Database:
     
     def get_company_by_whatsapp(self, phone: str) -> Optional[Dict[str, Any]]:
         """Get company by WhatsApp number."""
+        # Normalize phone number
+        clean_phone = phone.replace('whatsapp:', '').strip()
+        print(f"🔍 Looking for WhatsApp number: {clean_phone} (original: {phone})")
+        
         with self.get_connection() as conn:
             cursor = self._execute(conn, "SELECT * FROM companies")
             rows = self._fetchall(cursor)
             for row in rows:
                 numbers = row.get('whatsapp_numbers') or ''
-                if phone in numbers or phone.replace('whatsapp:', '') in numbers:
+                print(f"   Checking company '{row.get('name')}': numbers='{numbers}'")
+                
+                # Check various formats
+                if clean_phone in numbers:
+                    print(f"   ✅ Match found!")
                     return row
+                # Also try without + prefix
+                if clean_phone.lstrip('+') in numbers.replace('+', ''):
+                    print(f"   ✅ Match found (without +)!")
+                    return row
+                    
+            print(f"   ❌ No match found for {clean_phone}")
             return None
     
     def update_company_numbers(self, company_id: int, numbers: str) -> bool:
