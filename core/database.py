@@ -26,21 +26,27 @@ class Database:
     def __init__(self, db_path: str = None):
         self.use_postgres = USE_POSTGRES
         
-        if self.use_postgres:
-            import psycopg2
-            from psycopg2.extras import RealDictCursor
-            self.psycopg2 = psycopg2
-            self.RealDictCursor = RealDictCursor
-            self.db_url = DATABASE_URL
-            print(f"🐘 Using PostgreSQL (Supabase)")
-        else:
-            import sqlite3
-            self.sqlite3 = sqlite3
-            self.db_path = db_path or DATABASE_PATH
-            self._ensure_data_dir()
-            print(f"📁 Using SQLite: {self.db_path}")
-        
-        self._init_schema()
+        try:
+            if self.use_postgres:
+                import psycopg2
+                from psycopg2.extras import RealDictCursor
+                self.psycopg2 = psycopg2
+                self.RealDictCursor = RealDictCursor
+                self.db_url = DATABASE_URL
+                print(f"🐘 Using PostgreSQL (Supabase)")
+            else:
+                import sqlite3
+                self.sqlite3 = sqlite3
+                self.db_path = db_path or DATABASE_PATH
+                self._ensure_data_dir()
+                print(f"📁 Using SQLite: {self.db_path}")
+            
+            self._init_schema()
+        except Exception as e:
+            print(f"❌ Database initialization error: {e}")
+            import traceback
+            traceback.print_exc()
+            raise
     
     def _ensure_data_dir(self):
         """Create data directory if it doesn't exist (SQLite only)."""
