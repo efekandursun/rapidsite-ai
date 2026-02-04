@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<style>
+    /* Dashboard specific tweaks can go here if absolutely needed */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2.5rem;
+    }
+
+    .stat-sparkline {
+        height: 4px;
+        width: 100%;
+        background: rgba(255, 255, 255, 0.1);
+        margin-top: 1rem;
+        border-radius: 2px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stat-sparkline::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 60%;
+        background: var(--accent-color);
+        border-radius: 2px;
+    }
+
+    .filters-bar {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .search-input {
+        flex: 1;
+        min-width: 300px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Overview</h1>
+        <p class="page-subtitle">Real-time construction construction reporting & insights</p>
+    </div>
+    <button class="btn btn-primary" onclick="alert('Export functionality initializing...')">
+        📥 Export Data
+    </button>
+</div>
+
+<!-- Stats Widgets -->
+<div class="stats-grid">
+    <!-- Pending -->
+    <div class="glass-card" style="--accent-color: var(--accent-warning);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <div
+                    style="color: var(--text-secondary); font-size: 0.85rem; font-weight: 600; text-transform: uppercase;">
+                    Pending Reviews
+                </div>
+                <div style="font-size: 2.5rem; font-weight: 800; color: white; margin-top: 0.5rem;">
+                    {{ stats.pending }}
+                </div>
+            </div>
+            <div
+                style="background: rgba(245, 158, 11, 0.1); padding: 0.75rem; border-radius: 12px; color: var(--accent-warning);">
+                ⏳
+            </div>
+        </div>
+        <div class="stat-sparkline"></div>
+    </div>
+
+    <!-- Approved -->
+    <div class="glass-card" style="--accent-color: var(--accent-success);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <div
+                    style="color: var(--text-secondary); font-size: 0.85rem; font-weight: 600; text-transform: uppercase;">
+                    Approved
+                </div>
+                <div style="font-size: 2.5rem; font-weight: 800; color: white; margin-top: 0.5rem;">
+                    {{ stats.approved }}
+                </div>
+            </div>
+            <div
+                style="background: rgba(16, 185, 129, 0.1); padding: 0.75rem; border-radius: 12px; color: var(--accent-success);">
+                ✅
+            </div>
+        </div>
+        <div class="stat-sparkline" style="width: 80% !important;"></div>
+    </div>
+
+    <!-- Synced -->
+    <div class="glass-card" style="--accent-color: var(--accent-primary);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <div
+                    style="color: var(--text-secondary); font-size: 0.85rem; font-weight: 600; text-transform: uppercase;">
+                    Synced to ERP
+                </div>
+                <div style="font-size: 2.5rem; font-weight: 800; color: white; margin-top: 0.5rem;">
+                    {{ stats.synced }}
+                </div>
+            </div>
+            <div
+                style="background: rgba(59, 130, 246, 0.1); padding: 0.75rem; border-radius: 12px; color: var(--accent-primary);">
+                🔄
+            </div>
+        </div>
+        <div class="stat-sparkline" style="width: 40% !important;"></div>
+    </div>
+
+    <!-- Rejected -->
+    <div class="glass-card" style="--accent-color: var(--accent-danger);">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <div
+                    style="color: var(--text-secondary); font-size: 0.85rem; font-weight: 600; text-transform: uppercase;">
+                    Rejected
+                </div>
+                <div style="font-size: 2.5rem; font-weight: 800; color: white; margin-top: 0.5rem;">
+                    {{ stats.rejected }}
+                </div>
+            </div>
+            <div
+                style="background: rgba(239, 68, 68, 0.1); padding: 0.75rem; border-radius: 12px; color: var(--accent-danger);">
+                ❌
+            </div>
+        </div>
+        <div class="stat-sparkline" style="width: 15% !important;"></div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="glass-card" style="padding: 1rem; margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem;">
+    <span style="font-size: 1.2rem; color: var(--text-muted);">🔍</span>
+    <input type="text" class="form-control" placeholder="Search reports by location, item, or description..."
+        style="border: none; background: transparent; padding: 0;">
+
+    <div style="height: 24px; width: 1px; background: var(--border-light);"></div>
+
+    <select class="form-control" style="width: auto; background: transparent; border: none;">
+        <option value="">All Statuses</option>
+        <option value="pending">Pending</option>
+        <option value="approved">Approved</option>
+    </select>
+</div>
+
+<!-- Recent Reports Table -->
+<h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1.5rem; color: white;">Recent Activity</h2>
+
+<div class="table-container">
+    {% if reports %}
+    <table class="premium-table">
+        <thead>
+            <tr>
+                <th>Report ID</th>
+                <th>Type</th>
+                <th>Project / Item</th>
+                <th>Cost Code</th>
+                <th>Status</th>
+                <th>Date</th>
+                <th>Quick Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for report in reports %}
+            <tr>
+                <td>
+                    <span style="font-family: monospace; color: var(--accent-primary); font-weight: 600;">
+                        #{{ report.id }}
+                    </span>
+                </td>
+                <td>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span style="font-size: 1.2rem;">
+                            {% if report.parsed_data.log_type == 'production' %}🏗️
+                            {% elif report.parsed_data.log_type == 'materials' %}📦
+                            {% elif report.parsed_data.log_type == 'manpower' %}👷
+                            {% elif report.parsed_data.log_type == 'safety' %}⚠️
+                            {% else %}📝{% endif %}
+                        </span>
+                        <span style="font-weight: 500; text-transform: capitalize;">
+                            {{ report.parsed_data.log_type or 'General' }}
+                        </span>
+                    </div>
+                </td>
+                <td>
+                    <div style="font-weight: 600; color: white;">{{ report.parsed_data.item or 'Unknown Item' }}</div>
+                    <div
+                        style="font-size: 0.8rem; color: var(--text-muted); max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        {{ report.raw_transcript }}
+                    </div>
+                </td>
+                <td>
+                    <span
+                        style="background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 6px; font-family: monospace; font-size: 0.8rem;">
+                        {{ report.cost_code or '—' }}
+                    </span>
+                </td>
+                <td>
+                    <span class="badge badge-{{ report.status }}">
+                        {{ report.status }}
+                    </span>
+                </td>
+                <td>
+                    <span style="color: var(--text-muted); font-size: 0.85rem;">
+                        {{ report.created_at[:10] }}
+                    </span>
+                </td>
+                <td>
+                    <div style="display: flex; gap: 0.5rem;">
+                        {% if report.status == 'pending' %}
+                        <form action="/dashboard/approve/{{ report.id }}" method="POST" style="display: inline;">
+                            <button class="btn btn-primary"
+                                style="padding: 0.4rem 0.8rem; font-size: 0.8rem; background: var(--accent-success);">
+                                Approve
+                            </button>
+                        </form>
+                        <form action="/dashboard/reject/{{ report.id }}" method="POST" style="display: inline;">
+                            <button class="btn btn-secondary"
+                                style="padding: 0.4rem 0.8rem; font-size: 0.8rem; color: var(--accent-danger); border-color: rgba(239,68,68,0.3);">
+                                Reject
+                            </button>
+                        </form>
+                        {% elif report.status == 'approved' %}
+                        <button class="btn btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
+                            Sync ERP
+                        </button>
+                        {% endif %}
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div style="text-align: center; padding: 4rem; color: var(--text-muted);">
+        <div style="font-size: 4rem; opacity: 0.2; margin-bottom: 1rem;">📭</div>
+        <h3>No reports found</h3>
+        <p>New reports from WhatsApp will appear here instantly.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

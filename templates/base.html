@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FieldFlow AI - Enterprise</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    {% block styles %}{% endblock %}
+</head>
+
+<body>
+
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+        <div class="logo-container">
+            <div class="logo-text">FieldFlow AI</div>
+            <div class="logo-sub">Enterprise Edition</div>
+        </div>
+
+        <nav class="nav-menu">
+            <a href="{{ url_for('dashboard') }}"
+                class="nav-item {% if request.endpoint == 'dashboard' %}active{% endif %}">
+                <span class="nav-icon">📊</span>
+                Dashboard
+            </a>
+            <a href="#" class="nav-item" onclick="alert('Reports section coming soon')">
+                <span class="nav-icon">📋</span>
+                All Reports
+            </a>
+            <a href="#" class="nav-item" onclick="alert('Integration settings coming soon')">
+                <span class="nav-icon">🔗</span>
+                Integrations
+            </a>
+            <a href="{{ url_for('settings') }}"
+                class="nav-item {% if request.endpoint == 'settings' or request.endpoint == 'update_settings' %}active{% endif %}">
+                <span class="nav-icon">⚙️</span>
+                Settings
+            </a>
+        </nav>
+
+        <!-- User Profile Widget -->
+        <div class="user-panel">
+            <div class="user-info">
+                <div class="user-avatar">
+                    {{ user.name[0] | upper if user else 'U' }}
+                </div>
+                <div class="user-details">
+                    <h4>{{ user.name if user else 'Guest' }}</h4>
+                    <p>{{ company.name if company else 'No Company' }}</p>
+                </div>
+            </div>
+            {% if user %}
+            <a href="{{ url_for('auth.logout') }}" class="logout-link">
+                Sign Out
+            </a>
+            {% endif %}
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+        <div class="app-container">
+            <div style="width: 100%;">
+                {% block content %}{% endblock %}
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Simple active state handler if needed for dynamic interactions
+    </script>
+</body>
+
+</html>

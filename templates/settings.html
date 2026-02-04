@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1 class="page-title">Settings</h1>
+        <p class="page-subtitle">Manage company details and authorized numbers</p>
+    </div>
+</div>
+
+<div style="display: grid; gap: 2rem;">
+    <!-- Company Profile -->
+    <div class="glass-card">
+        <h3 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
+            <span style="background: rgba(59, 130, 246, 0.1); padding: 0.5rem; border-radius: 8px;">🏢</span>
+            Company Profile
+        </h3>
+
+        <form method="POST" action="{{ url_for('update_settings') }}">
+            <div class="form-group">
+                <label class="form-label">Company Name</label>
+                <input type="text" value="{{ company.name }}" disabled class="form-control" style="opacity: 0.7;">
+                <p style="font-size: 0.8rem; color: var(--text-muted); margin-top: 0.5rem;">
+                    Contact support to change company name.
+                </p>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Authorized WhatsApp Numbers</label>
+                <textarea name="whatsapp_numbers" class="form-control"
+                    rows="4">{{ company.whatsapp_numbers or '' }}</textarea>
+                <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.5rem;">
+                    Only these numbers can submit reports. Separate with commas.
+                </p>
+            </div>
+
+            <button type="submit" class="btn btn-primary">
+                Save Changes
+            </button>
+        </form>
+    </div>
+
+    <!-- Team Members -->
+    <div class="glass-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+            <h3 style="display: flex; align-items: center; gap: 0.75rem;">
+                <span style="background: rgba(139, 92, 246, 0.1); padding: 0.5rem; border-radius: 8px;">👥</span>
+                Team Members
+            </h3>
+            <button class="btn btn-secondary" onclick="alert('Invite feature coming soon')">
+                + Invite User
+            </button>
+        </div>
+
+        {% if users %}
+        <div class="table-container">
+            <table class="premium-table">
+                <thead>
+                    <tr>
+                        <th>User</th>
+                        <th>Email</th>
+                        <th>WhatsApp</th>
+                        <th>Role</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for team_user in users %}
+                    <tr>
+                        <td>
+                            <div style="font-weight: 600; color: white;">{{ team_user.name }}</div>
+                        </td>
+                        <td style="color: var(--text-muted);">{{ team_user.email }}</td>
+                        <td>
+                            <span style="font-family: monospace; color: var(--accent-success);">
+                                {{ team_user.whatsapp_number or '—' }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge" style="background: rgba(255,255,255,0.1); color: white;">
+                                {{ team_user.role|upper }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p style="color: var(--text-muted);">No team members found.</p>
+        {% endif %}
+    </div>
+
+    <!-- Your Account -->
+    <div class="glass-card">
+        <h3 style="margin-bottom: 1.5rem; display: flex; align-items: center; gap: 0.75rem;">
+            <span style="background: rgba(16, 185, 129, 0.1); padding: 0.5rem; border-radius: 8px;">👤</span>
+            Your Profile
+        </h3>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
+            <div>
+                <label class="form-label">Full Name</label>
+                <div style="font-size: 1.1rem; color: white;">{{ user.name }}</div>
+            </div>
+            <div>
+                <label class="form-label">Email Address</label>
+                <div style="font-size: 1.1rem; color: white;">{{ user.email }}</div>
+            </div>
+            <div>
+                <label class="form-label">Role</label>
+                <div style="font-size: 1.1rem; color: var(--accent-primary);">{{ user.role }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,28 @@
+# FieldFlow AI - Construction Report System
+
+# Web Framework
+Flask==3.0.0
+
+# AI & LLM
+openai==1.12.0
+
+# Database - PostgreSQL (Supabase)
+psycopg2-binary==2.9.9
+
+# Environment Variables
+python-dotenv==1.0.1
+
+# WhatsApp Integration (Twilio)
+twilio==8.11.0
+
+# HTTP Client
+requests==2.31.0
+
+# Web Server (Production - Render)
+gunicorn==21.2.0
+
+# Email
+Flask-Mail==0.9.1
+
+# Security
+bcrypt==4.1.2
