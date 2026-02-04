@@ -213,7 +213,11 @@
                 </td>
                 <td>
                     <span style="color: var(--text-muted); font-size: 0.85rem;">
+                        {% if report.created_at is string %}
                         {{ report.created_at[:10] }}
+                        {% else %}
+                        {{ report.created_at.strftime('%Y-%m-%d') }}
+                        {% endif %}
                     </span>
                 </td>
                 <td>
