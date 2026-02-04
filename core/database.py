@@ -28,12 +28,12 @@ class Database:
         
         try:
             if self.use_postgres:
-                import psycopg2
-                from psycopg2.extras import RealDictCursor
-                self.psycopg2 = psycopg2
-                self.RealDictCursor = RealDictCursor
+                import psycopg
+                from psycopg.rows import dict_row
+                self.psycopg = psycopg
+                self.dict_row = dict_row
                 self.db_url = DATABASE_URL
-                print(f"🐘 Using PostgreSQL (Supabase)")
+                print(f"🐘 Using PostgreSQL (Supabase) with psycopg3")
             else:
                 import sqlite3
                 self.sqlite3 = sqlite3
@@ -59,7 +59,7 @@ class Database:
     def get_connection(self):
         """Context manager for database connections."""
         if self.use_postgres:
-            conn = self.psycopg2.connect(self.db_url)
+            conn = self.psycopg.connect(self.db_url, row_factory=self.dict_row)
             try:
                 yield conn
                 conn.commit()
@@ -204,7 +204,7 @@ class Database:
     def _execute(self, conn, query: str, params: tuple = None):
         """Execute query with proper placeholder replacement."""
         if self.use_postgres:
-            cursor = conn.cursor(cursor_factory=self.RealDictCursor)
+            cursor = conn.cursor()
             # Replace ? with %s for PostgreSQL
             query = query.replace("?", "%s")
         else:
