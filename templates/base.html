@@ -67,8 +67,173 @@
         </div>
     </main>
 
+    <!-- Notification Toast Container -->
+    <div id="notification-container" style="
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 9999;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    "></div>
+
+    <!-- Notification Sound (base64 encoded short beep) -->
+    <audio id="notification-sound" preload="auto">
+        <source
+            src="data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1YZI6LiJyurKC7xL2/1NDb6Onw+fb8+Pv79/r6+/v9/v79/fz8+vr6+fn4+fj4+fn5+/v8/f39/f38/Pv7+fr5+Pj3+Pn4+Pn5+vr7+/z8/f7+/v79/f38/Pv7+vr5+fj4+Pf39/f3+Pj5+fr6+/v8/P39/v7+/v3+/f38/Pv7+vr5+fj49/f39/f3+Pj5+fr6+/v8/P39/v7+"
+            type="audio/wav">
+    </audio>
+
     <script>
-        // Simple active state handler if needed for dynamic interactions
+        // Notification System
+        let lastKnownReportIds = [];
+        let pendingCount = 0;
+        let notificationEnabled = true;
+
+        // Play notification sound
+        function playNotificationSound() {
+            try {
+                const audio = document.getElementById('notification-sound');
+                if (audio) {
+                    audio.currentTime = 0;
+                    audio.volume = 0.5;
+                    audio.play().catch(e => console.log('Audio play blocked:', e));
+                }
+            } catch (e) {
+                console.log('Sound error:', e);
+            }
+        }
+
+        // Show toast notification
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('notification-container');
+            const toast = document.createElement('div');
+            toast.className = 'notification-toast';
+            toast.innerHTML = `
+                <div style="
+                    background: linear-gradient(135deg, #1e1e3f 0%, #2a2a5a 100%);
+                    border: 1px solid ${type === 'success' ? '#22c55e' : '#4a9eff'};
+                    border-radius: 12px;
+                    padding: 16px 20px;
+                    color: #fff;
+                    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    min-width: 300px;
+                    animation: slideIn 0.3s ease-out;
+                ">
+                    <span style="font-size: 24px;">📋</span>
+                    <div>
+                        <div style="font-weight: 600; margin-bottom: 4px;">New Report!</div>
+                        <div style="font-size: 0.85rem; color: #aaa;">${message}</div>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" style="
+                        background: none;
+                        border: none;
+                        color: #666;
+                        cursor: pointer;
+                        font-size: 18px;
+                        margin-left: auto;
+                    ">×</button>
+                </div>
+            `;
+            container.appendChild(toast);
+
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                toast.style.animation = 'slideOut 0.3s ease-in forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, 5000);
+        }
+
+        // Update badge counter
+        function updateBadge(count) {
+            const dashboardLink = document.querySelector('a[href="/"]');
+            if (!dashboardLink) return;
+
+            // Remove existing badge
+            const existingBadge = dashboardLink.querySelector('.notification-badge');
+            if (existingBadge) existingBadge.remove();
+
+            // Add new badge if count > 0
+            if (count > 0) {
+                const badge = document.createElement('span');
+                badge.className = 'notification-badge';
+                badge.textContent = count > 9 ? '9+' : count;
+                badge.style.cssText = `
+                    background: linear-gradient(135deg, #ef4444 0%, #f97316 100%);
+                    color: white;
+                    font-size: 11px;
+                    font-weight: 700;
+                    padding: 2px 6px;
+                    border-radius: 10px;
+                    margin-left: 8px;
+                    animation: pulse 2s infinite;
+                `;
+                dashboardLink.appendChild(badge);
+            }
+        }
+
+        // Check for new notifications
+        async function checkNotifications() {
+            try {
+                const response = await fetch('/api/v1/notifications');
+                if (!response.ok) return;
+
+                const data = await response.json();
+                if (!data.success) return;
+
+                const newPending = data.pending_count;
+                const newReports = data.latest_reports || [];
+
+                // Get current report IDs
+                const currentReportIds = newReports.map(r => r.id);
+
+                // Check for truly new reports (not in our last known list)
+                const brandNewReports = newReports.filter(r => !lastKnownReportIds.includes(r.id));
+
+                // Show notifications for new reports
+                if (brandNewReports.length > 0 && lastKnownReportIds.length > 0) {
+                    brandNewReports.forEach(report => {
+                        const preview = report.raw_transcript.substring(0, 50) + '...';
+                        showToast(preview);
+                    });
+                    playNotificationSound();
+                }
+
+                // Update state
+                lastKnownReportIds = currentReportIds;
+                pendingCount = newPending;
+                updateBadge(newPending);
+
+            } catch (e) {
+                console.log('Notification check failed:', e);
+            }
+        }
+
+        // Add CSS animations
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOut {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+            @keyframes pulse {
+                0%, 100% { transform: scale(1); }
+                50% { transform: scale(1.1); }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Start polling (every 10 seconds)
+        checkNotifications(); // Initial check
+        setInterval(checkNotifications, 10000);
     </script>
 </body>
 

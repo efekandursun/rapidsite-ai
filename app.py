@@ -201,6 +201,39 @@ def api_stats():
     return jsonify({"success": True, "stats": stats})
 
 
+@app.route('/api/v1/notifications', methods=['GET'])
+@login_required
+def api_notifications():
+    """Get notification data for real-time updates."""
+    company = get_current_company()
+    
+    if not company:
+        return jsonify({"success": False, "error": "No company"}), 400
+    
+    # Get pending reports count
+    stats = db.get_stats_by_company(company['id'])
+    pending_count = stats.get('pending', 0)
+    
+    # Get latest pending reports (for toast notifications)
+    reports = db.get_reports_by_company(company['id'], status='pending', limit=5)
+    
+    # Convert to serializable format
+    latest_reports = []
+    for r in reports:
+        latest_reports.append({
+            'id': r['id'],
+            'raw_transcript': r['raw_transcript'][:100] if r.get('raw_transcript') else '',
+            'reported_by': r.get('reported_by', 'Unknown'),
+            'created_at': str(r.get('created_at', ''))
+        })
+    
+    return jsonify({
+        "success": True,
+        "pending_count": pending_count,
+        "latest_reports": latest_reports
+    })
+
+
 # =============================================================================
 # WHATSAPP NOTIFICATION
 # =============================================================================
