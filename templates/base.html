@@ -17,19 +17,11 @@
             <div class="logo-text">FieldFlow AI</div>
             <div class="logo-sub">Enterprise Edition</div>
             <!-- Test button for notifications -->
-            <button onclick="showToast('This is a test notification!', 'info')" style="
-                background-color: #4CAF50; /* Green */
-                border: none;
-                color: white;
-                padding: 8px 12px;
-                text-align: center;
-                text-decoration: none;
-                display: inline-block;
-                font-size: 12px;
-                margin-top: 10px;
-                cursor: pointer;
-                border-radius: 5px;
-            ">Test Notification</button>
+            <!-- Test button for notifications -->
+            <button onclick="showToast('This is a test notification!', 'info')" class="btn btn-primary"
+                style="width: 100%; justify-content: center; margin-top: 1rem;">
+                🔔 Test Notification
+            </button>
         </div>
 
         <nav class="nav-menu">
@@ -144,22 +136,23 @@
             toast.className = 'notification-toast';
             toast.innerHTML = `
                 <div style="
-                    background: linear-gradient(135deg, #1e1e3f 0%, #2a2a5a 100%);
-                    border: 1px solid ${type === 'success' ? '#22c55e' : '#4a9eff'};
-                    border-radius: 12px;
-                    padding: 16px 20px;
-                    color: #fff;
-                    box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+                    background: #ffffff;
+                    border: 1px solid ${type === 'success' ? 'var(--accent-success)' : 'var(--accent-secondary)'};
+                    border-left: 4px solid ${type === 'success' ? 'var(--accent-success)' : 'var(--accent-secondary)'};
+                    border-radius: var(--radius-md);
+                    padding: 1rem;
+                    color: var(--text-primary);
+                    box-shadow: var(--shadow-md);
                     display: flex;
                     align-items: center;
                     gap: 12px;
                     min-width: 300px;
                     animation: slideIn 0.3s ease-out;
                 ">
-                    <span style="font-size: 24px;">🔔</span>
+                    <span style="font-size: 20px;">${type === 'success' ? '✅' : '🔔'}</span>
                     <div>
-                        <div style="font-weight: 600; margin-bottom: 4px;">New Report Received!</div>
-                        <div style="font-size: 0.85rem; color: #aaa;">Refreshing dashboard...</div>
+                        <div style="font-weight: 600; margin-bottom: 2px; font-size: 0.9rem;">${message}</div>
+                        <div style="font-size: 0.8rem; color: var(--text-secondary);">Refreshing dashboard...</div>
                     </div>
                 </div>
             `;
