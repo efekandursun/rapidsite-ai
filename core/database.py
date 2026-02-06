@@ -367,7 +367,7 @@ class Database:
     # =========================================================================
     
     def create_company(self, name: str, slug: str, whatsapp_numbers: str = None) -> int:
-        """Create a new company."""
+        """Create a new company. (Legacy whatsapp_numbers support kept for compatibility)"""
         with self.get_connection() as conn:
             cursor = self._execute(conn, """
                 INSERT INTO companies (name, slug, whatsapp_numbers)
@@ -376,8 +376,17 @@ class Database:
             
             if self.use_postgres:
                 cursor.execute("SELECT lastval()")
-                return cursor.fetchone()['lastval']
-            return cursor.lastrowid
+                company_id = cursor.fetchone()['lastval']
+            else:
+                company_id = cursor.lastrowid
+            
+            # Migrate legacy numbers if provided
+            if whatsapp_numbers:
+                for num in whatsapp_numbers.split(','):
+                    if num.strip():
+                        self.add_authorized_number(company_id, num.strip(), "Initial User")
+            
+            return company_id
     
     def get_company(self, company_id: int) -> Optional[Dict[str, Any]]:
         """Get company by ID."""
@@ -396,39 +405,91 @@ class Database:
             return self._fetchone(cursor)
     
     def get_company_by_whatsapp(self, phone: str) -> Optional[Dict[str, Any]]:
-        """Get company by WhatsApp number."""
-        # Normalize phone number
+        """Get company by WhatsApp number (checks authorized_numbers table)."""
         clean_phone = phone.replace('whatsapp:', '').strip()
-        print(f"🔍 Looking for WhatsApp number: {clean_phone} (original: {phone})")
+        print(f"🔍 Looking for WhatsApp number: {clean_phone}")
         
         with self.get_connection() as conn:
-            cursor = self._execute(conn, "SELECT * FROM companies")
-            rows = self._fetchall(cursor)
-            for row in rows:
-                numbers = row.get('whatsapp_numbers') or ''
-                print(f"   Checking company '{row.get('name')}': numbers='{numbers}'")
+            # Check new table first
+            cursor = self._execute(conn, """
+                SELECT c.*, an.employee_name 
+                FROM companies c
+                JOIN company_authorized_numbers an ON c.id = an.company_id
+                WHERE an.phone_number = ?
+            """, (clean_phone,))
+            
+            row = self._fetchone(cursor)
+            
+            if row:
+                print(f"   ✅ Match found in authorized numbers (Employee: {row.get('employee_name')})")
+                return row
+            
+            # Fallback for + prefix issues
+            cursor = self._execute(conn, """
+                SELECT c.*, an.employee_name 
+                FROM companies c
+                JOIN company_authorized_numbers an ON c.id = an.company_id
+                WHERE an.phone_number LIKE ?
+            """, (f"%{clean_phone.lstrip('+')}",))
+            
+            row = self._fetchone(cursor)
+            if row:
+                print(f"   ✅ Match found (fuzzy search)")
+                return row
                 
-                # Check various formats
-                if clean_phone in numbers:
-                    print(f"   ✅ Match found!")
-                    return row
-                # Also try without + prefix
-                if clean_phone.lstrip('+') in numbers.replace('+', ''):
-                    print(f"   ✅ Match found (without +)!")
-                    return row
-                    
             print(f"   ❌ No match found for {clean_phone}")
             return None
     
-    def update_company_numbers(self, company_id: int, numbers: str) -> bool:
-        """Update authorized WhatsApp numbers for a company."""
+    def get_authorized_numbers(self, company_id: int) -> List[Dict[str, Any]]:
+        """Get all authorized numbers for a company."""
         with self.get_connection() as conn:
             cursor = self._execute(conn, """
+                SELECT * FROM company_authorized_numbers 
+                WHERE company_id = ? 
+                ORDER BY created_at DESC
+            """, (company_id,))
+            return self._fetchall(cursor)
+    
+    def add_authorized_number(self, company_id: int, phone: str, name: str = None) -> bool:
+        """Add an authorized WhatsApp number."""
+        clean_phone = phone.strip()
+        with self.get_connection() as conn:
+            try:
+                self._execute(conn, """
+                    INSERT INTO company_authorized_numbers (company_id, phone_number, employee_name)
+                    VALUES (?, ?, ?)
+                """, (company_id, clean_phone, name or "Unknown User"))
+                return True
+            except Exception as e:
+                print(f"Error adding number: {e}")
+                return False
+
+    def remove_authorized_number(self, number_id: int, company_id: int) -> bool:
+        """Remove an authorized number (securely scoped to company)."""
+        with self.get_connection() as conn:
+            cursor = self._execute(conn, """
+                DELETE FROM company_authorized_numbers 
+                WHERE id = ? AND company_id = ?
+            """, (number_id, company_id))
+            return cursor.rowcount > 0
+
+    def update_company_numbers(self, company_id: int, numbers: str) -> bool:
+        """Legacy support - updates text field but also migrates to new table."""
+        # Update text field for backward compatibility
+        with self.get_connection() as conn:
+             self._execute(conn, """
                 UPDATE companies 
                 SET whatsapp_numbers = ? 
                 WHERE id = ?
             """, (numbers, company_id))
-            return cursor.rowcount > 0
+        
+        # Also add to new table if not exists (dumb migration)
+        for num in numbers.split(','):
+            if num.strip():
+                # Try to add, ignore if exists (assumes employee name is unknown)
+                self.add_authorized_number(company_id, num.strip(), "Migrated User")
+                
+        return True
     
     # =========================================================================
     # USER MANAGEMENT

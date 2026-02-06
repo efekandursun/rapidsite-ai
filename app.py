@@ -329,24 +329,51 @@ def settings():
     user = get_current_user()
     company = get_current_company()
     users = db.get_users_by_company(company['id']) if company else []
-    return render_template('settings.html', user=user, company=company, users=users)
+    
+    # Get authorized numbers with names
+    authorized_numbers = db.get_authorized_numbers(company['id']) if company else []
+    
+    return render_template('settings.html', user=user, company=company, users=users, authorized_numbers=authorized_numbers)
 
 
 @app.route('/settings/update', methods=['POST'])
 @login_required
 def update_settings():
-    """Update settings."""
+    """Update settings (Legacy)."""
     user = get_current_user()
     if user['role'] != 'admin':
         return "Unauthorized", 403
     
-    whatsapp_numbers = request.form.get('whatsapp_numbers', '').strip()
+    # This route is now mostly for company name updates if we enabled them
+    return redirect(url_for('settings'))
+
+
+@app.route('/settings/numbers/add', methods=['POST'])
+@login_required
+def add_authorized_number():
+    """Add a new authorized WhatsApp number."""
+    user = get_current_user()
+    if user['role'] != 'admin':
+        return "Unauthorized", 403
     
-    # Clean numbers
-    numbers = [n.strip() for n in whatsapp_numbers.split(',') if n.strip()]
-    cleaned_numbers = ','.join(numbers)
+    name = request.form.get('employee_name')
+    number = request.form.get('phone_number')
     
-    db.update_company_numbers(user['company_id'], cleaned_numbers)
+    if name and number:
+        db.add_authorized_number(user['company_id'], number, name)
+    
+    return redirect(url_for('settings'))
+
+
+@app.route('/settings/numbers/delete/<int:number_id>', methods=['POST'])
+@login_required
+def delete_authorized_number(number_id):
+    """Delete an authorized WhatsApp number."""
+    user = get_current_user()
+    if user['role'] != 'admin':
+        return "Unauthorized", 403
+    
+    db.remove_authorized_number(number_id, user['company_id'])
     
     return redirect(url_for('settings'))
 
