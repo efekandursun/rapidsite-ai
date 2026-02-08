@@ -54,16 +54,28 @@ def sync_report_to_procore(report: dict):
     """Push approved report to Procore Daily Log."""
     # Get company ID from report
     company_id = report.get('company_id')
+    
+    # Get Project ID preference
+    project_id = report.get('project_id')
+    if not project_id and company_id:
+        try:
+            db = Database()
+            company = db.get_company(company_id)
+            if company:
+                project_id = company.get('procore_default_project_id')
+        except Exception as e:
+            print(f"⚠️ Error fetching company for project ID: {e}")
+
+    # Fallback to env var
+    if not project_id:
+        project_id = os.getenv('PROCORE_DEFAULT_PROJECT_ID')
+
     connector = get_procore_connector(company_id)
     if not connector:
         return False, "Procore connector unavailable"
 
-    if not report.get('parsed_data'):
-        return False, "Missing parsed_data"
-
-    project_id = report.get('project_id') or os.getenv('PROCORE_DEFAULT_PROJECT_ID')
     if not project_id:
-        return False, "No project_id; set PROCORE_DEFAULT_PROJECT_ID or include in report"
+        return False, "No project_id configured. Please set a Default Project in Settings."
 
     try:
         connector.authenticate()

@@ -236,9 +236,11 @@
                             </button>
                         </form>
                         {% elif report.status == 'approved' %}
-                        <button class="btn btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
-                            Sync ERP
-                        </button>
+                        <form action="/dashboard/sync/{{ report.id }}" method="POST" style="display: inline;">
+                            <button class="btn btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
+                                🔄 Sync ERP
+                            </button>
+                        </form>
                         {% endif %}
                     </div>
                 </td>
