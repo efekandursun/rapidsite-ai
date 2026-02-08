@@ -253,10 +253,22 @@ class ProcoreConnector(ERPConnector):
         procore_data = self.transform_data(log_data)
         
         try:
+            # Using 'notes_logs' as a generic daily log entry since specific types vary by project
+            # Endpoint: POST /rest/v1.0/projects/{project_id}/notes_logs
+            # Payload: { "notes_log": { "date": "...", "comment": "..." } }
+            
+            payload = {
+                "notes_log": {
+                    "date": procore_data.get("log_date"),
+                    "comment": procore_data.get("description"),
+                    "is_daily_log_header_note": False
+                }
+            }
+            
             response = requests.post(
-                f"{self.base_url}/rest/v1.0/projects/{project_id}/daily_construction_report_logs",
+                f"{self.base_url}/rest/v1.0/projects/{project_id}/notes_logs",
                 headers=self.headers,
-                json={"daily_construction_report_log": procore_data},
+                json=payload,
                 timeout=15
             )
             
@@ -276,23 +288,6 @@ class ProcoreConnector(ERPConnector):
     def transform_data(self, our_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Transform our data format to Procore Daily Log format.
-        
-        Our format:
-        {
-            "log_type": "production",
-            "description": "Poured 150 CY concrete",
-            "item": "Concrete Pour",
-            "quantity": 150,
-            "unit": "CY",
-            ...
-        }
-        
-        Procore format:
-        {
-            "log_date": "2024-02-02",
-            "description": "...",
-            ...
-        }
         """
         # Build description from our data
         description_parts = []
