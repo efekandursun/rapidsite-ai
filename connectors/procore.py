@@ -210,30 +210,34 @@ class ProcoreConnector(ERPConnector):
     def get_projects(self, company_id: int = None) -> List[Dict[str, Any]]:
         """Get list of projects from Procore."""
         target_company_id = company_id or self.company_id
-        if not target_company_id:
-             # If no company ID, try to get first available company
-             companies = self.get_companies()
-             if companies:
-                 target_company_id = companies[0]['id']
-                 
+        
         if not self._authenticated:
             self.authenticate()
+            
+        if not target_company_id:
+              # If no company ID, try to get first available company
+              companies = self.get_companies()
+              if companies:
+                  target_company_id = companies[0]['id']
         
         try:
             headers = self.headers.copy()
+            # Important: Procore-Company-Id must be in headers for this endpoint
             if target_company_id:
                 headers["Procore-Company-Id"] = str(target_company_id)
                 
             response = requests.get(
                 f"{self.base_url}/rest/v1.0/projects",
                 headers=headers,
+                params={"company_id": target_company_id} if target_company_id else {},
                 timeout=10
             )
             response.raise_for_status()
             return response.json()
             
         except requests.RequestException as e:
-            raise ConnectionError(f"Failed to get projects: {str(e)}")
+            print(f"Failed to get projects: {e}")
+            return []
     
     def push_daily_log(self, project_id: str, log_data: Dict[str, Any]) -> Dict[str, Any]:
         """
