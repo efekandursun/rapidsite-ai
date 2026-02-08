@@ -552,6 +552,16 @@ class Database:
             self._execute(conn, query, tuple(params))
             return True
 
+    def update_company_procore_company_id(self, company_id: int, procore_company_id: str) -> bool:
+        """Update Procore Company ID."""
+        with self.get_connection() as conn:
+            self._execute(conn, """
+                UPDATE companies 
+                SET procore_company_id = ? 
+                WHERE id = ?
+            """, (procore_company_id, company_id))
+            return True
+
     def update_company_procore_project(self, company_id: int, project_id: str) -> bool:
         """Update default Procore project."""
         with self.get_connection() as conn:

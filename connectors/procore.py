@@ -248,6 +248,16 @@ class ProcoreConnector(ERPConnector):
         """
         if not self._authenticated:
             self.authenticate()
+            
+        # Ensure we have a company ID (critical for Procore-Company-Id header)
+        if not self.company_id:
+            print("⚠️ No company_id found, attempting to auto-detect...")
+            companies = self.get_companies()
+            if companies:
+                self.company_id = companies[0]['id']
+                print(f"✅ Auto-detected company_id: {self.company_id}")
+            else:
+                 print("❌ Failed to auto-detect company_id")
         
         # Transform our data to Procore format
         procore_data = self.transform_data(log_data)
