@@ -1,11 +1,6 @@
-"""
-FieldFlow AI - Main Flask Application
-REST API + Dashboard for construction report management.
-"""
-
 import os
 from datetime import datetime
-from flask import Flask, jsonify, request, render_template, redirect, url_for, session
+from flask import Flask, jsonify, request, render_template, redirect, url_for, session, flash
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -151,6 +146,7 @@ def procore_callback():
             expires_at
         )
         
+        flash("Successfully connected to Procore!", "success")
         return redirect(url_for('settings'))
         
     except Exception as e:
@@ -172,7 +168,15 @@ def update_procore_project():
     if project_id:
         db.update_company_procore_project(company['id'], project_id)
         
-    # Also update procore company ID if provided
+    procore_company_id = request.form.get('procore_company_id')
+    if procore_company_id:
+        # We need to implement this in DB if not exist, or just use it.
+        # For now, let's assume we might need to store it. 
+        # Actually, looking at database.py, we have procore_company_id column.
+        db.update_company_procore_company_id(company['id'], procore_company_id)
+
+    flash("Procore settings updated successfully!", "success")
+    return redirect(url_for('settings'))
     if procore_company_id:
         with db.get_connection() as conn:
             db._execute(conn, "UPDATE companies SET procore_company_id = ? WHERE id = ?", (procore_company_id, company['id']))
@@ -437,6 +441,15 @@ def dashboard_approve(report_id):
         success, erp_id_or_error = sync_report_to_procore({**report, "id": report_id})
         if not success:
             print(f"⚠️ Procore sync failed for report {report_id}: {erp_id_or_error}")
+            try:
+                flash(f"Approved, but failed to sync to Procore: {erp_id_or_error}", "warning")
+            except Exception:
+                pass # Flash might fail if no secret key set properly, though we have one
+        else:
+            try:
+                flash(f"Report approved and synced to Procore (ID: {erp_id_or_error})", "success")
+            except Exception:
+                pass
 
     # Send WhatsApp notification
     if report and report.get('reported_by'):

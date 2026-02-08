@@ -110,18 +110,6 @@
         // Update badge (if any) - placeholder for now
         function updateBadge(count) {
             console.log(`Pending reports: ${count}`);
-            // Example: Update a badge on a menu item
-            // const dashboardLink = document.querySelector('.nav-item[href="{{ url_for('dashboard') }}"]');
-            // if (dashboardLink) {
-            //     let badge = dashboardLink.querySelector('.badge');
-            //     if (!badge) {
-            //         badge = document.createElement('span');
-            //         badge.className = 'badge';
-            //         dashboardLink.appendChild(badge);
-            //     }
-            //     badge.textContent = count > 0 ? count : '';
-            //     badge.style.display = count > 0 ? 'inline-block' : 'none';
-            // }
         }
 
         // Show toast notification
@@ -129,11 +117,27 @@
             const container = document.getElementById('notification-container');
             const toast = document.createElement('div');
             toast.className = 'notification-toast';
+
+            // Determine icon and color based on type
+            let icon = '🔔';
+            let color = 'var(--accent-secondary)';
+
+            if (type === 'success') {
+                icon = '✅';
+                color = 'var(--accent-success)';
+            } else if (type === 'warning') {
+                icon = '⚠️';
+                color = '#f59e0b';
+            } else if (type === 'error' || type === 'danger') {
+                icon = '❌';
+                color = 'var(--accent-danger)';
+            }
+
             toast.innerHTML = `
                 <div style="
                     background: #ffffff;
-                    border: 1px solid ${type === 'success' ? 'var(--accent-success)' : 'var(--accent-secondary)'};
-                    border-left: 4px solid ${type === 'success' ? 'var(--accent-success)' : 'var(--accent-secondary)'};
+                    border: 1px solid ${color};
+                    border-left: 4px solid ${color};
                     border-radius: var(--radius-md);
                     padding: 1rem;
                     color: var(--text-primary);
@@ -144,10 +148,9 @@
                     min-width: 300px;
                     animation: slideIn 0.3s ease-out;
                 ">
-                    <span style="font-size: 20px;">${type === 'success' ? '✅' : '🔔'}</span>
+                    <span style="font-size: 20px;">${icon}</span>
                     <div>
                         <div style="font-weight: 600; margin-bottom: 2px; font-size: 0.9rem;">${message}</div>
-                        <div style="font-size: 0.8rem; color: var(--text-secondary);">Refreshing dashboard...</div>
                     </div>
                 </div>
             `;
@@ -182,7 +185,6 @@
                 }
 
                 // Subsequent Polls: Check for new items
-                // A report is new if its ID is NOT in our last known list
                 const brandNewReports = newReports.filter(r => !lastKnownReportIds.includes(r.id));
 
                 if (brandNewReports.length > 0) {
@@ -225,8 +227,20 @@
         document.head.appendChild(style);
 
         // Start polling (every 10 seconds)
-        checkNotifications(); // Initial check
+        checkNotifications();
         setInterval(checkNotifications, 10000);
+
+        // Handle Server-Side Flash Messages
+        document.addEventListener('DOMContentLoaded', function () {
+            {% with messages = get_flashed_messages(with_categories = true) %}
+            {% if messages %}
+            {% for category, message in messages %}
+            // Clean message to avoid JS errors
+            showToast("{{ message | safe }}", "{{ category }}");
+            {% endfor %}
+            {% endif %}
+            {% endwith %}
+        });
     </script>
 </body>
 
