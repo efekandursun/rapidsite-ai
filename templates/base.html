@@ -86,6 +86,9 @@
         Your browser does not support the audio element.
     </audio>
 
+    <script id="flash-messages-data" type="application/json">
+        {{ get_flashed_messages(with_categories=true) | tojson | safe }}
+    </script>
     <script>
         // Notification System
         let lastKnownReportIds = [];
@@ -232,14 +235,13 @@
 
         // Handle Server-Side Flash Messages
         document.addEventListener('DOMContentLoaded', function () {
-            {% with messages = get_flashed_messages(with_categories = true) %}
-            {% if messages %}
-            {% for category, message in messages %}
-            // Clean message to avoid JS errors
-            showToast("{{ message | safe }}", "{{ category }}");
-            {% endfor %}
-            {% endif %}
-            {% endwith %}
+            const flashData = document.getElementById('flash-messages-data');
+            const messages = flashData ? JSON.parse(flashData.textContent) : [];
+            if (messages) {
+                messages.forEach(([category, message]) => {
+                    showToast(message, category);
+                });
+            }
         });
     </script>
 </body>
