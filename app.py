@@ -494,13 +494,13 @@ def settings():
     procore_projects = []
     procore_companies = []
     
-        try:
-            connector = get_procore_connector(company['id'])
-            # Fetch projects (connector handles auth)
-            if connector:
-                procore_projects = connector.get_projects()
-        except Exception as e:
-            print(f"Failed to fetch Procore data: {e}")
+    try:
+        connector = get_procore_connector(company['id'])
+        # Fetch projects (connector handles auth)
+        if connector:
+            procore_projects = connector.get_projects()
+    except Exception as e:
+        print(f"Failed to fetch Procore data: {e}")
 
     return render_template('settings.html', user=user, company=company, users=users, authorized_numbers=authorized_numbers, procore_projects=procore_projects)
 
