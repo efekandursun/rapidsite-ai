@@ -223,19 +223,10 @@ def update_procore_project():
     if project_id:
         db.update_company_procore_project(company['id'], project_id)
         
-    procore_company_id = request.form.get('procore_company_id')
     if procore_company_id:
-        # We need to implement this in DB if not exist, or just use it.
-        # For now, let's assume we might need to store it. 
-        # Actually, looking at database.py, we have procore_company_id column.
         db.update_company_procore_company_id(company['id'], procore_company_id)
 
     flash("Procore settings updated successfully!", "success")
-    return redirect(url_for('settings'))
-    if procore_company_id:
-        with db.get_connection() as conn:
-            db._execute(conn, "UPDATE companies SET procore_company_id = ? WHERE id = ?", (procore_company_id, company['id']))
-            
     return redirect(url_for('settings'))
 
 
