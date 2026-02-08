@@ -90,6 +90,12 @@
             <div style="display: flex; align-items: center; gap: 1rem;">
                 <span class="badge"
                     style="background: rgba(16, 185, 129, 0.2); color: #34d399; padding: 0.5rem 1rem;">Connected</span>
+                <form method="POST" action="{{ url_for('procore_disconnect') }}" style="display: inline;">
+                    <button type="submit" class="btn btn-secondary"
+                        style="color: var(--accent-danger); border-color: var(--accent-danger); font-size: 0.85rem; padding: 0.4rem 0.8rem;">
+                        Disconnect
+                    </button>
+                </form>
             </div>
             {% else %}
             <a href="{{ url_for('procore_auth') }}" class="btn btn-primary"

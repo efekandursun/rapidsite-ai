@@ -184,6 +184,31 @@ def procore_callback():
         return f"Authentication failed: {str(e)}", 500
 
 
+@app.route('/procore/disconnect', methods=['POST'])
+@login_required
+def procore_disconnect():
+    """Disconnect Procore integration."""
+    try:
+        company = get_current_company()
+        if not company:
+            return "Unauthorized", 403
+            
+        # Update tokens with None to clear them (access, refresh, expiry)
+        # Note: We keep the company_id and project_id for convenience on reconnect
+        db.update_company_procore_tokens(
+            company['id'],
+            None,
+            None,
+            None
+        )
+        flash("Successfully disconnected from Procore", "info")
+    except Exception as e:
+        print(f"Disconnect failed: {e}")
+        flash(f"Failed to disconnect: {e}", "error")
+        
+    return redirect(url_for('settings'))
+
+
 @app.route('/settings/procore/project', methods=['POST'])
 @login_required
 def update_procore_project():
