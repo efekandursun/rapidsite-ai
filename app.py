@@ -92,8 +92,8 @@ def sync_report_to_procore(report: dict):
 def procore_auth():
     """Initiate Procore OAuth flow."""
     try:
-        # Dynamically determine redirect URI based on current host
-        redirect_uri = url_for('procore_callback', _external=True)
+        # Prefer env var if set (essential for Render/HTTPS), else fallback to auto-detect
+        redirect_uri = os.getenv('PROCORE_REDIRECT_URI') or url_for('procore_callback', _external=True)
         
         connector = ProcoreConnector({
             "client_id": os.getenv('PROCORE_CLIENT_ID'),
@@ -119,7 +119,8 @@ def procore_callback():
         return "No code provided", 400
     
     try:
-        redirect_uri = url_for('procore_callback', _external=True)
+        # Must match the redirect_uri used in auth step
+        redirect_uri = os.getenv('PROCORE_REDIRECT_URI') or url_for('procore_callback', _external=True)
         
         connector = ProcoreConnector({
              "client_id": os.getenv('PROCORE_CLIENT_ID'),
