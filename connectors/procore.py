@@ -31,7 +31,10 @@ class ProcoreConnector(ERPConnector):
     # API URLs
     PRODUCTION_URL = "https://api.procore.com"
     SANDBOX_URL = "https://sandbox.procore.com"
-    OAUTH_URL = "https://login.procore.com"
+    
+    # Auth URLs
+    AUTH_URL_PROD = "https://login.procore.com"
+    AUTH_URL_SANDBOX = "https://login-sandbox.procore.com"
     
     def __init__(self, credentials: Dict[str, str] = None):
         """
@@ -61,6 +64,7 @@ class ProcoreConnector(ERPConnector):
         self.use_sandbox = creds.get('use_sandbox', env_sandbox)
         
         self.base_url = self.SANDBOX_URL if self.use_sandbox else self.PRODUCTION_URL
+        self.auth_base_url = self.AUTH_URL_SANDBOX if self.use_sandbox else self.AUTH_URL_PROD
         
         super().__init__(creds)
     
@@ -83,7 +87,7 @@ class ProcoreConnector(ERPConnector):
             raise ERPError("Missing client_id or redirect_uri")
             
         return (
-            f"{self.OAUTH_URL}/oauth/authorize"
+            f"{self.auth_base_url}/oauth/authorize"
             f"?client_id={self.client_id}"
             f"&response_type=code"
             f"&redirect_uri={self.redirect_uri}"
@@ -92,9 +96,10 @@ class ProcoreConnector(ERPConnector):
     def exchange_code_for_token(self, code: str) -> Dict[str, Any]:
         """Exchange auth code for access token."""
         try:
+            # Use data= for form-urlencoded, which is standard for OAuth
             response = requests.post(
-                f"{self.OAUTH_URL}/oauth/token",
-                json={
+                f"{self.auth_base_url}/oauth/token",
+                data={
                     "grant_type": "authorization_code",
                     "client_id": self.client_id,
                     "client_secret": self.client_secret,
@@ -103,6 +108,11 @@ class ProcoreConnector(ERPConnector):
                 },
                 timeout=15
             )
+            
+            # Debug info (remove in prod)
+            if response.status_code != 200:
+                print(f"Token exchange failed: {response.text}")
+                
             response.raise_for_status()
             data = response.json()
             
@@ -120,8 +130,8 @@ class ProcoreConnector(ERPConnector):
             
         try:
             response = requests.post(
-                f"{self.OAUTH_URL}/oauth/token",
-                json={
+                f"{self.auth_base_url}/oauth/token",
+                data={
                     "grant_type": "refresh_token",
                     "client_id": self.client_id,
                     "client_secret": self.client_secret,
