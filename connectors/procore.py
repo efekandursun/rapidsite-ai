@@ -259,6 +259,10 @@ class ProcoreConnector(ERPConnector):
             else:
                  print("❌ Failed to auto-detect company_id")
         
+        # Transform our data to Procore format
+        procore_data = self.transform_data(log_data)
+        
+        try:
             payload = {
                 "notes_log": {
                     "date": procore_data.get("log_date"),
