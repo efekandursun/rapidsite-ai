@@ -1,14 +1,25 @@
 """
 FieldFlow AI - WhatsApp Handler
 Twilio webhook handler for WhatsApp voice/text messages.
+
+Improvements in this version:
+- Twilio signature validation for incoming webhooks (fails closed on mismatch).
+- Idempotency using Twilio MessageSid to avoid duplicate processing.
+- Async processing: webhook returns fast, heavy work runs in background thread.
+- Proactive WhatsApp responses after background processing completes.
 """
 
 import os
 import tempfile
 import requests
-from flask import Blueprint, request
+import logging
+import threading
+import time
+from concurrent.futures import ThreadPoolExecutor
+from flask import Blueprint, request, abort
 from twilio.twiml.messaging_response import MessagingResponse
 from twilio.rest import Client as TwilioClient
+from twilio.request_validator import RequestValidator
 
 from core.brain import ConstructionBrain, TranscriptionError, ParsingError
 from core.database import Database
@@ -20,72 +31,151 @@ whatsapp_bp = Blueprint('whatsapp', __name__)
 brain = ConstructionBrain()
 db = Database()
 
+# Lightweight worker pool for async processing. For production, replace with a
+# proper queue (RQ/Celery) but this keeps webhook latency low immediately.
+executor = ThreadPoolExecutor(max_workers=4)
+
 # Twilio client (optional, for sending proactive messages)
+TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
+TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
 twilio_client = None
-if os.getenv("TWILIO_ACCOUNT_SID"):
-    twilio_client = TwilioClient(
-        os.getenv("TWILIO_ACCOUNT_SID"),
-        os.getenv("TWILIO_AUTH_TOKEN")
-    )
+if TWILIO_ACCOUNT_SID and TWILIO_AUTH_TOKEN:
+    twilio_client = TwilioClient(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+else:
+    logging.warning("Twilio credentials not fully set; outbound WhatsApp replies disabled.")
+
+# Twilio signature validator (fail closed when token present)
+request_validator = RequestValidator(TWILIO_AUTH_TOKEN) if TWILIO_AUTH_TOKEN else None
+
+# In-memory idempotency cache for Twilio MessageSid (best-effort; replace with
+# persistent store for multi-instance setups).
+processed_sids = {}
+sid_lock = threading.Lock()
+
+
+def _purge_old_sids(ttl_seconds: int = 3600):
+    """Drop idempotency entries older than ttl to bound memory."""
+    cutoff = time.time() - ttl_seconds
+    to_delete = [sid for sid, ts in processed_sids.items() if ts < cutoff]
+    for sid in to_delete:
+        processed_sids.pop(sid, None)
 
 
 @whatsapp_bp.route('/webhook/whatsapp', methods=['POST'])
 def whatsapp_webhook():
-    """
-    Twilio WhatsApp webhook handler.
-    
-    Receives voice/text messages, processes with AI, saves to database.
-    """
-    # Get message details
+    """Twilio WhatsApp webhook handler (fast return + background work)."""
+
+    # Validate signature if token is configured
+    if request_validator:
+        signature = request.headers.get('X-Twilio-Signature', '')
+        url = request.url
+        params = request.form.to_dict()  # Twilio signs form params
+        if not request_validator.validate(url, params, signature):
+            abort(403)
+
+    message_sid = request.values.get('MessageSid')
+    if not message_sid:
+        abort(400)
+
+    # Idempotency check (best-effort in-memory)
+    with sid_lock:
+        _purge_old_sids()
+        if message_sid in processed_sids:
+            # Already handled; acknowledge to Twilio
+            resp = MessagingResponse()
+            resp.message("✅ Already received. Processing underway.")
+            return str(resp)
+        processed_sids[message_sid] = time.time()
+
     from_number = request.values.get('From', '')
     message_body = request.values.get('Body', '')
     num_media = int(request.values.get('NumMedia', 0))
-    
-    # Extract project ID from message or use default
-    project_id = extract_project_id(message_body) or "DEFAULT"
-    
-    response = MessagingResponse()
-    
+
+    # Quick ACK to Twilio; heavy lifting offloaded
+    ack = MessagingResponse()
+    ack.message("✅ Received. Processing now...")
+
+    # Kick background processing
+    executor.submit(handle_message_async, message_sid, from_number, message_body, num_media, request.values)
+
+    return str(ack)
+
+
+def handle_message_async(message_sid: str, from_number: str, message_body: str, num_media: int, values):
+    """Process message in background thread and send a follow-up reply."""
     try:
+        project_id = extract_project_id(message_body) or "DEFAULT"
+        response = MessagingResponse()
+
         if num_media > 0:
-            # Handle voice message
-            media_url = request.values.get('MediaUrl0', '')
-            media_type = request.values.get('MediaContentType0', '')
-            
+            media_url = values.get('MediaUrl0', '')
+            media_type = values.get('MediaContentType0', '')
             if 'audio' in media_type or 'ogg' in media_type:
                 result = process_voice_message(media_url, project_id, from_number)
             else:
                 response.message("⚠️ Please send a voice message or text. Images are not supported yet.")
-                return str(response)
+                return send_followup(from_number, str(response))
         else:
-            # Handle text message
             if not message_body.strip():
                 response.message("👋 Welcome to FieldFlow AI! Send a voice note or text report.")
-                return str(response)
-            
-            # Check if this is a registration message
+                return send_followup(from_number, str(response))
+
             if message_body.lower().startswith('register '):
-                # TODO: Implement registration flow
-                pass
-            
+                response.message("🛠 Registration flow coming soon. Please ask your supervisor to add your number for now.")
+                return send_followup(from_number, str(response))
+
             result = process_text_message(message_body, project_id, from_number)
-        
-        # Add company info to result if available
+
         if result.get('company_name'):
             confirm_msg = format_confirmation(result)
             response.message(confirm_msg)
         else:
-            # Unknown number
             response.message("⚠️ Your number is not registered to any company. Please contact your supervisor to add your number to the system.")
-        
+
+        send_followup(from_number, str(response))
+
     except TranscriptionError as e:
-        response.message(f"❌ Could not transcribe audio: {str(e)}")
+        send_followup(from_number, f"❌ Could not transcribe audio: {str(e)}")
     except ParsingError as e:
-        response.message(f"❌ Could not parse message: {str(e)}")
+        send_followup(from_number, f"❌ Could not parse message: {str(e)}")
     except Exception as e:
-        response.message(f"❌ Error: {str(e)}")
-    
-    return str(response)
+        logging.exception("WhatsApp processing failed")
+        send_followup(from_number, f"❌ Error: {str(e)}")
+
+
+def send_followup(to_number: str, response_xml: str):
+    """Send a WhatsApp message using Twilio with the prepared TwiML payload."""
+    if not twilio_client:
+        logging.warning("Twilio client not configured; cannot send follow-up.")
+        return
+
+    # Twilio expects plain text body, not full TwiML, for proactive outbound
+    # messages. We extract <Body> content when possible.
+    body = extract_body_from_twiml(response_xml)
+    if not body:
+        body = "✅ Processed."
+
+    # Ensure WhatsApp prefix
+    if not to_number.startswith('whatsapp:'):
+        to_number = f"whatsapp:{to_number}"
+
+    from_number = os.getenv('TWILIO_WHATSAPP_NUMBER', '+14155238886')
+    if not from_number.startswith('whatsapp:'):
+        from_number = f"whatsapp:{from_number}"
+
+    try:
+        twilio_client.messages.create(body=body, from_=from_number, to=to_number)
+    except Exception:
+        logging.exception("Failed to send WhatsApp follow-up")
+
+
+def extract_body_from_twiml(twiml_xml: str) -> str:
+    """Best-effort extraction of message body from MessagingResponse XML."""
+    import re
+    match = re.search(r"<Body>(.*?)</Body>", twiml_xml, re.DOTALL)
+    if match:
+        return match.group(1).strip()
+    return None
 
 
 def process_voice_message(media_url: str, project_id: str, from_number: str) -> dict:

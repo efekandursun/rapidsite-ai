@@ -18,6 +18,8 @@ from core.whatsapp_handler import whatsapp_bp
 from core.auth import auth_bp, login_required, get_current_user, get_current_company
 from core.database import Database
 from core.mailer import init_mail
+from connectors.procore import ProcoreConnector
+from connectors.base import ERPError
 
 app.register_blueprint(whatsapp_bp)
 app.register_blueprint(auth_bp)
@@ -27,6 +29,153 @@ db = Database()
 
 # Initialize mailer
 mail = init_mail(app)
+
+# Lazy init of Procore connector (token-based or OAuth)
+def get_procore_connector(company_id: int = None):
+    try:
+        if company_id:
+            # Load credentials from database
+            db = Database()
+            company = db.get_company(company_id)
+            if company and company.get('procore_access_token'):
+                return ProcoreConnector({
+                    "access_token": company.get('procore_access_token'),
+                    "refresh_token": company.get('procore_refresh_token'),
+                    "company_id": company.get('procore_company_id'),
+                    "client_id": os.getenv('PROCORE_CLIENT_ID'),
+                    "client_secret": os.getenv('PROCORE_CLIENT_SECRET'),
+                    "redirect_uri": os.getenv('PROCORE_REDIRECT_URI', request.host_url.rstrip('/') + '/procore/callback') if request else None
+                })
+        
+        # Fallback to env vars (legacy/single-tenant)
+        return ProcoreConnector()
+    except Exception as e:
+        print(f"❌ Procore connector init failed: {e}")
+        return None
+
+
+def sync_report_to_procore(report: dict):
+    """Push approved report to Procore Daily Log."""
+    # Get company ID from report
+    company_id = report.get('company_id')
+    connector = get_procore_connector(company_id)
+    if not connector:
+        return False, "Procore connector unavailable"
+
+    if not report.get('parsed_data'):
+        return False, "Missing parsed_data"
+
+    project_id = report.get('project_id') or os.getenv('PROCORE_DEFAULT_PROJECT_ID')
+    if not project_id:
+        return False, "No project_id; set PROCORE_DEFAULT_PROJECT_ID or include in report"
+
+    try:
+        connector.authenticate()
+        result = connector.push_daily_log(project_id, report['parsed_data'])
+        erp_id = result.get("erp_id")
+        db.mark_synced(report['id'], erp_sync_id=erp_id)
+        return True, erp_id
+    except ERPError as e:
+        print(f"❌ Procore sync failed for report {report.get('id')}: {e}")
+        return False, str(e)
+    except Exception as e:
+        print(f"❌ Unexpected Procore error for report {report.get('id')}: {e}")
+        return False, str(e)
+
+
+# =============================================================================
+# PROCORE OAUTH ROUTES
+# =============================================================================
+
+@app.route('/procore/auth')
+@login_required
+def procore_auth():
+    """Initiate Procore OAuth flow."""
+    try:
+        # Dynamically determine redirect URI based on current host
+        redirect_uri = url_for('procore_callback', _external=True)
+        
+        connector = ProcoreConnector({
+            "client_id": os.getenv('PROCORE_CLIENT_ID'),
+            "redirect_uri": redirect_uri
+        })
+        auth_url = connector.get_auth_url()
+        return redirect(auth_url)
+    except Exception as e:
+        return f"Error initiating Procore auth: {e}", 500
+
+
+@app.route('/procore/callback')
+@login_required
+def procore_callback():
+    """Handle Procore OAuth callback."""
+    code = request.args.get('code')
+    error = request.args.get('error')
+    
+    if error:
+        return f"Procore auth error: {error}", 400
+    
+    if not code:
+        return "No code provided", 400
+    
+    try:
+        redirect_uri = url_for('procore_callback', _external=True)
+        
+        connector = ProcoreConnector({
+             "client_id": os.getenv('PROCORE_CLIENT_ID'),
+             "client_secret": os.getenv('PROCORE_CLIENT_SECRET'),
+             "redirect_uri": redirect_uri
+        })
+        
+        # Exchange code for tokens
+        tokens = connector.exchange_code_for_token(code)
+        
+        # Get user's company
+        company = get_current_company()
+        if not company:
+            return "No company associated with user", 400
+        
+        # Calculate expiration
+        expires_in = tokens.get('expires_in', 7200)
+        expires_at = int(datetime.now().timestamp()) + expires_in
+        
+        # Get Procore company ID (optional, can be selected later)
+        # For now we'll just store the tokens
+        
+        db.update_company_procore_tokens(
+            company['id'],
+            tokens['access_token'],
+            tokens['refresh_token'],
+            expires_at
+        )
+        
+        return redirect(url_for('settings'))
+        
+    except Exception as e:
+        print(f"❌ Procore callback failed: {e}")
+        return f"Authentication failed: {str(e)}", 500
+
+
+@app.route('/settings/procore/project', methods=['POST'])
+@login_required
+def update_procore_project():
+    """Update default Procore project."""
+    company = get_current_company()
+    if not company:
+        return "Unauthorized", 403
+        
+    project_id = request.form.get('project_id')
+    procore_company_id = request.form.get('procore_company_id')
+    
+    if project_id:
+        db.update_company_procore_project(company['id'], project_id)
+        
+    # Also update procore company ID if provided
+    if procore_company_id:
+        with db.get_connection() as conn:
+            db._execute(conn, "UPDATE companies SET procore_company_id = ? WHERE id = ?", (procore_company_id, company['id']))
+            
+    return redirect(url_for('settings'))
 
 
 # =============================================================================
@@ -183,15 +332,15 @@ def api_sync_report(report_id):
     if report['status'] != 'approved':
         return jsonify({"success": False, "error": "Report must be approved first"}), 400
     
-    # TODO: Implement actual Procore sync
-    # For now, just mark as synced
-    db.mark_synced(report_id, erp_sync_id="MOCK-SYNC-ID")
-    
-    return jsonify({
-        "success": True,
-        "message": "Report synced to ERP",
-        "erp_sync_id": "MOCK-SYNC-ID"
-    })
+    success, erp_id_or_error = sync_report_to_procore(report)
+    if success:
+        return jsonify({
+            "success": True,
+            "message": "Report synced to Procore",
+            "erp_sync_id": erp_id_or_error
+        })
+    else:
+        return jsonify({"success": False, "error": erp_id_or_error}), 502
 
 
 @app.route('/api/v1/stats', methods=['GET'])
@@ -281,6 +430,12 @@ def dashboard_approve(report_id):
     report = db.get_report(report_id)
     db.approve_report(report_id, approved_by="Dashboard User")
     
+    # Attempt Procore sync (best-effort; errors are logged)
+    if report:
+        success, erp_id_or_error = sync_report_to_procore({**report, "id": report_id})
+        if not success:
+            print(f"⚠️ Procore sync failed for report {report_id}: {erp_id_or_error}")
+
     # Send WhatsApp notification
     if report and report.get('reported_by'):
         parsed = report.get('parsed_data', {})
@@ -333,7 +488,37 @@ def settings():
     # Get authorized numbers with names
     authorized_numbers = db.get_authorized_numbers(company['id']) if company else []
     
-    return render_template('settings.html', user=user, company=company, users=users, authorized_numbers=authorized_numbers)
+    # Get Procore projects if connected
+    procore_projects = []
+    procore_companies = []
+    
+    if company and company.get('procore_access_token'):
+        try:
+            connector = get_procore_connector(company['id'])
+            # We might need to handle getting companies first if multi-company
+            # For now, let's get projects. Wait, endpoint requires company_id header.
+            # If we haven't selected a company_id yet, we might need to fetch available companies.
+            
+            # Simple approach: If no company_id selected, fetch companies?
+            # Or just fetch projects and let connector handle it?
+            # Connector needs company_id header for most calls.
+            
+            # Let's try to get companies via /vapid/companies or similar if needed
+            # But specific projects endpoint usually lists all accessible?
+            
+            # For this MVP, let's assume we can list projects or it handles defaults.
+            # Actually, without procore-company-id header, many calls fail.
+            # We need a way to select procore company.
+            
+            # Revisiting connector:
+            # It uses self.company_id for header.
+            # If not set, header is None.
+            
+            pass
+        except Exception as e:
+            print(f"Failed to fetch Procore data: {e}")
+
+    return render_template('settings.html', user=user, company=company, users=users, authorized_numbers=authorized_numbers, procore_projects=procore_projects)
 
 
 @app.route('/settings/update', methods=['POST'])

@@ -39,16 +39,26 @@ class ProcoreConnector(ERPConnector):
         
         Args:
             credentials: Dict with:
-                - access_token: OAuth access token
+                - client_id: OAuth Client ID
+                - client_secret: OAuth Client Secret
+                - redirect_uri: OAuth Redirect URI
+                - access_token: OAuth access token (optional if doing auth flow)
+                - refresh_token: OAuth refresh token (optional)
                 - company_id: Procore company ID
                 - use_sandbox: True to use sandbox environment
         """
         creds = credentials or {}
         
-        # Load from env if not provided
+        self.client_id = creds.get('client_id') or os.getenv('PROCORE_CLIENT_ID')
+        self.client_secret = creds.get('client_secret') or os.getenv('PROCORE_CLIENT_SECRET')
+        self.redirect_uri = creds.get('redirect_uri') or os.getenv('PROCORE_REDIRECT_URI')
+        
         self.access_token = creds.get('access_token') or os.getenv('PROCORE_ACCESS_TOKEN')
+        self.refresh_token = creds.get('refresh_token') or os.getenv('PROCORE_REFRESH_TOKEN')
         self.company_id = creds.get('company_id') or os.getenv('PROCORE_COMPANY_ID')
-        self.use_sandbox = creds.get('use_sandbox', False)
+        
+        env_sandbox = os.getenv('PROCORE_USE_SANDBOX', '').lower() in ['1', 'true', 'yes']
+        self.use_sandbox = creds.get('use_sandbox', env_sandbox)
         
         self.base_url = self.SANDBOX_URL if self.use_sandbox else self.PRODUCTION_URL
         
@@ -63,16 +73,77 @@ class ProcoreConnector(ERPConnector):
         """Get API headers."""
         return {
             "Authorization": f"Bearer {self.access_token}",
-            "Procore-Company-Id": str(self.company_id),
+            "Procore-Company-Id": str(self.company_id) if self.company_id else None,
             "Content-Type": "application/json"
         }
     
+    def get_auth_url(self) -> str:
+        """Generate OAuth2 authorization URL."""
+        if not self.client_id or not self.redirect_uri:
+            raise ERPError("Missing client_id or redirect_uri")
+            
+        return (
+            f"{self.OAUTH_URL}/oauth/authorize"
+            f"?client_id={self.client_id}"
+            f"&response_type=code"
+            f"&redirect_uri={self.redirect_uri}"
+        )
+    
+    def exchange_code_for_token(self, code: str) -> Dict[str, Any]:
+        """Exchange auth code for access token."""
+        try:
+            response = requests.post(
+                f"{self.OAUTH_URL}/oauth/token",
+                json={
+                    "grant_type": "authorization_code",
+                    "client_id": self.client_id,
+                    "client_secret": self.client_secret,
+                    "code": code,
+                    "redirect_uri": self.redirect_uri
+                },
+                timeout=15
+            )
+            response.raise_for_status()
+            data = response.json()
+            
+            self.access_token = data.get('access_token')
+            self.refresh_token = data.get('refresh_token')
+            return data
+            
+        except requests.RequestException as e:
+            raise AuthenticationError(f"Token exchange failed: {str(e)}")
+
+    def refresh_access_token(self) -> Dict[str, Any]:
+        """Refresh expired access token."""
+        if not self.refresh_token:
+            raise AuthenticationError("No refresh token available")
+            
+        try:
+            response = requests.post(
+                f"{self.OAUTH_URL}/oauth/token",
+                json={
+                    "grant_type": "refresh_token",
+                    "client_id": self.client_id,
+                    "client_secret": self.client_secret,
+                    "refresh_token": self.refresh_token,
+                    "redirect_uri": self.redirect_uri
+                },
+                timeout=15
+            )
+            response.raise_for_status()
+            data = response.json()
+            
+            self.access_token = data.get('access_token')
+            self.refresh_token = data.get('refresh_token')
+            return data
+            
+        except requests.RequestException as e:
+            raise AuthenticationError(f"Token refresh failed: {str(e)}")
+
     def authenticate(self) -> bool:
         """
         Verify authentication is valid.
-        
-        For full OAuth flow, use the separate OAuth handler.
-        This just verifies the token works.
+        Auto-refreshes token if expired (401).
         """
         if not self.access_token:
             raise AuthenticationError("No access token provided")
@@ -87,11 +158,19 @@ class ProcoreConnector(ERPConnector):
             if response.status_code == 200:
                 self._authenticated = True
                 return True
+            elif response.status_code == 401 and self.refresh_token:
+                # Try to refresh token
+                print("🔄 Access token expired, refreshing...")
+                self.refresh_access_token()
+                # Retry request
+                return self.authenticate()
             elif response.status_code == 401:
                 raise AuthenticationError("Invalid or expired access token")
             else:
                 raise AuthenticationError(f"Auth failed: {response.status_code}")
                 
+        except RecursionError:
+            raise AuthenticationError("Repeated authentication failure")
         except requests.RequestException as e:
             raise ConnectionError(f"Connection failed: {str(e)}")
     

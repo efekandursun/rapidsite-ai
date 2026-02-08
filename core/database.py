@@ -100,6 +100,11 @@ class Database:
                         name TEXT NOT NULL,
                         slug TEXT UNIQUE NOT NULL,
                         whatsapp_numbers TEXT,
+                        procore_access_token TEXT,
+                        procore_refresh_token TEXT,
+                        procore_expires_at TIMESTAMP,
+                        procore_company_id TEXT,
+                        procore_default_project_id TEXT,
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     )
                 """)
@@ -154,6 +159,11 @@ class Database:
                         name TEXT NOT NULL,
                         slug TEXT UNIQUE NOT NULL,
                         whatsapp_numbers TEXT,
+                        procore_access_token TEXT,
+                        procore_refresh_token TEXT,
+                        procore_expires_at TEXT,
+                        procore_company_id TEXT,
+                        procore_default_project_id TEXT,
                         created_at TEXT DEFAULT CURRENT_TIMESTAMP
                     )
                 """)
@@ -200,6 +210,33 @@ class Database:
                 cursor.execute("CREATE INDEX IF NOT EXISTS idx_reports_status ON site_reports(status)")
                 cursor.execute("CREATE INDEX IF NOT EXISTS idx_reports_company ON site_reports(company_id)")
                 cursor.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)")
+
+            # ADD MIGRATIONS FOR PROCORE COLUMNS IF MISSING
+            try:
+                # SQLite check
+                if not self.use_postgres:
+                    cursor.execute("PRAGMA table_info(companies)")
+                    columns = [row['name'] for row in cursor.fetchall()]
+                    if 'procore_access_token' not in columns:
+                        print("🔄 Migrating database: Adding Procore columns...")
+                        cursor.execute("ALTER TABLE companies ADD COLUMN procore_access_token TEXT")
+                        cursor.execute("ALTER TABLE companies ADD COLUMN procore_refresh_token TEXT")
+                        cursor.execute("ALTER TABLE companies ADD COLUMN procore_expires_at TEXT")
+                        cursor.execute("ALTER TABLE companies ADD COLUMN procore_company_id TEXT")
+                        cursor.execute("ALTER TABLE companies ADD COLUMN procore_default_project_id TEXT")
+                else:
+                    # Postgres check
+                    cursor.execute("SELECT column_name FROM information_schema.columns WHERE table_name='companies' and column_name='procore_access_token'")
+                    if not cursor.fetchone():
+                         print("🔄 Migrating database: Adding Procore columns (Postgres)...")
+                         cursor.execute("ALTER TABLE companies ADD COLUMN procore_access_token TEXT")
+                         cursor.execute("ALTER TABLE companies ADD COLUMN procore_refresh_token TEXT")
+                         cursor.execute("ALTER TABLE companies ADD COLUMN procore_expires_at TIMESTAMP")
+                         cursor.execute("ALTER TABLE companies ADD COLUMN procore_company_id TEXT")
+                         cursor.execute("ALTER TABLE companies ADD COLUMN procore_default_project_id TEXT")
+
+            except Exception as e:
+                print(f"⚠️ Migration warning: {e}")
     
     def _execute(self, conn, query: str, params: tuple = None):
         """Execute query with proper placeholder replacement."""
@@ -490,6 +527,40 @@ class Database:
                 self.add_authorized_number(company_id, num.strip(), "Migrated User")
                 
         return True
+
+    def update_company_procore_tokens(self, company_id: int, access_token: str, refresh_token: str, expires_at: int, procore_company_id: str = None) -> bool:
+        """Update Procore tokens for a company."""
+        # Convert timestamp to ISO format
+        expires_iso = datetime.fromtimestamp(expires_at).isoformat() if expires_at else None
+        
+        with self.get_connection() as conn:
+            query = """
+                UPDATE companies 
+                SET procore_access_token = ?,
+                    procore_refresh_token = ?,
+                    procore_expires_at = ?
+            """
+            params = [access_token, refresh_token, expires_iso]
+            
+            if procore_company_id:
+                query += ", procore_company_id = ?"
+                params.append(procore_company_id)
+                
+            query += " WHERE id = ?"
+            params.append(company_id)
+            
+            self._execute(conn, query, tuple(params))
+            return True
+
+    def update_company_procore_project(self, company_id: int, project_id: str) -> bool:
+        """Update default Procore project."""
+        with self.get_connection() as conn:
+            self._execute(conn, """
+                UPDATE companies 
+                SET procore_default_project_id = ? 
+                WHERE id = ?
+            """, (project_id, company_id))
+            return True
     
     # =========================================================================
     # USER MANAGEMENT
