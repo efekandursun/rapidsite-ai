@@ -494,29 +494,11 @@ def settings():
     procore_projects = []
     procore_companies = []
     
-    if company and company.get('procore_access_token'):
         try:
             connector = get_procore_connector(company['id'])
-            # We might need to handle getting companies first if multi-company
-            # For now, let's get projects. Wait, endpoint requires company_id header.
-            # If we haven't selected a company_id yet, we might need to fetch available companies.
-            
-            # Simple approach: If no company_id selected, fetch companies?
-            # Or just fetch projects and let connector handle it?
-            # Connector needs company_id header for most calls.
-            
-            # Let's try to get companies via /vapid/companies or similar if needed
-            # But specific projects endpoint usually lists all accessible?
-            
-            # For this MVP, let's assume we can list projects or it handles defaults.
-            # Actually, without procore-company-id header, many calls fail.
-            # We need a way to select procore company.
-            
-            # Revisiting connector:
-            # It uses self.company_id for header.
-            # If not set, header is None.
-            
-            pass
+            # Fetch projects (connector handles auth)
+            if connector:
+                procore_projects = connector.get_projects()
         except Exception as e:
             print(f"Failed to fetch Procore data: {e}")
 

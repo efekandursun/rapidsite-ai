@@ -103,14 +103,28 @@
         <form method="POST" action="{{ url_for('update_procore_project') }}"
             style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-light);">
             <div class="form-group">
-                <label class="form-label">Default Project ID</label>
+                <label class="form-label">Default Project</label>
                 <div style="display: flex; gap: 1rem;">
+                    {% if procore_projects %}
+                    <select name="project_id" class="form-control"
+                        style="background: rgba(255,255,255,0.05); color: white; border: 1px solid var(--border-light);">
+                        <option value="">Select a Project...</option>
+                        {% for project in procore_projects %}
+                        <option value="{{ project.id }}" {% if
+                            company.procore_default_project_id|string==project.id|string %}selected{% endif %}>
+                            {{ project.name }} (ID: {{ project.id }})
+                        </option>
+                        {% endfor %}
+                    </select>
+                    {% else %}
                     <input type="text" name="project_id" class="form-control"
-                        value="{{ company.procore_default_project_id or '' }}" placeholder="Enter Procore Project ID">
+                        value="{{ company.procore_default_project_id or '' }}"
+                        placeholder="Enter Procore Project ID manually">
+                    {% endif %}
                     <button type="submit" class="btn btn-secondary">Save</button>
                 </div>
-                <p class="form-hint" style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.5rem;">Navigate
-                    to your Procore project and copy the ID from the URL (e.g., /12345/...).</p>
+                <p class="form-hint" style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.5rem;">Select the
+                    project where approved reports will be synced.</p>
             </div>
             <div class="form-group" style="margin-bottom: 0;">
                 <label class="form-label">Procore Company ID</label>

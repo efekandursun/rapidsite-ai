@@ -191,15 +191,42 @@ class ProcoreConnector(ERPConnector):
         except ERPError:
             return False
     
-    def get_projects(self) -> List[Dict[str, Any]]:
+    def get_companies(self) -> List[Dict[str, Any]]:
+        """Get list of companies user has access to."""
+        if not self._authenticated:
+            self.authenticate()
+            
+        try:
+            response = requests.get(
+                f"{self.base_url}/rest/v1.0/companies",
+                headers={"Authorization": f"Bearer {self.access_token}"},
+                timeout=10
+            )
+            response.raise_for_status()
+            return response.json()
+        except requests.RequestException as e:
+            raise ConnectionError(f"Failed to get companies: {str(e)}")
+
+    def get_projects(self, company_id: int = None) -> List[Dict[str, Any]]:
         """Get list of projects from Procore."""
+        target_company_id = company_id or self.company_id
+        if not target_company_id:
+             # If no company ID, try to get first available company
+             companies = self.get_companies()
+             if companies:
+                 target_company_id = companies[0]['id']
+                 
         if not self._authenticated:
             self.authenticate()
         
         try:
+            headers = self.headers.copy()
+            if target_company_id:
+                headers["Procore-Company-Id"] = str(target_company_id)
+                
             response = requests.get(
                 f"{self.base_url}/rest/v1.0/projects",
-                headers=self.headers,
+                headers=headers,
                 timeout=10
             )
             response.raise_for_status()
