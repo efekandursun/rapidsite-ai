@@ -259,14 +259,6 @@ class ProcoreConnector(ERPConnector):
             else:
                  print("❌ Failed to auto-detect company_id")
         
-        # Transform our data to Procore format
-        procore_data = self.transform_data(log_data)
-        
-        try:
-            # Using 'notes_logs' as a generic daily log entry since specific types vary by project
-            # Endpoint: POST /rest/v1.0/projects/{project_id}/notes_logs
-            # Payload: { "notes_log": { "date": "...", "comment": "..." } }
-            
             payload = {
                 "notes_log": {
                     "date": procore_data.get("log_date"),
@@ -275,8 +267,15 @@ class ProcoreConnector(ERPConnector):
                 }
             }
             
+            url = f"{self.base_url}/rest/v1.0/projects/{project_id}/notes_logs"
+            print(f"🔄 Syncing to Procore...")
+            print(f"📍 URL: {url}")
+            print(f"🆔 Project ID: {project_id}")
+            print(f"🏢 Company Header: {self.headers.get('Procore-Company-Id')}")
+            print(f"📦 Payload: {payload}")
+            
             response = requests.post(
-                f"{self.base_url}/rest/v1.0/projects/{project_id}/notes_logs",
+                url,
                 headers=self.headers,
                 json=payload,
                 timeout=15
