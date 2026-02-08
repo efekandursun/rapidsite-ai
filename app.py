@@ -504,6 +504,28 @@ def dashboard_reject(report_id):
     return redirect(url_for('dashboard'))
 
 
+@app.route('/dashboard/sync/<int:report_id>', methods=['POST'])
+@login_required
+def dashboard_sync(report_id):
+    """Manually trigger Procore sync for an approved report."""
+    report = db.get_report(report_id)
+    if not report:
+        flash("Report not found", "error")
+        return redirect(url_for('dashboard'))
+        
+    success, erp_id_or_error = sync_report_to_procore(report)
+    
+    if success:
+        flash(f"✅ Sync successful! Procore ID: {erp_id_or_error}", "success")
+    else:
+        if "No project_id" in erp_id_or_error:
+             flash("Sync failed: No Default Project configured. Please go to Settings and select a project.", "warning")
+        else:
+             flash(f"❌ Sync failed: {erp_id_or_error}", "error")
+             
+    return redirect(url_for('dashboard'))
+
+
 @app.route('/settings')
 @login_required
 def settings():
