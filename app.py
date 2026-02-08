@@ -79,6 +79,24 @@ def sync_report_to_procore(report: dict):
 
     try:
         connector.authenticate()
+        
+        # PERSIST TOKENS: If auth refreshed them, we must save to DB
+        if company_id:
+            try:
+                # Update tokens in DB to prevent 401 on next run
+                # Using 2 hours (7200s) as default expiry since connector handles refresh internally
+                expires_at = int(datetime.now().timestamp()) + 7200
+                
+                db = Database()
+                db.update_company_procore_tokens(
+                    company_id,
+                    connector.access_token,
+                    connector.refresh_token,
+                    expires_at
+                )
+            except Exception as e:
+                print(f"⚠️ Failed to persist Procore tokens: {e}")
+
         result = connector.push_daily_log(project_id, report['parsed_data'])
         erp_id = result.get("erp_id")
         db.mark_synced(report['id'], erp_sync_id=erp_id)
