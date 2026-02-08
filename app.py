@@ -57,18 +57,24 @@ def sync_report_to_procore(report: dict):
     
     # Get Project ID preference
     project_id = report.get('project_id')
+    print(f"🧐 Project ID from Report: {project_id}")
+    
     if not project_id and company_id:
         try:
             db = Database()
             company = db.get_company(company_id)
             if company:
-                project_id = company.get('procore_default_project_id')
+                db_project_id = company.get('procore_default_project_id')
+                print(f"🧐 Project ID from DB: {db_project_id}")
+                project_id = db_project_id
         except Exception as e:
             print(f"⚠️ Error fetching company for project ID: {e}")
 
     # Fallback to env var
     if not project_id:
-        project_id = os.getenv('PROCORE_DEFAULT_PROJECT_ID')
+        env_project_id = os.getenv('PROCORE_DEFAULT_PROJECT_ID')
+        print(f"🧐 Project ID from Env: {env_project_id}")
+        project_id = env_project_id
 
     connector = get_procore_connector(company_id)
     if not connector:
