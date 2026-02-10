@@ -468,6 +468,8 @@ class ProcoreConnector(ERPConnector):
                 desc_str = f"Sub: {company} | {desc_str}"
 
             payload = {
+                "manpower_log": {
+                    "date": log_date,
                     "num_workers": num_workers,
                     "num_hours": hours,
                     "description": f"{trade} - {desc_str}" if trade else desc_str
@@ -536,6 +538,13 @@ class ProcoreConnector(ERPConnector):
             if dev_time: full_desc += f" @ {dev_time}"
             
             payload = {
+                "delivery_log": {
+                    "date": log_date,
+                    "log_date": log_date,
+                    "status": "pending",
+                    "delivery_from": vendor,
+                    "tracking_number": tracking,
+                    "contents": f"{item} - {quantity} {unit}",
                     "description": full_desc,
                     "comments": f"{full_desc} | {description}"
                 }
@@ -565,6 +574,17 @@ class ProcoreConnector(ERPConnector):
             if issued_to: comments += f" | Issued To: {issued_to}"
             
             payload = {
+                "safety_violation_log": {
+                    "date": log_date,
+                    "log_date": log_date,
+                    "time_hour": now.hour,
+                    "time_minute": now.minute,
+                    "title": item,
+                    "subject": item,
+                    "safety_notice": notice,
+                    "issued_to": issued_to,
+                    "compliance_due": compliance_due,
+                    "description": comments,
                     "comments": comments,
                     "status": "pending"
                 }
@@ -575,6 +595,9 @@ class ProcoreConnector(ERPConnector):
         else:
             # notes or any unknown type -> Notes
             payload = {
+                "notes_log": {
+                    "date": log_date,
+                    "comment": description,
                     "is_daily_log_header_note": False
                 }
             }
