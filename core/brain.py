@@ -61,22 +61,48 @@ Your job is to parse field reports from construction foremen into structured JSO
 ## OUTPUT JSON FORMAT:
 {
   "log_type": "production|materials|delivery|manpower|equipment|safety|notes",
-  "description": "Brief professional summary",
-  "item": "Main item name",
+  "description": "Brief professional summary for comments/notes fields",
+  "item": "Main item name (Equipment Name, Material Name, Safety Subject, etc.)",
   "quantity": number or null,
   "unit": "CY|tons|LF|SF|EA|hours|null",
   "location": {
+    "name": "Full location string (e.g. Building A Level 2)",
     "building": "string or null",
     "level": "string or null", 
     "area": "string or null"
   },
   "cost_code": "XX-XX-XX format",
-  "cost_code_description": "CSI description",
+  
+  // MANPOWER SPECIFIC
   "crew": {
+    "company_name": "Subcontractor company name if mentioned",
     "count": number or null,
+    "hours": number or null,
     "trade": "string or null"
   },
-  "equipment": ["list of equipment used"],
+
+  // EQUIPMENT SPECIFIC
+  "equipment_details": {
+    "hours_operating": number or null,
+    "hours_idle": number or null,
+    "inspected": boolean (true if inspection mentioned)
+  },
+
+  // DELIVERY SPECIFIC
+  "delivery_details": {
+    "delivery_from": "Vendor/Supplier name",
+    "tracking_number": "string or null",
+    "time": "HH:MM format if mentioned",
+    "contents": "Description of contents"
+  },
+
+  // SAFETY SPECIFIC
+  "safety_details": {
+    "safety_notice": "Notice details",
+    "issued_to": "Person/Company issued to",
+    "compliance_due": "YYYY-MM-DD if mentioned"
+  },
+
   "urgency": "normal|high|critical",
   "procore_ready": true
 }
@@ -86,8 +112,8 @@ Your job is to parse field reports from construction foremen into structured JSO
 2. Use null for missing/unknown values
 3. Infer cost codes from context
 4. Urgency is "critical" for safety issues, "high" for delays
-5. Equipment should be an array even if single item
-6. Location can be partial (just building, or building+level)"""
+5. Parse "idle" time distinct from "operating" time for equipment
+6. Extract Vendor names for deliveries and subcontractors for manpower checks
 
     def transcribe_audio(self, audio_file_path: str) -> str:
         """

@@ -308,33 +308,45 @@ class ProcoreConnector(ERPConnector):
         
         if log_type == "manpower":
             # ✅ WORKS - verified field names
-            num_workers = log_data.get('quantity') or 1
-            trade = log_data.get('item', '')
-            hours = 8
+            # Extract from new 'crew' object if available
+            crew = log_data.get('crew', {})
+            num_workers = crew.get('count') or log_data.get('quantity') or 1
+            trade = crew.get('trade') or log_data.get('item', '')
+            hours = crew.get('hours') or 8
+            company = crew.get('company_name', '')
             
+            desc_str = description
+            if company:
+                desc_str = f"Sub: {company} | {desc_str}"
+
             payload = {
                 "manpower_log": {
                     "date": log_date,
                     "num_workers": num_workers,
                     "num_hours": hours,
-                    "description": f"{trade} - {description}" if trade else description
+                    "description": f"{trade} - {desc_str}" if trade else desc_str
                 }
             }
             return "manpower_logs", payload, "Manpower"
         
         elif log_type == "equipment":
             equipment_name = log_data.get('item', 'Equipment')
-            hours = log_data.get('quantity') or 0
+            
+            # Extract details
+            details = log_data.get('equipment_details', {})
+            hours_op = details.get('hours_operating') or log_data.get('quantity') or 0
+            hours_idle = details.get('hours_idle') or 0
+            inspected = details.get('inspected', False)
             
             payload = {
                 "equipment_log": {
                     "date": log_date,
                     "log_date": log_date,
                     "equipment_name": equipment_name,
-                    "hours_operating": float(hours) if hours else 0.0,
-                    "hours_idle": 0.0,
-                    "inspected": False,
-                    "notes": f"{equipment_name} - {hours}h operating | {description}"
+                    "hours_operating": float(hours_op),
+                    "hours_idle": float(hours_idle),
+                    "inspected": inspected,
+                    "notes": f"{equipment_name} - {hours_op}h op / {hours_idle}h idle | {description}"
                 }
             }
             return "equipment_logs", payload, "Equipment"
@@ -360,21 +372,51 @@ class ProcoreConnector(ERPConnector):
             unit = log_data.get('unit', 'EA')
             item = log_data.get('item', 'Delivery')
             
+            details = log_data.get('delivery_details', {})
+            tracking = details.get('tracking_number', '')
+            vendor = details.get('delivery_from', '')
+            dev_time = details.get('time', '')
+            
+            # Combine info into description since some ID fields (vendor_id) might not be resolvable
+            full_desc = f"{item} - {quantity} {unit}"
+            if vendor: full_desc += f" from {vendor}"
+            if tracking: full_desc += f" (Trk#{tracking})"
+            if dev_time: full_desc += f" @ {dev_time}"
+            
             payload = {
                 "delivery_log": {
                     "date": log_date,
                     "log_date": log_date,
                     "status": "pending",
+                    "delivery_from": vendor, # Try sending as string, might work or be ignored
+                    "tracking_number": tracking,
                     "contents": f"{item} - {quantity} {unit}",
-                    "description": f"{item} - {quantity} {unit} | {description}",
-                    "comments": description
+                    "description": full_desc,
+                    "comments": f"{full_desc} | {description}"
                 }
             }
+            # Try to add time if available
+            if dev_time and ':' in dev_time:
+                try:
+                    h, m = dev_time.split(':')
+                    payload['delivery_log']['time_hour'] = int(h)
+                    payload['delivery_log']['time_minute'] = int(m)
+                except: pass
+
             return "delivery_logs", payload, "Deliveries"
         
         elif log_type == "safety":
             item = log_data.get('item', 'Safety Issue')
             now = datetime.utcnow()
+            
+            details = log_data.get('safety_details', {})
+            notice = details.get('safety_notice', '')
+            issued_to = details.get('issued_to', '')
+            compliance_due = details.get('compliance_due', '')
+
+            comments = f"{item} | {description}"
+            if notice: comments += f" | Notice: {notice}"
+            if issued_to: comments += f" | Issued To: {issued_to}"
             
             payload = {
                 "safety_violation_log": {
@@ -384,8 +426,11 @@ class ProcoreConnector(ERPConnector):
                     "time_minute": now.minute,
                     "title": item,
                     "subject": item,
-                    "description": f"{item} | {description}",
-                    "comments": f"{item} | {description}",
+                    "safety_notice": notice,
+                    "issued_to": issued_to, # Might be ignored if expects ID, but worth trying
+                    "compliance_due": compliance_due,
+                    "description": comments,
+                    "comments": comments,
                     "status": "pending"
                 }
             }
