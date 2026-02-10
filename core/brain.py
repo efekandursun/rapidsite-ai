@@ -60,7 +60,7 @@ Your job is to parse field reports from construction foremen into structured JSO
 
 ## OUTPUT JSON FORMAT:
 {
-  "log_type": "production|materials|manpower|equipment|safety|notes",
+  "log_type": "production|materials|delivery|manpower|equipment|safety|notes",
   "description": "Brief professional summary",
   "item": "Main item name",
   "quantity": number or null,

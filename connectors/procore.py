@@ -304,16 +304,19 @@ class ProcoreConnector(ERPConnector):
         description = self._build_description(log_data)
         
         if log_type == "manpower":
-            num_workers = log_data.get('crew', {}).get('count') if isinstance(log_data.get('crew'), dict) else None
-            trade = log_data.get('crew', {}).get('trade') if isinstance(log_data.get('crew'), dict) else None
-            hours = log_data.get('quantity') or 8
+            crew = log_data.get('crew', {}) if isinstance(log_data.get('crew'), dict) else {}
+            num_workers = crew.get('count') or 1
+            trade = crew.get('trade', '')
+            # For manpower, quantity usually means worker count, not hours
+            # Default to 8-hour workday
+            hours = 8
             
             payload = {
                 "manpower_log": {
                     "date": log_date,
-                    "num_workers": num_workers or 1,
-                    "hours": hours,
-                    "description": trade or description
+                    "num_workers": num_workers,
+                    "num_hours": hours,
+                    "description": f"{trade} - {description}" if trade else description
                 }
             }
             return "manpower_logs", payload, "Manpower"
@@ -326,8 +329,10 @@ class ProcoreConnector(ERPConnector):
             payload = {
                 "equipment_log": {
                     "date": log_date,
-                    "hours": hours,
-                    "description": f"{equipment_name} - {description}"
+                    "equipment_name": equipment_name,
+                    "hours_operating": hours,
+                    "hours_idle": 0,
+                    "notes": description
                 }
             }
             return "equipment_logs", payload, "Equipment"
@@ -340,14 +345,39 @@ class ProcoreConnector(ERPConnector):
                 "quantity_log": {
                     "date": log_date,
                     "quantity": quantity,
-                    "unit_of_measure": unit,
-                    "description": description
+                    "units": unit,
+                    "comments": description
                 }
             }
             return "quantity_logs", payload, "Quantities"
         
+        elif log_type == "delivery":
+            quantity = log_data.get('quantity') or 0
+            unit = log_data.get('unit', 'EA')
+            item = log_data.get('item', 'Delivery')
+            
+            payload = {
+                "delivery_log": {
+                    "date": log_date,
+                    "description": f"{item} - {description}",
+                    "quantity": quantity,
+                    "units": unit
+                }
+            }
+            return "delivery_logs", payload, "Deliveries"
+        
+        elif log_type == "safety":
+            payload = {
+                "safety_violation_log": {
+                    "date": log_date,
+                    "subject": log_data.get('item', 'Safety Issue'),
+                    "comments": description
+                }
+            }
+            return "safety_violation_logs", payload, "Safety Violations"
+        
         else:
-            # safety, notes, or any unknown type → Notes
+            # notes or any unknown type → Notes
             payload = {
                 "notes_log": {
                     "date": log_date,
@@ -355,8 +385,7 @@ class ProcoreConnector(ERPConnector):
                     "is_daily_log_header_note": False
                 }
             }
-            label = "Notes (Safety)" if log_type == "safety" else "Notes"
-            return "notes_logs", payload, label
+            return "notes_logs", payload, "Notes"
 
     def _push_as_note(self, project_id: str, log_data: Dict[str, Any], log_date: str):
         """Fallback: push as a Note log entry."""
