@@ -139,53 +139,6 @@
     </div>
 </div>
 
-<!-- Category Stats (New) -->
-<h2
-    style="font-size: 1.1rem; font-weight: 600; margin-bottom: 1rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">
-    By Category</h2>
-<div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); margin-bottom: 2rem;">
-    <!-- Manpower -->
-    <div class="glass-card" style="padding: 1.25rem;">
-        <div style="color: var(--text-secondary); font-size: 0.8rem; font-weight: 600; margin-bottom: 0.5rem;">MANPOWER
-        </div>
-        <div style="font-size: 2rem; font-weight: 700; color: white;">
-            {{ stats.by_type.get('manpower', 0) }}
-        </div>
-        <div style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--accent-primary);">👷 Workers</div>
-    </div>
-
-    <!-- Production (Quantities) -->
-    <div class="glass-card" style="padding: 1.25rem;">
-        <div style="color: var(--text-secondary); font-size: 0.8rem; font-weight: 600; margin-bottom: 0.5rem;">
-            PRODUCTION</div>
-        <div style="font-size: 2rem; font-weight: 700; color: white;">
-            {{ stats.by_type.get('production', 0) + stats.by_type.get('materials', 0) + stats.by_type.get('quantity', 0)
-            }}
-        </div>
-        <div style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--accent-success);">🏗️ Quantities</div>
-    </div>
-
-    <!-- Equipment -->
-    <div class="glass-card" style="padding: 1.25rem;">
-        <div style="color: var(--text-secondary); font-size: 0.8rem; font-weight: 600; margin-bottom: 0.5rem;">EQUIPMENT
-        </div>
-        <div style="font-size: 2rem; font-weight: 700; color: white;">
-            {{ stats.by_type.get('equipment', 0) }}
-        </div>
-        <div style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--accent-warning);">🚜 Machines</div>
-    </div>
-
-    <!-- Notes / Safety -->
-    <div class="glass-card" style="padding: 1.25rem;">
-        <div style="color: var(--text-secondary); font-size: 0.8rem; font-weight: 600; margin-bottom: 0.5rem;">NOTES /
-            SAFETY</div>
-        <div style="font-size: 2rem; font-weight: 700; color: white;">
-            {{ stats.by_type.get('notes', 0) + stats.by_type.get('safety', 0) }}
-        </div>
-        <div style="margin-top: 0.5rem; font-size: 0.9rem; color: var(--accent-danger);">📝 Issues</div>
-    </div>
-</div>
-
 <!-- Filters -->
 <div class="glass-card" style="padding: 1rem; margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem;">
     <span style="font-size: 1.2rem; color: var(--text-muted);">🔍</span>
@@ -220,10 +173,7 @@
         </thead>
         <tbody>
             {% for report in reports %}
-            <tr onclick="window.location='/reports/{{ report.id }}'"
-                style="cursor: pointer; transition: background 0.2s;"
-                onmouseover="this.style.background='rgba(255,255,255,0.05)'"
-                onmouseout="this.style.background='transparent'">
+            <tr>
                 <td>
                     <span style="font-family: monospace; color: var(--accent-primary); font-weight: 600;">
                         #{{ report.id }}
@@ -234,7 +184,6 @@
                         <span style="font-size: 1.2rem;">
                             {% if report.parsed_data.log_type == 'production' %}🏗️
                             {% elif report.parsed_data.log_type == 'materials' %}📦
-                            {% elif report.parsed_data.log_type == 'quantity' %}🔢
                             {% elif report.parsed_data.log_type == 'manpower' %}👷
                             {% elif report.parsed_data.log_type == 'safety' %}⚠️
                             {% else %}📝{% endif %}
@@ -272,7 +221,7 @@
                     </span>
                 </td>
                 <td>
-                    <div style="display: flex; gap: 0.5rem;" onclick="event.stopPropagation()">
+                    <div style="display: flex; gap: 0.5rem;">
                         {% if report.status == 'pending' %}
                         <form action="/dashboard/approve/{{ report.id }}" method="POST" style="display: inline;">
                             <button class="btn btn-primary"
@@ -294,18 +243,17 @@
                         </form>
                         {% endif %}
                     </div>
-</div>
-</td>
-</tr>
-{% endfor %}
-</tbody>
-</table>
-{% else %}
-<div style="text-align: center; padding: 4rem; color: var(--text-muted);">
-    <div style="font-size: 4rem; opacity: 0.2; margin-bottom: 1rem;">📭</div>
-    <h3>No reports found</h3>
-    <p>New reports from WhatsApp will appear here instantly.</p>
-</div>
-{% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div style="text-align: center; padding: 4rem; color: var(--text-muted);">
+        <div style="font-size: 4rem; opacity: 0.2; margin-bottom: 1rem;">📭</div>
+        <h3>No reports found</h3>
+        <p>New reports from WhatsApp will appear here instantly.</p>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
