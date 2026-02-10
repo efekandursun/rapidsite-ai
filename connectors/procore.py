@@ -241,19 +241,13 @@ class ProcoreConnector(ERPConnector):
     
     def push_daily_log(self, project_id: str, log_data: Dict[str, Any]) -> Dict[str, Any]:
         """
-        Push a daily log entry to Procore.
-        
-        Args:
-            project_id: Procore project ID
-            log_data: Our parsed report data
-            
-        Returns:
-            Dict with success status and Procore log ID
+        Push a daily log entry to the correct Procore Daily Log category.
+        Routes based on log_type: manpower, equipment, materials/production, or notes.
         """
         if not self._authenticated:
             self.authenticate()
             
-        # Ensure we have a company ID (critical for Procore-Company-Id header)
+        # Ensure we have a company ID
         if not self.company_id:
             print("⚠️ No company_id found, attempting to auto-detect...")
             companies = self.get_companies()
@@ -263,25 +257,22 @@ class ProcoreConnector(ERPConnector):
             else:
                  print("❌ Failed to auto-detect company_id")
         
-        # Transform our data to Procore format
-        procore_data = self.transform_data(log_data)
+        # Determine which endpoint & payload to use based on log_type
+        log_type = log_data.get('log_type', 'notes').lower()
+        log_date = datetime.utcnow().strftime("%Y-%m-%d")
+        
+        endpoint, payload, category_label = self._build_category_payload(log_type, log_data, log_date)
+        
+        url = f"{self.base_url}/rest/v1.0/projects/{project_id}/{endpoint}"
+        
+        print(f"🔄 Syncing to Procore...")
+        print(f"📂 Category: {category_label}")
+        print(f"📍 URL: {url}")
+        print(f"🆔 Project ID: {project_id}")
+        print(f"🏢 Company Header: {self.headers.get('Procore-Company-Id')}")
+        print(f"📦 Payload: {payload}")
         
         try:
-            payload = {
-                "notes_log": {
-                    "date": procore_data.get("log_date"),
-                    "comment": procore_data.get("description"),
-                    "is_daily_log_header_note": False
-                }
-            }
-            
-            url = f"{self.base_url}/rest/v1.0/projects/{project_id}/notes_logs"
-            print(f"🔄 Syncing to Procore...")
-            print(f"📍 URL: {url}")
-            print(f"🆔 Project ID: {project_id}")
-            print(f"🏢 Company Header: {self.headers.get('Procore-Company-Id')}")
-            print(f"📦 Payload: {payload}")
-            
             response = requests.post(
                 url,
                 headers=self.headers,
@@ -294,32 +285,119 @@ class ProcoreConnector(ERPConnector):
                 return {
                     "success": True,
                     "erp_id": result.get("id"),
-                    "erp_response": result
+                    "erp_response": result,
+                    "category": category_label
                 }
             else:
+                # If category endpoint fails, fallback to Notes
+                if endpoint != "notes_logs":
+                    print(f"⚠️ {category_label} endpoint failed ({response.status_code}), falling back to Notes...")
+                    return self._push_as_note(project_id, log_data, log_date)
                 raise SyncError(f"Procore rejected: {response.status_code} - {response.text}")
                 
         except requests.RequestException as e:
             raise SyncError(f"Failed to push log: {str(e)}")
-    
-    def transform_data(self, our_data: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Transform our data format to Procore Daily Log format.
-        """
-        # Build description from our data
-        description_parts = []
+
+    def _build_category_payload(self, log_type: str, log_data: Dict[str, Any], log_date: str):
+        """Build the correct endpoint and payload based on log_type."""
         
-        if our_data.get('item'):
-            description_parts.append(our_data['item'])
+        description = self._build_description(log_data)
         
-        if our_data.get('quantity') and our_data.get('unit'):
-            description_parts.append(f"- {our_data['quantity']} {our_data['unit']}")
+        if log_type == "manpower":
+            num_workers = log_data.get('crew', {}).get('count') if isinstance(log_data.get('crew'), dict) else None
+            trade = log_data.get('crew', {}).get('trade') if isinstance(log_data.get('crew'), dict) else None
+            hours = log_data.get('quantity') or 8
+            
+            payload = {
+                "manpower_log": {
+                    "date": log_date,
+                    "num_workers": num_workers or 1,
+                    "hours": hours,
+                    "description": trade or description
+                }
+            }
+            return "manpower_logs", payload, "Manpower"
         
-        if our_data.get('description'):
-            description_parts.append(our_data['description'])
+        elif log_type == "equipment":
+            equipment_list = log_data.get('equipment', [])
+            equipment_name = equipment_list[0] if equipment_list else log_data.get('item', 'Equipment')
+            hours = log_data.get('quantity') or 0
+            
+            payload = {
+                "equipment_log": {
+                    "date": log_date,
+                    "hours": hours,
+                    "description": f"{equipment_name} - {description}"
+                }
+            }
+            return "equipment_logs", payload, "Equipment"
         
-        if our_data.get('location'):
-            loc = our_data['location']
+        elif log_type in ("materials", "production"):
+            quantity = log_data.get('quantity') or 0
+            unit = log_data.get('unit', 'EA')
+            
+            payload = {
+                "quantity_log": {
+                    "date": log_date,
+                    "quantity": quantity,
+                    "unit_of_measure": unit,
+                    "description": description
+                }
+            }
+            return "quantity_logs", payload, "Quantities"
+        
+        else:
+            # safety, notes, or any unknown type → Notes
+            payload = {
+                "notes_log": {
+                    "date": log_date,
+                    "comment": description,
+                    "is_daily_log_header_note": False
+                }
+            }
+            label = "Notes (Safety)" if log_type == "safety" else "Notes"
+            return "notes_logs", payload, label
+
+    def _push_as_note(self, project_id: str, log_data: Dict[str, Any], log_date: str):
+        """Fallback: push as a Note log entry."""
+        description = self._build_description(log_data)
+        payload = {
+            "notes_log": {
+                "date": log_date,
+                "comment": description,
+                "is_daily_log_header_note": False
+            }
+        }
+        url = f"{self.base_url}/rest/v1.0/projects/{project_id}/notes_logs"
+        print(f"📝 Fallback → Notes: {url}")
+        
+        response = requests.post(url, headers=self.headers, json=payload, timeout=15)
+        
+        if response.status_code in [200, 201]:
+            result = response.json()
+            return {
+                "success": True,
+                "erp_id": result.get("id"),
+                "erp_response": result,
+                "category": "Notes (fallback)"
+            }
+        raise SyncError(f"Procore rejected: {response.status_code} - {response.text}")
+
+    def _build_description(self, log_data: Dict[str, Any]) -> str:
+        """Build a human-readable description from parsed data."""
+        parts = []
+        
+        if log_data.get('item'):
+            parts.append(log_data['item'])
+        
+        if log_data.get('quantity') and log_data.get('unit'):
+            parts.append(f"- {log_data['quantity']} {log_data['unit']}")
+        
+        if log_data.get('description'):
+            parts.append(log_data['description'])
+        
+        if log_data.get('location'):
+            loc = log_data['location']
             if isinstance(loc, dict):
                 loc_str = ", ".join(filter(None, [
                     loc.get('building'),
@@ -329,12 +407,9 @@ class ProcoreConnector(ERPConnector):
             else:
                 loc_str = str(loc)
             if loc_str:
-                description_parts.append(f"Location: {loc_str}")
+                parts.append(f"Location: {loc_str}")
         
-        return {
-            "log_date": datetime.utcnow().strftime("%Y-%m-%d"),
-            "description": " | ".join(description_parts) or "Field report"
-        }
+        return " | ".join(parts) or "Field report"
 
 
 # --- TEST SECTION ---
