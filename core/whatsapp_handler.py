@@ -104,7 +104,7 @@ def whatsapp_webhook():
 def handle_message_async(message_sid: str, from_number: str, message_body: str, num_media: int, values):
     """Process message in background thread and send a follow-up reply."""
     try:
-        project_id = extract_project_id(message_body) or "DEFAULT"
+        project_id = extract_project_id(message_body) or None
         response = MessagingResponse()
 
         if num_media > 0:
