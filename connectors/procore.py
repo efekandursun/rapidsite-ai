@@ -367,6 +367,64 @@ class ProcoreConnector(ERPConnector):
         print(f"⚠️ No UOM match for '{unit_str}'")
         return None
     
+    def get_vendors(self, project_id: str) -> List[Dict[str, Any]]:
+        """Fetch project vendors upon request."""
+        if not self._authenticated: self.authenticate()
+        try:
+            url = f"{self.base_url}/rest/v1.0/projects/{project_id}/vendors"
+            response = requests.get(url, headers=self.headers, params={"company_id": self.company_id}, timeout=10)
+            if response.status_code == 200:
+                return response.json()
+        except: pass
+        return []
+
+    def find_vendor_id(self, project_id: str, company_name: str) -> Optional[int]:
+        """Fuzzy match company name to Procore Vendor ID."""
+        if not company_name: return None
+        search = company_name.lower().strip()
+        print(f"🏢 Searching for Vendor: '{company_name}'")
+        
+        vendors = self.get_vendors(project_id)
+        for v in vendors:
+            v_name = v['name'].lower()
+            if search in v_name or v_name in search:
+                print(f"✅ Vendor match: {v['name']} (ID: {v['id']})")
+                return v['id']
+        print(f"⚠️ No Vendor match for '{company_name}'")
+        return None
+
+    def get_cost_codes(self, project_id: str) -> List[Dict[str, Any]]:
+        """Fetch project cost codes."""
+        if not self._authenticated: self.authenticate()
+        try:
+            url = f"{self.base_url}/rest/v1.0/projects/{project_id}/cost_codes"
+            response = requests.get(url, headers=self.headers, params={"company_id": self.company_id}, timeout=10)
+            if response.status_code == 200:
+                return response.json()
+        except: pass
+        return []
+
+    def find_cost_code_id(self, project_id: str, search_str: str) -> Optional[int]:
+        """Fuzzy match work description to Cost Code ID."""
+        if not search_str: return None
+        search = search_str.lower().strip()
+        print(f"💰 Searching for Cost Code: '{search_str}'")
+        
+        codes = self.get_cost_codes(project_id)
+        best_match = None
+        
+        for code in codes:
+            # Match against name (e.g. "Cast-in-Place Concrete")
+            name = code['name'].lower()
+            full_code = f"{code['code']} {name}".lower() # "03-3000 cast-in-place concrete"
+            
+            if search in name or name in search:
+                print(f"✅ Cost Code match: {code['name']} (ID: {code['id']})")
+                return code['id']
+                
+        print(f"⚠️ No Cost Code match for '{search_str}'")
+        return None
+
     def push_daily_log(self, project_id: str, log_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Push a daily log entry to the correct Procore Daily Log category.
@@ -389,7 +447,6 @@ class ProcoreConnector(ERPConnector):
         log_type = log_data.get('log_type', 'notes').lower()
         log_date = datetime.utcnow().strftime("%Y-%m-%d")
 
-        # 📍 Try to find Location ID
         location_id = self.find_location_id(project_id, log_data)
         
         # 📏 Try to find UOM ID if quantity log
@@ -399,7 +456,22 @@ class ProcoreConnector(ERPConnector):
              if unit_str:
                  uom_id = self.find_uom_id(unit_str)
 
-        endpoint, payload, category_label = self._build_category_payload(log_type, log_data, log_date, location_id, uom_id)
+        # 🏢 Try to find Vendor ID (Manpower, Delivery)
+        vendor_id = None
+        company_name = log_data.get('crew', {}).get('company_name') or log_data.get('delivery_details', {}).get('delivery_from')
+        if company_name:
+            vendor_id = self.find_vendor_id(project_id, company_name)
+            
+        # 💰 Try to find Cost Code ID (Quantities, Manpower, Equipment)
+        cost_code_id = None
+        # Use 'item' or 'trade' or 'description' as search query
+        search_query = log_data.get('item') or log_data.get('crew', {}).get('trade') or log_data.get('description')
+        if search_query:
+            cost_code_id = self.find_cost_code_id(project_id, search_query)
+
+        endpoint, payload, category_label = self._build_category_payload(
+            log_type, log_data, log_date, location_id, uom_id, vendor_id, cost_code_id
+        )
         
         url = f"{self.base_url}/rest/v1.0/projects/{project_id}/{endpoint}"
         
@@ -439,23 +511,26 @@ class ProcoreConnector(ERPConnector):
         except requests.RequestException as e:
             raise SyncError(f"Failed to push log: {str(e)}")
 
-    def _build_category_payload(self, log_type: str, log_data: Dict[str, Any], log_date: str, location_id: Optional[int] = None, uom_id: Optional[int] = None):
+    def _build_category_payload(self, log_type: str, log_data: Dict[str, Any], log_date: str, 
+                                location_id: Optional[int] = None, 
+                                uom_id: Optional[int] = None,
+                                vendor_id: Optional[int] = None,
+                                cost_code_id: Optional[int] = None):
         """Build the correct endpoint and payload based on log_type."""
         
         description = self._build_description(log_data)
         
-        # Helper to inject location_id if found
+        # Helper helpers
         def add_loc(target_dict):
-            if location_id:
-                target_dict['location_id'] = location_id
-        
-        # Helper to inject uom_id
+            if location_id: target_dict['location_id'] = location_id
         def add_uom(target_dict):
-            if uom_id:
-                target_dict['unit_of_measure_id'] = uom_id
+            if uom_id: target_dict['unit_of_measure_id'] = uom_id
+        def add_vendor(target_dict):
+            if vendor_id: target_dict['vendor_id'] = vendor_id
+        def add_cost_code(target_dict):
+            if cost_code_id: target_dict['cost_code_id'] = cost_code_id
         
         if log_type == "manpower":
-            # ✅ WORKS - verified field names
             # Extract from new 'crew' object if available
             crew = log_data.get('crew', {})
             num_workers = crew.get('count') or log_data.get('quantity') or 1
@@ -464,7 +539,7 @@ class ProcoreConnector(ERPConnector):
             company = crew.get('company_name', '')
             
             desc_str = description
-            if company:
+            if company and not vendor_id:
                 desc_str = f"Sub: {company} | {desc_str}"
 
             payload = {
@@ -476,6 +551,8 @@ class ProcoreConnector(ERPConnector):
                 }
             }
             add_loc(payload['manpower_log'])
+            add_vendor(payload['manpower_log'])
+            add_cost_code(payload['manpower_log'])
             return "manpower_logs", payload, "Manpower"
         
         elif log_type == "equipment":
@@ -501,6 +578,7 @@ class ProcoreConnector(ERPConnector):
                 }
             }
             add_loc(payload['equipment_log'])
+            add_cost_code(payload['equipment_log'])
             return "equipment_logs", payload, "Equipment"
         
         elif log_type in ("materials", "production"):
@@ -519,6 +597,7 @@ class ProcoreConnector(ERPConnector):
             }
             add_loc(payload['quantity_log'])
             add_uom(payload['quantity_log'])
+            add_cost_code(payload['quantity_log'])
             return "quantity_logs", payload, "Quantities"
         
         elif log_type == "delivery":
@@ -550,6 +629,7 @@ class ProcoreConnector(ERPConnector):
                 }
             }
             add_loc(payload['delivery_log'])
+            add_vendor(payload['delivery_log'])
             # Try to add time if available
             if dev_time and ':' in dev_time:
                 try:
@@ -594,10 +674,13 @@ class ProcoreConnector(ERPConnector):
         
         else:
             # notes or any unknown type -> Notes
+            is_issue = log_data.get('is_issue', False) or 'issue' in description.lower() or 'safety' in description.lower()
+            
             payload = {
                 "notes_log": {
                     "date": log_date,
                     "comment": description,
+                    "is_issue": is_issue,
                     "is_daily_log_header_note": False
                 }
             }
