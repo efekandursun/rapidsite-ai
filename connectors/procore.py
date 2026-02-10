@@ -304,12 +304,10 @@ class ProcoreConnector(ERPConnector):
         description = self._build_description(log_data)
         
         if log_type == "manpower":
-            crew = log_data.get('crew', {}) if isinstance(log_data.get('crew'), dict) else {}
-            num_workers = crew.get('count') or 1
-            trade = crew.get('trade', '')
-            # For manpower, quantity usually means worker count, not hours
-            # Default to 8-hour workday
-            hours = 8
+            # AI outputs: item="Electricians", quantity=8 (worker count)
+            num_workers = log_data.get('quantity') or 1
+            trade = log_data.get('item', '')
+            hours = 8  # Default 8-hour workday
             
             payload = {
                 "manpower_log": {
@@ -322,8 +320,8 @@ class ProcoreConnector(ERPConnector):
             return "manpower_logs", payload, "Manpower"
         
         elif log_type == "equipment":
-            equipment_list = log_data.get('equipment', [])
-            equipment_name = equipment_list[0] if equipment_list else log_data.get('item', 'Equipment')
+            # AI outputs: item="Excavator", quantity=6 (hours)
+            equipment_name = log_data.get('item', 'Equipment')
             hours = log_data.get('quantity') or 0
             
             payload = {

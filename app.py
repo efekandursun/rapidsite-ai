@@ -504,13 +504,19 @@ def dashboard_approve(report_id):
     if report and report.get('reported_by'):
         parsed = report.get('parsed_data', {})
         item = parsed.get('item', 'Report')
-        quantity = parsed.get('quantity', '')
+        quantity = parsed.get('quantity')
         unit = parsed.get('unit', '')
+        log_type = parsed.get('log_type', 'notes').title()
+        
+        # Build quantity line only if there's actual data
+        qty_line = ""
+        if quantity:
+            qty_line = f"\n📊 {quantity} {unit}".rstrip() if unit else f"\n📊 {quantity}"
         
         message = f"""✅ Report #{report_id} APPROVED!
 
-📋 {item}
-📊 {quantity} {unit}
+📋 {item}{qty_line}
+📂 Category: {log_type}
 
 👷 Logged to system by supervisor."""
         
