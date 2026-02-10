@@ -364,7 +364,7 @@ class ProcoreConnector(ERPConnector):
                 "delivery_log": {
                     "date": log_date,
                     "log_date": log_date,
-                    "status": "received",
+                    "status": "pending",
                     "contents": f"{item} - {quantity} {unit}",
                     "description": f"{item} - {quantity} {unit} | {description}",
                     "comments": description
@@ -374,16 +374,19 @@ class ProcoreConnector(ERPConnector):
         
         elif log_type == "safety":
             item = log_data.get('item', 'Safety Issue')
+            now = datetime.utcnow()
             
             payload = {
                 "safety_violation_log": {
                     "date": log_date,
                     "log_date": log_date,
+                    "time_hour": now.hour,
+                    "time_minute": now.minute,
                     "title": item,
                     "subject": item,
                     "description": f"{item} | {description}",
                     "comments": f"{item} | {description}",
-                    "status": "Initiated"
+                    "status": "pending"
                 }
             }
             return "safety_violation_logs", payload, "Safety Violations"
