@@ -2,7 +2,6 @@
 FieldFlow AI - Brain Module
 US Construction Site Voice/Text Analysis Engine
 
-Uses OpenRouter (Llama 3.1) for text parsing and OpenAI Whisper for STT.
 """
 
 import os
@@ -37,17 +36,17 @@ class ConstructionBrain:
 Your job is to parse field reports from construction foremen into structured JSON for ERP systems like Procore.
 
 ## CONSTRUCTION JARGON DICTIONARY:
-- "pour" / "placed" / "shot" → Concrete production
-- "rebar" / "reinforcement" / "iron" → Steel/rebar delivery or installation
-- "yards" / "CY" → Cubic yards (concrete)
-- "tons" / "LF" / "SF" → Tons, Linear feet, Square feet
-- "crew" / "guys" / "hands" → Labor count
-- "punch list" / "snag list" → Deficiency items
-- "RFI" → Request for Information
-- "CO" / "change order" → Budget/scope change
-- "grade" / "grading" → Earthwork
-- "form" / "formwork" → Concrete forming
-- "MEP" → Mechanical/Electrical/Plumbing
+- "pour" / "placed" / "shot" -> Concrete production
+- "rebar" / "reinforcement" / "iron" -> Steel/rebar delivery or installation
+- "yards" / "CY" -> Cubic yards (concrete)
+- "tons" / "LF" / "SF" -> Tons, Linear feet, Square feet
+- "crew" / "guys" / "hands" -> Labor count
+- "punch list" / "snag list" -> Deficiency items
+- "RFI" -> Request for Information
+- "CO" / "change order" -> Budget/scope change
+- "grade" / "grading" -> Earthwork
+- "form" / "formwork" -> Concrete forming
+- "MEP" -> Mechanical/Electrical/Plumbing
 
 ## CSI MASTERFORMAT COST CODES:
 - 03-30-00: Cast-in-Place Concrete
@@ -113,7 +112,7 @@ Your job is to parse field reports from construction foremen into structured JSO
 3. Infer cost codes from context
 4. Urgency is "critical" for safety issues, "high" for delays
 5. Parse "idle" time distinct from "operating" time for equipment
-6. Extract Vendor names for deliveries and subcontractors for manpower checks
+6. Extract Vendor names for deliveries and subcontractors for manpower checks"""
 
     def transcribe_audio(self, audio_file_path: str) -> str:
         """
@@ -179,7 +178,7 @@ Your job is to parse field reports from construction foremen into structured JSO
 
     def process_audio(self, audio_file_path: str) -> dict:
         """
-        Full pipeline: Audio → Text → Structured JSON.
+        Full pipeline: Audio -> Text -> Structured JSON.
         
         Args:
             audio_file_path: Path to audio file

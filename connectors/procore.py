@@ -295,6 +295,7 @@ class ProcoreConnector(ERPConnector):
                 # If category endpoint fails, fallback to Notes
                 if endpoint != "notes_logs":
                     print(f"⚠️ {category_label} endpoint failed ({response.status_code}), falling back to Notes...")
+                    print(f"📝 Fallback -> Notes: {url}")
                     return self._push_as_note(project_id, log_data, log_date)
                 raise SyncError(f"Procore rejected: {response.status_code} - {response.text}")
                 
@@ -437,7 +438,7 @@ class ProcoreConnector(ERPConnector):
             return "safety_violation_logs", payload, "Safety Violations"
         
         else:
-            # notes or any unknown type → Notes
+            # notes or any unknown type -> Notes
             payload = {
                 "notes_log": {
                     "date": log_date,
