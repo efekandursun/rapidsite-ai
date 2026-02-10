@@ -4,6 +4,7 @@ Integration with Procore construction management software.
 """
 
 import os
+import json
 import requests
 from typing import Dict, Any, List, Optional
 from datetime import datetime
@@ -282,6 +283,7 @@ class ProcoreConnector(ERPConnector):
             
             if response.status_code in [200, 201]:
                 result = response.json()
+                print(f"✅ Procore {category_label} response: {json.dumps(result, indent=2, default=str)[:500]}")
                 return {
                     "success": True,
                     "erp_id": result.get("id"),
@@ -289,6 +291,7 @@ class ProcoreConnector(ERPConnector):
                     "category": category_label
                 }
             else:
+                print(f"❌ Procore {category_label} error response: {response.text[:500]}")
                 # If category endpoint fails, fallback to Notes
                 if endpoint != "notes_logs":
                     print(f"⚠️ {category_label} endpoint failed ({response.status_code}), falling back to Notes...")
@@ -304,10 +307,10 @@ class ProcoreConnector(ERPConnector):
         description = self._build_description(log_data)
         
         if log_type == "manpower":
-            # AI outputs: item="Electricians", quantity=8 (worker count)
+            # ✅ WORKS - verified field names
             num_workers = log_data.get('quantity') or 1
             trade = log_data.get('item', '')
-            hours = 8  # Default 8-hour workday
+            hours = 8
             
             payload = {
                 "manpower_log": {
@@ -320,17 +323,18 @@ class ProcoreConnector(ERPConnector):
             return "manpower_logs", payload, "Manpower"
         
         elif log_type == "equipment":
-            # AI outputs: item="Excavator", quantity=6 (hours)
             equipment_name = log_data.get('item', 'Equipment')
             hours = log_data.get('quantity') or 0
             
             payload = {
                 "equipment_log": {
                     "date": log_date,
+                    "log_date": log_date,
                     "equipment_name": equipment_name,
-                    "hours_operating": hours,
-                    "hours_idle": 0,
-                    "notes": f"{equipment_name} - {hours}h - {description}"
+                    "hours_operating": float(hours) if hours else 0.0,
+                    "hours_idle": 0.0,
+                    "inspected": False,
+                    "notes": f"{equipment_name} - {hours}h operating | {description}"
                 }
             }
             return "equipment_logs", payload, "Equipment"
@@ -343,7 +347,9 @@ class ProcoreConnector(ERPConnector):
             payload = {
                 "quantity_log": {
                     "date": log_date,
-                    "quantity": quantity,
+                    "log_date": log_date,
+                    "quantity": float(quantity) if quantity else 0.0,
+                    "units": str(unit),
                     "description": f"{item} - {quantity} {unit} | {description}"
                 }
             }
@@ -357,7 +363,10 @@ class ProcoreConnector(ERPConnector):
             payload = {
                 "delivery_log": {
                     "date": log_date,
+                    "log_date": log_date,
+                    "status": "received",
                     "contents": f"{item} - {quantity} {unit}",
+                    "description": f"{item} - {quantity} {unit} | {description}",
                     "comments": description
                 }
             }
@@ -369,7 +378,10 @@ class ProcoreConnector(ERPConnector):
             payload = {
                 "safety_violation_log": {
                     "date": log_date,
+                    "log_date": log_date,
+                    "title": item,
                     "subject": item,
+                    "description": f"{item} | {description}",
                     "comments": f"{item} | {description}",
                     "status": "Initiated"
                 }
