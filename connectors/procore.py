@@ -330,7 +330,7 @@ class ProcoreConnector(ERPConnector):
                     "equipment_name": equipment_name,
                     "hours_operating": hours,
                     "hours_idle": 0,
-                    "notes": description
+                    "notes": f"{equipment_name} - {hours}h - {description}"
                 }
             }
             return "equipment_logs", payload, "Equipment"
@@ -338,13 +338,13 @@ class ProcoreConnector(ERPConnector):
         elif log_type in ("materials", "production"):
             quantity = log_data.get('quantity') or 0
             unit = log_data.get('unit', 'EA')
+            item = log_data.get('item', 'Material')
             
             payload = {
                 "quantity_log": {
                     "date": log_date,
                     "quantity": quantity,
-                    "units": unit,
-                    "comments": description
+                    "description": f"{item} - {quantity} {unit} | {description}"
                 }
             }
             return "quantity_logs", payload, "Quantities"
@@ -357,19 +357,21 @@ class ProcoreConnector(ERPConnector):
             payload = {
                 "delivery_log": {
                     "date": log_date,
-                    "description": f"{item} - {description}",
-                    "quantity": quantity,
-                    "units": unit
+                    "contents": f"{item} - {quantity} {unit}",
+                    "comments": description
                 }
             }
             return "delivery_logs", payload, "Deliveries"
         
         elif log_type == "safety":
+            item = log_data.get('item', 'Safety Issue')
+            
             payload = {
                 "safety_violation_log": {
                     "date": log_date,
-                    "subject": log_data.get('item', 'Safety Issue'),
-                    "comments": description
+                    "subject": item,
+                    "comments": f"{item} | {description}",
+                    "status": "Initiated"
                 }
             }
             return "safety_violation_logs", payload, "Safety Violations"
