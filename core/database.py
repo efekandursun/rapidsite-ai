@@ -397,6 +397,15 @@ class Database:
                 stats[status] = row['count'] if row else 0
             
             stats['total'] = sum(stats.values())
+            
+            # Type breakdown
+            stats['by_type'] = {}
+            cursor = self._execute(conn, "SELECT log_type, COUNT(*) as count FROM site_reports GROUP BY log_type")
+            for row in self._fetchall(cursor):
+                ltype = row.get('log_type')
+                if ltype:
+                    stats['by_type'][ltype] = row.get('count', 0)
+                    
             return stats
     
     # =========================================================================
@@ -711,6 +720,15 @@ class Database:
                 stats[status] = row['count'] if row else 0
             
             stats['total'] = sum(stats.values())
+            
+            # Type breakdown
+            stats['by_type'] = {}
+            cursor = self._execute(conn, "SELECT log_type, COUNT(*) as count FROM site_reports WHERE company_id = ? GROUP BY log_type", (company_id,))
+            for row in self._fetchall(cursor):
+                ltype = row.get('log_type')
+                if ltype:
+                    stats['by_type'][ltype] = row.get('count', 0)
+
             return stats
     
     def _row_to_dict(self, row: Dict[str, Any]) -> Dict[str, Any]:
