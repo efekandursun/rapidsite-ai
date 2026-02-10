@@ -236,9 +236,136 @@ class ProcoreConnector(ERPConnector):
             response.raise_for_status()
             return response.json()
             
+            response.raise_for_status()
+            return response.json()
+            
         except requests.RequestException as e:
             print(f"Failed to get projects: {e}")
             return []
+
+    def get_locations(self, project_id: str) -> List[Dict[str, Any]]:
+        """Fetch project locations from Procore."""
+        if not self._authenticated:
+            self.authenticate()
+            
+        try:
+            url = f"{self.base_url}/rest/v1.0/projects/{project_id}/locations"
+            response = requests.get(url, headers=self.headers, timeout=10)
+            if response.status_code == 200:
+                return response.json()
+        except Exception as e:
+            print(f"⚠️ Failed to fetch locations: {e}")
+        return []
+
+    def find_location_id(self, project_id: str, log_data: Dict[str, Any]) -> Optional[int]:
+        """Try to match AI location string to a Procore Location ID."""
+        # Extract location string from AI data
+        loc_data = log_data.get('location')
+        if not loc_data:
+            return None
+            
+        search_str = ""
+        if isinstance(loc_data, dict):
+            # Prefer 'name' if available, else build from parts
+            search_str = loc_data.get('name') or " ".join(filter(None, [
+                loc_data.get('building'),
+                loc_data.get('level'), 
+                loc_data.get('area')
+            ]))
+        elif isinstance(loc_data, str):
+            search_str = loc_data
+            
+        if not search_str:
+            return None
+            
+        search_lower = search_str.lower().strip()
+        print(f"📍 Searching for location: '{search_str}'...")
+
+        # Fetch Procore locations
+        locations = self.get_locations(project_id)
+        
+        # Strategy 1: Exact Match (Name or Node Name)
+        for loc in locations:
+            if loc['name'].lower() == search_lower or loc.get('node_name', '').lower() == search_lower:
+                print(f"✅ Exact location match: {loc['name']} (ID: {loc['id']})")
+                return loc['id']
+
+        # Strategy 2: Contains Match (AI string inside Procore path)
+        # e.g. AI: "Building A" -> Procore: "Building A > Level 1" (Maybe risky, let's do reverse)
+        
+        # Strategy 3: Reverse Contains (Procore Path inside AI string?? No)
+        
+        # Strategy 3: Part Match
+        # If AI says "Building A Level 2", and Procore has "Building A > Level 2", match it.
+        # Normalize Procore name: "Building A > Level 2" -> "building a level 2"
+        for loc in locations:
+            normalized_name = loc['name'].replace(">", "").replace("-", " ").lower()
+            # aggressive normalization
+            normalized_name = " ".join(normalized_name.split())
+            
+            if search_lower in normalized_name or normalized_name in search_lower:
+                print(f"✅ Fuzzy location match: '{loc['name']}' for input '{search_str}'")
+                return loc['id']
+
+            print(f"⚠️ No location match found for '{search_str}'")
+        return None
+
+    def get_uoms(self) -> List[Dict[str, Any]]:
+        """Fetch company Units of Measure from Procore."""
+        if not self._authenticated:
+            self.authenticate()
+            
+        if not self.company_id:
+            return []
+            
+        try:
+            url = f"{self.base_url}/rest/v1.0/companies/{self.company_id}/uoms"
+            response = requests.get(url, headers=self.headers, timeout=10)
+            if response.status_code == 200:
+                return response.json()
+        except Exception as e:
+            print(f"⚠️ Failed to fetch UOMs: {e}")
+        return []
+
+    def find_uom_id(self, unit_str: str) -> Optional[int]:
+        """Map AI unit string (CY, ea, tons) to Procore UOM ID."""
+        if not unit_str: return None
+        
+        search_lower = unit_str.lower().strip()
+        
+        # Standard mappings because AI output vs Procore names differ
+        # AI -> Procore Name expected
+        common_mappings = {
+            "cy": "cubic yards",
+            "cubic yard": "cubic yards",
+            "ea": "each",
+            "lf": "linear feet",
+            "sf": "square feet",
+            "ls": "lump sum",
+            "hr": "hours"
+        }
+        
+        # Normalize search string via mapping if possible
+        target_name = common_mappings.get(search_lower, search_lower)
+        
+        print(f"📏 Searching for UOM: '{unit_str}' (Target: '{target_name}')")
+        
+        uoms = self.get_uoms()
+        
+        for uom in uoms:
+            uom_name = uom['name'].lower()
+            # Exact match on name or mapped name
+            if uom_name == target_name or uom_name == search_lower:
+                print(f"✅ UOM match: {uom['name']} (ID: {uom['id']})")
+                return uom['id']
+                
+            # Match on abbreviation/key if available in Procore response (usually just name/desc)
+            if uom.get('description') and uom['description'].lower() == target_name:
+                print(f"✅ UOM match by desc: {uom['name']} (ID: {uom['id']})")
+                return uom['id']
+                
+        print(f"⚠️ No UOM match for '{unit_str}'")
+        return None
     
     def push_daily_log(self, project_id: str, log_data: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -261,8 +388,18 @@ class ProcoreConnector(ERPConnector):
         # Determine which endpoint & payload to use based on log_type
         log_type = log_data.get('log_type', 'notes').lower()
         log_date = datetime.utcnow().strftime("%Y-%m-%d")
+
+        # 📍 Try to find Location ID
+        location_id = self.find_location_id(project_id, log_data)
         
-        endpoint, payload, category_label = self._build_category_payload(log_type, log_data, log_date)
+        # 📏 Try to find UOM ID if quantity log
+        uom_id = None
+        if log_type in ("materials", "production", "delivery", "quantity"):
+             unit_str = log_data.get('unit') or log_data.get('delivery_details', {}).get('unit')
+             if unit_str:
+                 uom_id = self.find_uom_id(unit_str)
+
+        endpoint, payload, category_label = self._build_category_payload(log_type, log_data, log_date, location_id, uom_id)
         
         url = f"{self.base_url}/rest/v1.0/projects/{project_id}/{endpoint}"
         
@@ -302,10 +439,20 @@ class ProcoreConnector(ERPConnector):
         except requests.RequestException as e:
             raise SyncError(f"Failed to push log: {str(e)}")
 
-    def _build_category_payload(self, log_type: str, log_data: Dict[str, Any], log_date: str):
+    def _build_category_payload(self, log_type: str, log_data: Dict[str, Any], log_date: str, location_id: Optional[int] = None, uom_id: Optional[int] = None):
         """Build the correct endpoint and payload based on log_type."""
         
         description = self._build_description(log_data)
+        
+        # Helper to inject location_id if found
+        def add_loc(target_dict):
+            if location_id:
+                target_dict['location_id'] = location_id
+        
+        # Helper to inject uom_id
+        def add_uom(target_dict):
+            if uom_id:
+                target_dict['unit_of_measure_id'] = uom_id
         
         if log_type == "manpower":
             # ✅ WORKS - verified field names
@@ -321,13 +468,12 @@ class ProcoreConnector(ERPConnector):
                 desc_str = f"Sub: {company} | {desc_str}"
 
             payload = {
-                "manpower_log": {
-                    "date": log_date,
                     "num_workers": num_workers,
                     "num_hours": hours,
                     "description": f"{trade} - {desc_str}" if trade else desc_str
                 }
             }
+            add_loc(payload['manpower_log'])
             return "manpower_logs", payload, "Manpower"
         
         elif log_type == "equipment":
@@ -339,6 +485,8 @@ class ProcoreConnector(ERPConnector):
             hours_idle = details.get('hours_idle') or 0
             inspected = details.get('inspected', False)
             
+            notes = f"{equipment_name} - {hours_op}h op / {hours_idle}h idle | {description}"
+
             payload = {
                 "equipment_log": {
                     "date": log_date,
@@ -347,9 +495,10 @@ class ProcoreConnector(ERPConnector):
                     "hours_operating": float(hours_op),
                     "hours_idle": float(hours_idle),
                     "inspected": inspected,
-                    "notes": f"{equipment_name} - {hours_op}h op / {hours_idle}h idle | {description}"
+                    "notes": notes
                 }
             }
+            add_loc(payload['equipment_log'])
             return "equipment_logs", payload, "Equipment"
         
         elif log_type in ("materials", "production"):
@@ -362,10 +511,12 @@ class ProcoreConnector(ERPConnector):
                     "date": log_date,
                     "log_date": log_date,
                     "quantity": float(quantity) if quantity else 0.0,
-                    "units": str(unit),
+                    # "units": str(unit), # Deprecated if uom_id works, but keep for fallback? Procore API prefers uom_id
                     "description": f"{item} - {quantity} {unit} | {description}"
                 }
             }
+            add_loc(payload['quantity_log'])
+            add_uom(payload['quantity_log'])
             return "quantity_logs", payload, "Quantities"
         
         elif log_type == "delivery":
@@ -385,17 +536,11 @@ class ProcoreConnector(ERPConnector):
             if dev_time: full_desc += f" @ {dev_time}"
             
             payload = {
-                "delivery_log": {
-                    "date": log_date,
-                    "log_date": log_date,
-                    "status": "pending",
-                    "delivery_from": vendor, # Try sending as string, might work or be ignored
-                    "tracking_number": tracking,
-                    "contents": f"{item} - {quantity} {unit}",
                     "description": full_desc,
                     "comments": f"{full_desc} | {description}"
                 }
             }
+            add_loc(payload['delivery_log'])
             # Try to add time if available
             if dev_time and ':' in dev_time:
                 try:
@@ -420,32 +565,20 @@ class ProcoreConnector(ERPConnector):
             if issued_to: comments += f" | Issued To: {issued_to}"
             
             payload = {
-                "safety_violation_log": {
-                    "date": log_date,
-                    "log_date": log_date,
-                    "time_hour": now.hour,
-                    "time_minute": now.minute,
-                    "title": item,
-                    "subject": item,
-                    "safety_notice": notice,
-                    "issued_to": issued_to, # Might be ignored if expects ID, but worth trying
-                    "compliance_due": compliance_due,
-                    "description": comments,
                     "comments": comments,
                     "status": "pending"
                 }
             }
+            add_loc(payload['safety_violation_log'])
             return "safety_violation_logs", payload, "Safety Violations"
         
         else:
             # notes or any unknown type -> Notes
             payload = {
-                "notes_log": {
-                    "date": log_date,
-                    "comment": description,
                     "is_daily_log_header_note": False
                 }
             }
+            add_loc(payload['notes_log'])
             return "notes_logs", payload, "Notes"
 
     def _push_as_note(self, project_id: str, log_data: Dict[str, Any], log_date: str):
@@ -459,7 +592,7 @@ class ProcoreConnector(ERPConnector):
             }
         }
         url = f"{self.base_url}/rest/v1.0/projects/{project_id}/notes_logs"
-        print(f"📝 Fallback → Notes: {url}")
+        print(f"📝 Fallback -> Notes: {url}")
         
         response = requests.post(url, headers=self.headers, json=payload, timeout=15)
         
