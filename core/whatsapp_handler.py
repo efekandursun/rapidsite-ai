@@ -197,15 +197,23 @@ def process_voice_message(media_url: str, project_id: str, from_number: str) -> 
             return {'error': 'Unknown number', 'transcript': result['transcript']}
         
         # Save to database
-        report_id = db.create_report(
-            raw_transcript=result['transcript'],
-            parsed_data=result['parsed_data'],
-            project_id=project_id,
-            reported_by=from_number,
-            company_id=company_id
-        )
+        parsed_items = result['parsed_data']
+        if not isinstance(parsed_items, list):
+            parsed_items = [parsed_items]
+            
+        report_ids = []
+        for item in parsed_items:
+            rid = db.create_report(
+                raw_transcript=result['transcript'],
+                parsed_data=item,
+                project_id=project_id,
+                reported_by=from_number,
+                company_id=company_id
+            )
+            report_ids.append(rid)
         
-        result['report_id'] = report_id
+        result['report_ids'] = report_ids
+        result['parsed_data_list'] = parsed_items
         result['company_name'] = company['name']
         return result
         
@@ -228,20 +236,25 @@ def process_text_message(text: str, project_id: str, from_number: str) -> dict:
 
     # Parse with brain
     parsed_data = brain.parse_text(text)
+    if not isinstance(parsed_data, list):
+        parsed_data = [parsed_data]
     
     # Save to database
-    report_id = db.create_report(
-        raw_transcript=text,
-        parsed_data=parsed_data,
-        project_id=project_id,
-        reported_by=from_number,
-        company_id=company_id
-    )
+    report_ids = []
+    for item in parsed_data:
+        rid = db.create_report(
+            raw_transcript=text,
+            parsed_data=item,
+            project_id=project_id,
+            reported_by=from_number,
+            company_id=company_id
+        )
+        report_ids.append(rid)
     
     return {
         'transcript': text,
-        'parsed_data': parsed_data,
-        'report_id': report_id,
+        'parsed_data_list': parsed_data,
+        'report_ids': report_ids,
         'company_name': company['name']
     }
 
@@ -281,22 +294,30 @@ def format_confirmation(result: dict) -> str:
     """
     Format confirmation message for user.
     """
-    parsed = result.get('parsed_data', {})
+    parsed_list = result.get('parsed_data_list', [])
+    report_ids = result.get('report_ids', [])
     
-    msg = "✅ *Report Received!*\n\n"
-    msg += f"📋 *ID:* #{result.get('report_id', 'N/A')}\n"
-    msg += f"📁 *Type:* {parsed.get('log_type', 'N/A').title()}\n"
+    if not parsed_list:
+        return "⚠️ Mesajınız alındı ama işlenemedi."
+        
+    msg = f"✅ *{len(parsed_list)} Report(s) Received!*\n\n"
     
-    if parsed.get('item'):
-        msg += f"🔧 *Item:* {parsed.get('item')}\n"
+    for i, parsed in enumerate(parsed_list):
+        r_id = report_ids[i] if i < len(report_ids) else 'N/A'
+        msg += f"📋 *ID:* #{r_id} | *Type:* {parsed.get('log_type', 'N/A').title()}\n"
+        
+        if parsed.get('item'):
+            msg += f"🔧 *Item:* {parsed.get('item')}\n"
+        
+        if parsed.get('quantity'):
+            unit = parsed.get('unit', '')
+            msg += f"📊 *Quantity:* {parsed.get('quantity')} {unit}\n"
+        
+        if parsed.get('cost_code'):
+            msg += f"💰 *Cost Code:* {parsed.get('cost_code')}\n"
+            
+        msg += "\n"
     
-    if parsed.get('quantity'):
-        unit = parsed.get('unit', '')
-        msg += f"📊 *Quantity:* {parsed.get('quantity')} {unit}\n"
-    
-    if parsed.get('cost_code'):
-        msg += f"💰 *Cost Code:* {parsed.get('cost_code')}\n"
-    
-    msg += "\n⏳ _Pending supervisor approval_"
+    msg += "⏳ _Pending supervisor approval_"
     
     return msg
