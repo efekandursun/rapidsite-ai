@@ -357,6 +357,19 @@ class Database:
         """Get all pending reports for approval."""
         return self.get_reports(status="pending")
     
+    def update_report_parsed_data(self, report_id: int, parsed_data: Dict[str, Any]) -> bool:
+        """Update the parsed JSON data of a report."""
+        import json
+        with self.get_connection() as conn:
+            now = datetime.utcnow().isoformat()
+            cursor = self._execute(conn, """
+                UPDATE site_reports 
+                SET parsed_data = ?,
+                    updated_at = ?
+                WHERE id = ?
+            """, (json.dumps(parsed_data, ensure_ascii=False), now, report_id))
+            return cursor.rowcount > 0
+    
     def approve_report(self, report_id: int, approved_by: str = None) -> bool:
         """Approve a pending report."""
         with self.get_connection() as conn:

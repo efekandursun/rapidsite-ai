@@ -223,16 +223,21 @@
                 <td>
                     <div style="display: flex; gap: 0.5rem;">
                         {% if report.status == 'pending' %}
+                        <button type="button" class="btn btn-secondary" 
+                            style="padding: 0.4rem 0.8rem; font-size: 0.8rem; color: white; border-color: rgba(255,255,255,0.3);"
+                            onclick="openEditModal('{{ report.id }}', '{{ report.parsed_data | tojson | forceescape }}')">
+                            ✏️ Edit
+                        </button>
                         <form action="/dashboard/approve/{{ report.id }}" method="POST" style="display: inline;">
                             <button class="btn btn-primary"
                                 style="padding: 0.4rem 0.8rem; font-size: 0.8rem; background: var(--accent-success);">
-                                Approve
+                                ✅ Approve
                             </button>
                         </form>
                         <form action="/dashboard/reject/{{ report.id }}" method="POST" style="display: inline;">
                             <button class="btn btn-secondary"
                                 style="padding: 0.4rem 0.8rem; font-size: 0.8rem; color: var(--accent-danger); border-color: rgba(239,68,68,0.3);">
-                                Reject
+                                ❌ Reject
                             </button>
                         </form>
                         {% elif report.status == 'approved' %}
@@ -256,4 +261,67 @@
     </div>
     {% endif %}
 </div>
+
+<!-- Edit Modal -->
+<div id="editModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center;">
+    <div class="glass-card" style="width: 90%; max-width: 600px; padding: 2rem; position: relative;">
+        <h3 style="margin-bottom: 1rem; color: white;">Edit Report Data</h3>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
+            You can modify the parsed JSON data before approving. Ensure the structure remains valid JSON.
+        </p>
+        <textarea id="editJsonData" style="width: 100%; height: 300px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-light); border-radius: 8px; color: #a5d6ff; padding: 1rem; font-family: monospace; margin-bottom: 1rem; resize: vertical;"></textarea>
+        <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+            <button class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+            <button class="btn btn-primary" onclick="saveEditedData()">Save Changes</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentEditReportId = null;
+
+    function openEditModal(reportId, parsedDataStr) {
+        currentEditReportId = reportId;
+        try {
+            const dataObj = JSON.parse(parsedDataStr);
+            document.getElementById('editJsonData').value = JSON.stringify(dataObj, null, 4);
+            document.getElementById('editModal').style.display = 'flex';
+        } catch (e) {
+            alert('Failed to parse report data.');
+        }
+    }
+
+    function closeEditModal() {
+        document.getElementById('editModal').style.display = 'none';
+        currentEditReportId = null;
+    }
+
+    async function saveEditedData() {
+        if (!currentEditReportId) return;
+        const textData = document.getElementById('editJsonData').value;
+        let jsonData;
+        try {
+            jsonData = JSON.parse(textData);
+        } catch (e) {
+            alert('Invalid JSON format. Please fix any syntax errors before saving.');
+            return;
+        }
+
+        try {
+            const response = await fetch(`/dashboard/edit/${currentEditReportId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(jsonData)
+            });
+            const result = await response.json();
+            if (result.success) {
+                location.reload();
+            } else {
+                alert('Error saving data: ' + (result.error || 'Unknown error'));
+            }
+        } catch (e) {
+            alert('Network error while saving.');
+        }
+    }
+</script>
 {% endblock %}

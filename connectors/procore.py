@@ -547,7 +547,7 @@ class ProcoreConnector(ERPConnector):
                     "date": log_date,
                     "num_workers": num_workers,
                     "num_hours": hours,
-                    "description": f"{trade} - {desc_str}" if trade else desc_str
+                    "notes": f"{trade} - {desc_str}" if trade else desc_str
                 }
             }
             add_loc(payload['manpower_log'])

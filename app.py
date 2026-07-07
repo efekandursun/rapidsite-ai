@@ -525,6 +525,26 @@ def dashboard_approve(report_id):
     return redirect(url_for('dashboard'))
 
 
+@app.route('/dashboard/edit/<int:report_id>', methods=['POST'])
+@login_required
+def dashboard_edit(report_id):
+    """Edit the parsed data of a report before approval."""
+    try:
+        new_data = request.json
+        if not new_data:
+            return jsonify({"success": False, "error": "No data provided"}), 400
+            
+        success = db.update_report_parsed_data(report_id, new_data)
+        if success:
+            return jsonify({"success": True})
+        else:
+            return jsonify({"success": False, "error": "Report not found or update failed"}), 404
+            
+    except Exception as e:
+        print(f"Error updating report {report_id}: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 @app.route('/dashboard/reject/<int:report_id>', methods=['POST'])
 def dashboard_reject(report_id):
     """Reject report from dashboard and notify foreman."""
