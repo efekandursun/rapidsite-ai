@@ -110,6 +110,17 @@ class Database:
                 """)
                 
                 cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS company_authorized_numbers (
+                        id SERIAL PRIMARY KEY,
+                        company_id INTEGER NOT NULL REFERENCES companies(id),
+                        phone_number TEXT NOT NULL,
+                        employee_name TEXT,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        UNIQUE(company_id, phone_number)
+                    )
+                """)
+                
+                cursor.execute("""
                     CREATE TABLE IF NOT EXISTS users (
                         id SERIAL PRIMARY KEY,
                         email TEXT UNIQUE NOT NULL,
