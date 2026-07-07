@@ -172,7 +172,7 @@ def send_followup(to_number: str, response_xml: str):
 def extract_body_from_twiml(twiml_xml: str) -> str:
     """Best-effort extraction of message body from MessagingResponse XML."""
     import re
-    match = re.search(r"<Body>(.*?)</Body>", twiml_xml, re.DOTALL)
+    match = re.search(r"<Message>(.*?)</Message>", twiml_xml, re.DOTALL)
     if match:
         return match.group(1).strip()
     return None
