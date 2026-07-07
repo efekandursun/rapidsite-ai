@@ -444,7 +444,8 @@ class ProcoreConnector(ERPConnector):
                  print("❌ Failed to auto-detect company_id")
         
         # Determine which endpoint & payload to use based on log_type
-        log_type = log_data.get('log_type', 'notes').lower()
+        if not log_data: log_data = {}
+        log_type = (log_data.get('log_type') or 'notes').lower()
         log_date = datetime.utcnow().strftime("%Y-%m-%d")
 
         location_id = self.find_location_id(project_id, log_data)
@@ -452,20 +453,20 @@ class ProcoreConnector(ERPConnector):
         # 📏 Try to find UOM ID if quantity log
         uom_id = None
         if log_type in ("materials", "production", "delivery", "quantity"):
-             unit_str = log_data.get('unit') or log_data.get('delivery_details', {}).get('unit')
+             unit_str = log_data.get('unit') or (log_data.get('delivery_details') or {}).get('unit')
              if unit_str:
                  uom_id = self.find_uom_id(unit_str)
 
         # 🏢 Try to find Vendor ID (Manpower, Delivery)
         vendor_id = None
-        company_name = log_data.get('crew', {}).get('company_name') or log_data.get('delivery_details', {}).get('delivery_from')
+        company_name = (log_data.get('crew') or {}).get('company_name') or (log_data.get('delivery_details') or {}).get('delivery_from')
         if company_name:
             vendor_id = self.find_vendor_id(project_id, company_name)
             
         # 💰 Try to find Cost Code ID (Quantities, Manpower, Equipment)
         cost_code_id = None
         # Use 'item' or 'trade' or 'description' as search query
-        search_query = log_data.get('item') or log_data.get('crew', {}).get('trade') or log_data.get('description')
+        search_query = log_data.get('item') or (log_data.get('crew') or {}).get('trade') or log_data.get('description')
         if search_query:
             cost_code_id = self.find_cost_code_id(project_id, search_query)
 
@@ -532,7 +533,7 @@ class ProcoreConnector(ERPConnector):
         
         if log_type == "manpower":
             # Extract from new 'crew' object if available
-            crew = log_data.get('crew', {})
+            crew = log_data.get('crew') or {}
             num_workers = crew.get('count') or log_data.get('quantity') or 1
             trade = crew.get('trade') or log_data.get('item', '')
             hours = crew.get('hours') or 8
@@ -559,7 +560,7 @@ class ProcoreConnector(ERPConnector):
             equipment_name = log_data.get('item', 'Equipment')
             
             # Extract details
-            details = log_data.get('equipment_details', {})
+            details = log_data.get('equipment_details') or {}
             hours_op = details.get('hours_operating') or log_data.get('quantity') or 0
             hours_idle = details.get('hours_idle') or 0
             inspected = details.get('inspected', False)
@@ -602,10 +603,10 @@ class ProcoreConnector(ERPConnector):
         
         elif log_type == "delivery":
             quantity = log_data.get('quantity') or 0
-            unit = log_data.get('unit', 'EA')
+            unit = log_data.get('unit') or 'EA'
             item = log_data.get('item', 'Delivery')
             
-            details = log_data.get('delivery_details', {})
+            details = log_data.get('delivery_details') or {}
             tracking = details.get('tracking_number', '')
             vendor = details.get('delivery_from', '')
             dev_time = details.get('time', '')
@@ -649,7 +650,7 @@ class ProcoreConnector(ERPConnector):
             item = log_data.get('item', 'Safety Issue')
             now = datetime.utcnow()
             
-            details = log_data.get('safety_details', {})
+            details = log_data.get('safety_details') or {}
             notice = details.get('safety_notice', '')
             issued_to = details.get('issued_to', '')
             compliance_due = details.get('compliance_due', '')
