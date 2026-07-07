@@ -630,13 +630,18 @@ class ProcoreConnector(ERPConnector):
             }
             add_loc(payload['delivery_log'])
             add_vendor(payload['delivery_log'])
-            # Try to add time if available
+            # Try to add time if available (Procore requires time_hour and time_minute)
             if dev_time and ':' in dev_time:
                 try:
                     h, m = dev_time.split(':')
                     payload['delivery_log']['time_hour'] = int(h)
                     payload['delivery_log']['time_minute'] = int(m)
-                except: pass
+                except: 
+                    payload['delivery_log']['time_hour'] = 12
+                    payload['delivery_log']['time_minute'] = 0
+            else:
+                payload['delivery_log']['time_hour'] = 12
+                payload['delivery_log']['time_minute'] = 0
 
             return "delivery_logs", payload, "Deliveries"
         
