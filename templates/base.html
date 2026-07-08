@@ -25,14 +25,6 @@
                 <span class="nav-icon">📊</span>
                 Dashboard
             </a>
-            <a href="#" class="nav-item" onclick="alert('Reports section coming soon')">
-                <span class="nav-icon">📋</span>
-                All Reports
-            </a>
-            <a href="#" class="nav-item" onclick="alert('Integration settings coming soon')">
-                <span class="nav-icon">🔗</span>
-                Integrations
-            </a>
             <a href="{{ url_for('settings') }}"
                 class="nav-item {% if request.endpoint == 'settings' or request.endpoint == 'update_settings' %}active{% endif %}">
                 <span class="nav-icon">⚙️</span>
@@ -139,22 +131,22 @@
             toast.innerHTML = `
                 <div style="
                     background: #ffffff;
-                    border: 1px solid ${color};
+                    border: 1px solid #e2e8f0;
                     border-left: 4px solid ${color};
-                    border-radius: var(--radius-md);
-                    padding: 1rem;
-                    color: var(--text-primary);
-                    box-shadow: var(--shadow-md);
+                    border-radius: 8px;
+                    padding: 0.85rem 1rem;
+                    color: #1e293b;
+                    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
                     display: flex;
                     align-items: center;
-                    gap: 12px;
-                    min-width: 300px;
+                    gap: 10px;
+                    min-width: 280px;
+                    max-width: 400px;
                     animation: slideIn 0.3s ease-out;
+                    font-family: 'Inter', system-ui, sans-serif;
                 ">
-                    <span style="font-size: 20px;">${icon}</span>
-                    <div>
-                        <div style="font-weight: 600; margin-bottom: 2px; font-size: 0.9rem;">${message}</div>
-                    </div>
+                    <span style="font-size: 18px; flex-shrink: 0;">${icon}</span>
+                    <div style="font-weight: 500; font-size: 0.85rem; line-height: 1.4;">${message}</div>
                 </div>
             `;
             container.appendChild(toast);

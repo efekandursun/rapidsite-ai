@@ -276,15 +276,6 @@ def dashboard():
     return render_template('dashboard.html', reports=reports, stats=stats, user=user, company=company)
 
 
-@app.route('/reports/<int:report_id>')
-def view_report(report_id):
-    """View single report details."""
-    report = db.get_report(report_id)
-    if not report:
-        return "Report not found", 404
-    return render_template('report_detail.html', report=report)
-
-
 # =============================================================================
 # API ROUTES
 # =============================================================================
@@ -671,7 +662,8 @@ def update_settings():
     """Update settings (Legacy)."""
     user = get_current_user()
     if user['role'] != 'admin':
-        return "Unauthorized", 403
+        flash("Unauthorized. Only admins can update settings.", "error")
+        return redirect(url_for('settings'))
     
     # This route is now mostly for company name updates if we enabled them
     return redirect(url_for('settings'))
@@ -683,7 +675,8 @@ def add_authorized_number():
     """Add a new authorized WhatsApp number."""
     user = get_current_user()
     if user['role'] != 'admin':
-        return "Unauthorized", 403
+        flash("Unauthorized. Only admins can add authorized numbers.", "error")
+        return redirect(url_for('settings'))
     
     name = request.form.get('employee_name')
     number = request.form.get('phone_number')
@@ -700,7 +693,8 @@ def delete_authorized_number(number_id):
     """Delete an authorized WhatsApp number."""
     user = get_current_user()
     if user['role'] != 'admin':
-        return "Unauthorized", 403
+        flash("Unauthorized. Only admins can delete authorized numbers.", "error")
+        return redirect(url_for('settings'))
     
     db.remove_authorized_number(number_id, user['company_id'])
     
