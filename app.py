@@ -266,14 +266,30 @@ def dashboard():
     user = get_current_user()
     
     if company:
-        reports = db.get_reports_by_company(company['id'], limit=50)
+        raw_reports = db.get_reports_by_company(company['id'], limit=50)
         stats = db.get_stats_by_company(company['id'])
     else:
         # Fallback for users without company (shouldn't happen)
-        reports = db.get_reports(limit=50)
+        raw_reports = db.get_reports(limit=50)
         stats = db.get_stats()
+        
+    grouped_reports = []
+    for r in raw_reports:
+        if grouped_reports and grouped_reports[-1]['raw_transcript'] == r['raw_transcript']:
+            grouped_reports[-1]['sub_reports'].append(r)
+            if r['status'] == 'incomplete':
+                grouped_reports[-1]['overall_status'] = 'incomplete'
+            elif r['status'] == 'pending' and grouped_reports[-1]['overall_status'] != 'incomplete':
+                grouped_reports[-1]['overall_status'] = 'pending'
+        else:
+            group = r.copy()
+            group['sub_reports'] = [r]
+            group['overall_status'] = r['status']
+            grouped_reports.append(group)
+            
+    total = len(raw_reports)
     
-    return render_template('dashboard.html', reports=reports, stats=stats, user=user, company=company)
+    return render_template('dashboard.html', reports=grouped_reports, total_reports=total, stats=stats, user=user, company=company)
 
 
 # =============================================================================
