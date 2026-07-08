@@ -580,12 +580,14 @@
 
 <!-- Edit Modal -->
 <div id="editModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
-    <div style="background:white; width:90%; max-width:640px; border-radius:var(--radius-md); box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); padding:2rem; position:relative;">
+    <div style="background:white; width:90%; max-width:640px; max-height: 90vh; overflow-y: auto; border-radius:var(--radius-md); box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); padding:2rem; position:relative;">
         <h3 style="margin-bottom:0.5rem; color:var(--text-primary); font-size:1.1rem;">Edit Report Data</h3>
         <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:1rem;">
-            Modify the JSON structure below before approving. Ensure valid JSON format.
+            Update the log details before approving.
         </p>
-        <textarea id="editJsonData" style="width:100%; height:300px; background:#f8fafc; border:1px solid var(--border-light); border-radius:var(--radius-sm); color:var(--text-primary); padding:1rem; font-family:'SF Mono','Fira Code',monospace; font-size:0.85rem; margin-bottom:1rem; resize:vertical;"></textarea>
+        
+        <div id="dynamicFormContainer" style="margin-bottom: 1.5rem;"></div>
+        
         <div style="display:flex; justify-content:flex-end; gap:0.75rem;">
             <button class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
             <button class="btn btn-primary" onclick="saveEditedData()">Save Changes</button>
@@ -595,12 +597,51 @@
 
 <script>
     let currentEditReportId = null;
+    let currentEditData = {};
+
+    function buildDynamicForm(dataObj, parentKey = '') {
+        let html = '';
+        for (const key in dataObj) {
+            const val = dataObj[key];
+            const fieldName = parentKey ? `${parentKey}.${key}` : key;
+            
+            // Skip status here since it's managed by backend/approve button
+            if (fieldName === 'status' || fieldName === 'follow_up_question') continue;
+            
+            if (val !== null && typeof val === 'object' && !Array.isArray(val)) {
+                html += `<div style="margin-top: 1rem; padding-left: 1rem; border-left: 2px solid var(--border-light); margin-bottom: 1rem;">`;
+                html += `<strong style="text-transform: capitalize; color: var(--text-primary); font-size: 0.9rem; margin-bottom: 0.5rem; display: block;">${key.replace('_', ' ')}</strong>`;
+                html += buildDynamicForm(val, fieldName);
+                html += `</div>`;
+            } else {
+                html += `<div style="margin-bottom: 0.75rem;">`;
+                html += `<label style="display: block; font-size: 0.8rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.25rem; text-transform: capitalize;">${key.replace('_', ' ')}</label>`;
+                
+                if (typeof val === 'boolean') {
+                     html += `<select class="dynamic-input" data-key="${fieldName}" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-light); border-radius: var(--radius-sm); font-size: 0.9rem; outline: none;">
+                         <option value="true" ${val ? 'selected' : ''}>True</option>
+                         <option value="false" ${!val ? 'selected' : ''}>False</option>
+                     </select>`;
+                } else if (key === 'description' || key === 'comments') {
+                     html += `<textarea class="dynamic-input" data-key="${fieldName}" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-light); border-radius: var(--radius-sm); font-size: 0.9rem; resize: vertical; outline: none;" rows="3">${val || ''}</textarea>`;
+                } else {
+                     let inputType = 'text';
+                     if (key === 'quantity' || key === 'count' || key === 'hours' || key === 'hours_operating' || key === 'hours_idle') {
+                         inputType = 'number';
+                     }
+                     html += `<input type="${inputType}" class="dynamic-input" data-key="${fieldName}" value="${val || ''}" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-light); border-radius: var(--radius-sm); font-size: 0.9rem; outline: none;">`;
+                }
+                html += `</div>`;
+            }
+        }
+        return html;
+    }
 
     function openEditModal(reportId, parsedDataStr) {
         currentEditReportId = reportId;
         try {
-            const dataObj = JSON.parse(parsedDataStr);
-            document.getElementById('editJsonData').value = JSON.stringify(dataObj, null, 4);
+            currentEditData = JSON.parse(parsedDataStr);
+            document.getElementById('dynamicFormContainer').innerHTML = buildDynamicForm(currentEditData);
             document.getElementById('editModal').style.display = 'flex';
         } catch (e) {
             alert('Failed to parse report data.');
@@ -612,22 +653,35 @@
         currentEditReportId = null;
     }
 
+    function setNestedValue(obj, path, value) {
+        const keys = path.split('.');
+        let current = obj;
+        for (let i = 0; i < keys.length - 1; i++) {
+            if (!current[keys[i]]) current[keys[i]] = {};
+            current = current[keys[i]];
+        }
+        const lastKey = keys[keys.length - 1];
+        
+        if (value === 'true') value = true;
+        else if (value === 'false') value = false;
+        else if (value === '' && typeof current[lastKey] !== 'string') value = null; // empty number to null
+        
+        current[lastKey] = value;
+    }
+
     async function saveEditedData() {
         if (!currentEditReportId) return;
-        const textData = document.getElementById('editJsonData').value;
-        let jsonData;
-        try {
-            jsonData = JSON.parse(textData);
-        } catch (e) {
-            alert('Invalid JSON format. Please fix syntax errors before saving.');
-            return;
-        }
+        
+        const inputs = document.querySelectorAll('.dynamic-input');
+        inputs.forEach(input => {
+            setNestedValue(currentEditData, input.getAttribute('data-key'), input.value);
+        });
 
         try {
             const response = await fetch(`/dashboard/edit/${currentEditReportId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(jsonData)
+                body: JSON.stringify(currentEditData)
             });
             const result = await response.json();
             if (result.success) {
