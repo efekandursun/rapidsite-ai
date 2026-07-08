@@ -5,8 +5,8 @@
     /* Construction Enterprise Palette */
     --bg-dark: #f1f5f9;
     /* Slate 100 - Light clean background for workspace feeling */
-    --bg-sidebar: #0f172a;
-    /* Slate 900 - Strong dark sidebar */
+    --bg-sidebar: #ffffff;
+    /* Pure White Sidebar */
 
     /* Card Backgrounds */
     --bg-card: #ffffff;
@@ -40,8 +40,8 @@
     /* Borders & Shadows - Clean & Rigid */
     --border-light: #e2e8f0;
     /* Slate 200 */
-    --border-dark: #334155;
-    /* Slate 700 (for dark areas) */
+    --border-dark: #cbd5e1;
+    /* Slate 300 (for subtle lines) */
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
     --radius-sm: 4px;
@@ -93,7 +93,7 @@ body {
     width: 260px;
     height: 100vh;
     background: var(--bg-sidebar);
-    border-right: 1px solid var(--border-dark);
+    border-right: 1px solid var(--border-light);
     display: flex;
     flex-direction: column;
     padding: 1.5rem 1rem;
@@ -110,8 +110,8 @@ body {
 
 .logo-text {
     font-size: 1.25rem;
-    font-weight: 700;
-    color: var(--text-on-dark);
+    font-weight: 800;
+    color: var(--text-primary);
     letter-spacing: -0.5px;
 }
 
@@ -146,8 +146,8 @@ body {
 }
 
 .nav-item:hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: var(--text-on-dark);
+    background: var(--bg-dark);
+    color: var(--text-primary);
 }
 
 .nav-item.active {
@@ -165,10 +165,10 @@ body {
 
 .user-panel {
     margin-top: auto;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--bg-card-hover);
     border-radius: var(--radius-md);
     padding: 1rem;
-    border: 1px solid var(--border-dark);
+    border: 1px solid var(--border-light);
 }
 
 .user-info {
@@ -192,7 +192,7 @@ body {
 }
 
 .user-details h4 {
-    color: var(--text-on-dark);
+    color: var(--text-primary);
     font-size: 0.85rem;
     font-weight: 600;
 }
@@ -217,7 +217,7 @@ body {
 }
 
 .logout-link:hover {
-    background: rgba(239, 68, 68, 0.1);
+    background: #fef2f2;
 }
 
 /* Main Content */
