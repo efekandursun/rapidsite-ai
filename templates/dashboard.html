@@ -159,7 +159,6 @@
 
 <div class="table-container">
     {% if reports %}
-    {% if reports %}
     <div style="display: flex; flex-direction: column; gap: 1.5rem;">
         {% for report in reports %}
         <div class="glass-card" style="padding: 1.5rem; position: relative; border-left: 4px solid {% if report.status == 'approved' %}var(--accent-success){% elif report.status == 'pending' %}var(--accent-warning){% elif report.status == 'synced' %}var(--accent-primary){% else %}var(--accent-danger){% endif %};">
