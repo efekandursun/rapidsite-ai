@@ -139,8 +139,20 @@
                         value="{{ company.procore_company_id or '' }}" placeholder="Enter Procore Company ID">
                     <button type="submit" class="btn btn-secondary">Save</button>
                 </div>
-                <p class="form-hint" style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.5rem;">Often
-                    found in the URL or account settings.</p>
+                <p class="form-hint" style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.5rem;">For API rate-limit reasons, auto-detection might fail. Enter it manually if needed.</p>
+            </div>
+        </form>
+
+        <form method="POST" action="{{ url_for('sync_master_data') }}" style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-light);">
+            <div class="form-group" style="margin-bottom: 0;">
+                <label class="form-label">Procore Master Data</label>
+                <p class="form-hint" style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1rem;">
+                    Sync Vendors, Cost Codes, and Locations from Procore so the AI can use them for exact fuzzy matching. 
+                    <strong>Note:</strong> You must select a Default Project first.
+                </p>
+                <button type="submit" class="btn btn-primary" style="background: var(--accent-success); border-color: var(--accent-success);">
+                    🔄 Sync Procore Master Data
+                </button>
             </div>
         </form>
         {% endif %}

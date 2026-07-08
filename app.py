@@ -615,6 +615,49 @@ def settings():
     return render_template('settings.html', user=user, company=company, users=users, authorized_numbers=authorized_numbers, procore_projects=procore_projects)
 
 
+@app.route('/settings/sync_master_data', methods=['POST'])
+@login_required
+def sync_master_data():
+    """Fetch Master Data (Vendors, Cost Codes, Locations) from Procore and save to DB."""
+    company = get_current_company()
+    if not company:
+        flash("No company associated with account.", "error")
+        return redirect(url_for('settings'))
+        
+    project_id = company.get('procore_default_project_id')
+    if not project_id:
+        flash("Please set a Default Project first.", "warning")
+        return redirect(url_for('settings'))
+        
+    connector = get_procore_connector(company['id'])
+    if not connector:
+        flash("Procore connector unavailable.", "error")
+        return redirect(url_for('settings'))
+        
+    try:
+        vendors = connector.get_vendors(project_id)
+        cost_codes = connector.get_cost_codes(project_id)
+        locations = connector.get_locations(project_id)
+        
+        # We only need minimal info to feed the LLM
+        v_list = [{"id": v.get("id"), "name": v.get("name")} for v in vendors if v.get("name")]
+        cc_list = [{"id": c.get("id"), "full_code": c.get("full_code"), "name": c.get("name")} for c in cost_codes if c.get("full_code")]
+        loc_list = [{"id": l.get("id"), "name": l.get("name")} for l in locations if l.get("name")]
+        
+        import json
+        db.update_company_procore_lists(
+            company['id'],
+            json.dumps(v_list, ensure_ascii=False),
+            json.dumps(cc_list, ensure_ascii=False),
+            json.dumps(loc_list, ensure_ascii=False)
+        )
+        flash(f"✅ Successfully synced {len(v_list)} vendors, {len(cc_list)} cost codes, and {len(loc_list)} locations.", "success")
+    except Exception as e:
+        flash(f"❌ Failed to sync master data: {e}", "error")
+        
+    return redirect(url_for('settings'))
+
+
 @app.route('/settings/update', methods=['POST'])
 @login_required
 def update_settings():

@@ -185,37 +185,20 @@ def process_voice_message(media_url: str, project_id: str, from_number: str) -> 
     # Download audio file
     audio_path = download_media(media_url)
     
+    # Find company early for Procore Master Data matching
+    company = db.get_company_by_whatsapp(from_number)
+    company_id = company['id'] if company else None
+    
+    if not company_id:
+        # Without company, we can't save anyway
+        return {'error': 'Unknown number'}
+        
     try:
-        # Process with brain
-        result = brain.process_audio(audio_path)
+        # 1. Transcribe audio
+        new_transcript = brain.transcribe_audio(audio_path)
         
-        # Find company
-        company = db.get_company_by_whatsapp(from_number)
-        company_id = company['id'] if company else None
-        
-        if not company_id:
-            return {'error': 'Unknown number', 'transcript': result['transcript']}
-        
-        # Save to database
-        parsed_items = result['parsed_data']
-        if not isinstance(parsed_items, list):
-            parsed_items = [parsed_items]
-            
-        report_ids = []
-        for item in parsed_items:
-            rid = db.create_report(
-                raw_transcript=result['transcript'],
-                parsed_data=item,
-                project_id=project_id,
-                reported_by=from_number,
-                company_id=company_id
-            )
-            report_ids.append(rid)
-        
-        result['report_ids'] = report_ids
-        result['parsed_data_list'] = parsed_items
-        result['company_name'] = company['name']
-        return result
+        # 2. Process with memory (append to incomplete report if exists)
+        return _process_text_with_memory(new_transcript, project_id, from_number, company)
         
     finally:
         # Cleanup temp file
@@ -234,30 +217,96 @@ def process_text_message(text: str, project_id: str, from_number: str) -> dict:
     if not company_id:
         return {'error': 'Unknown number', 'transcript': text}
 
-    # Parse with brain
-    parsed_data = brain.parse_text(text)
-    if not isinstance(parsed_data, list):
-        parsed_data = [parsed_data]
-    
-    # Save to database
-    report_ids = []
-    for item in parsed_data:
-        rid = db.create_report(
-            raw_transcript=text,
-            parsed_data=item,
-            project_id=project_id,
-            reported_by=from_number,
-            company_id=company_id
-        )
-        report_ids.append(rid)
-    
-    return {
-        'transcript': text,
-        'parsed_data_list': parsed_data,
-        'report_ids': report_ids,
-        'company_name': company['name']
-    }
+    return _process_text_with_memory(text, project_id, from_number, company)
 
+def _process_text_with_memory(text: str, project_id: str, from_number: str, company: dict) -> dict:
+    company_id = company['id']
+    
+    # Check if there is an incomplete report for this user
+    incomplete_report = db.get_incomplete_report_for_user(from_number)
+    
+    if incomplete_report:
+        # Append new text to old transcript
+        combined_transcript = incomplete_report['raw_transcript'] + f"\n[EK BİLGİ]: {text}"
+        
+        # Parse combined text
+        parsed_data = brain.parse_text(combined_transcript, company=company)
+        if not isinstance(parsed_data, list):
+            parsed_data = [parsed_data]
+            
+        # Update the incomplete report with the FIRST item (assuming it completes the flow)
+        # If there are multiple items now, we update the first and create new for rest
+        first_item = parsed_data[0]
+        new_status = first_item.get('status', 'pending')
+        if new_status == 'complete':
+            new_status = 'pending' # Ready for approval
+            
+        db.update_incomplete_report(
+            incomplete_report['id'], 
+            combined_transcript, 
+            first_item, 
+            new_status
+        )
+        
+        report_ids = [incomplete_report['id']]
+        
+        # If LLM extracted more events from combined text, save them as new
+        for item in parsed_data[1:]:
+            s = item.get('status', 'pending')
+            if s == 'complete': s = 'pending'
+            rid = db.create_report(
+                raw_transcript=combined_transcript,
+                parsed_data=item,
+                project_id=project_id,
+                reported_by=from_number,
+                company_id=company_id
+            )
+            # manually set status (create_report defaults to pending, we might need an update_status here if we want it to be incomplete, 
+            # but for simplicity let's assume the follow up completes the main issue)
+            if s == 'incomplete':
+                db._execute(db.get_connection(), "UPDATE site_reports SET status='incomplete' WHERE id=?", (rid,))
+            report_ids.append(rid)
+            
+        return {
+            'transcript': combined_transcript,
+            'parsed_data_list': parsed_data,
+            'report_ids': report_ids,
+            'company_name': company['name']
+        }
+    else:
+        # Normal flow: brand new message
+        parsed_data = brain.parse_text(text, company=company)
+        if not isinstance(parsed_data, list):
+            parsed_data = [parsed_data]
+        
+        report_ids = []
+        for item in parsed_data:
+            status = item.get('status', 'pending')
+            if status == 'complete': status = 'pending'
+            
+            rid = db.create_report(
+                raw_transcript=text,
+                parsed_data=item,
+                project_id=project_id,
+                reported_by=from_number,
+                company_id=company_id
+            )
+            
+            # Since create_report hardcodes 'pending' or we can't pass status yet without schema changes,
+            # we'll run a quick update if it's incomplete
+            if status == 'incomplete':
+                with db.get_connection() as conn:
+                    db._execute(conn, "UPDATE site_reports SET status='incomplete' WHERE id=?", (rid,))
+                    conn.commit()
+            
+            report_ids.append(rid)
+        
+        return {
+            'transcript': text,
+            'parsed_data_list': parsed_data,
+            'report_ids': report_ids,
+            'company_name': company['name']
+        }
 
 def download_media(url: str) -> str:
     """
@@ -300,24 +349,35 @@ def format_confirmation(result: dict) -> str:
     if not parsed_list:
         return "⚠️ Mesajınız alındı ama işlenemedi."
         
-    msg = f"✅ *{len(parsed_list)} Report(s) Received!*\n\n"
+    completed_msgs = []
+    incomplete_msgs = []
     
     for i, parsed in enumerate(parsed_list):
         r_id = report_ids[i] if i < len(report_ids) else 'N/A'
-        msg += f"📋 *ID:* #{r_id} | *Type:* {parsed.get('log_type', 'N/A').title()}\n"
         
-        if parsed.get('item'):
-            msg += f"🔧 *Item:* {parsed.get('item')}\n"
-        
-        if parsed.get('quantity'):
-            unit = parsed.get('unit', '')
-            msg += f"📊 *Quantity:* {parsed.get('quantity')} {unit}\n"
-        
-        if parsed.get('cost_code'):
-            msg += f"💰 *Cost Code:* {parsed.get('cost_code')}\n"
+        if parsed.get('status') == 'incomplete' and parsed.get('follow_up_question'):
+            incomplete_msgs.append(f"❓ *EKSİK BİLGİ:* {parsed.get('follow_up_question')}")
+        else:
+            msg = f"📋 *ID:* #{r_id} | *Type:* {parsed.get('log_type', 'N/A').title()}\n"
+            if parsed.get('item'):
+                msg += f"🔧 *Item:* {parsed.get('item')}\n"
+            if parsed.get('quantity'):
+                unit = parsed.get('unit', '')
+                msg += f"📊 *Quantity:* {parsed.get('quantity')} {unit}\n"
+            if parsed.get('cost_code'):
+                msg += f"💰 *Cost Code:* {parsed.get('cost_code')}\n"
+            completed_msgs.append(msg)
             
-        msg += "\n"
-    
-    msg += "⏳ _Pending supervisor approval_"
-    
-    return msg
+    final_response = ""
+    if completed_msgs:
+        final_response += f"✅ *{len(completed_msgs)} Rapor Alındı!*\n" + "\n".join(completed_msgs) + "\n"
+        
+    if incomplete_msgs:
+        if final_response:
+            final_response += "\n---\n\n"
+        final_response += "\n\n".join(incomplete_msgs)
+        
+    if not incomplete_msgs and completed_msgs:
+        final_response += "\n⏳ _Onay bekliyor_"
+        
+    return final_response

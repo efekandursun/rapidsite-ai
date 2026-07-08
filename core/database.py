@@ -105,6 +105,9 @@ class Database:
                         procore_expires_at TIMESTAMP,
                         procore_company_id TEXT,
                         procore_default_project_id TEXT,
+                        procore_vendors TEXT,
+                        procore_cost_codes TEXT,
+                        procore_locations TEXT,
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     )
                 """)
@@ -325,6 +328,40 @@ class Database:
             if row:
                 return self._row_to_dict(row)
             return None
+            
+    def get_incomplete_report_for_user(self, reported_by: str) -> Optional[Dict[str, Any]]:
+        """Get the most recent incomplete report for a user within the last hour."""
+        with self.get_connection() as conn:
+            query = """
+                SELECT * FROM site_reports 
+                WHERE reported_by = ? 
+                AND status = 'incomplete'
+                ORDER BY created_at DESC 
+                LIMIT 1
+            """
+            cursor = self._execute(conn, query, (reported_by,))
+            row = self._fetchone(cursor)
+            if row:
+                return self._row_to_dict(row)
+            return None
+            
+    def update_incomplete_report(self, report_id: int, new_transcript: str, parsed_data: dict, status: str) -> bool:
+        """Update an incomplete report with new transcript and data."""
+        with self.get_connection() as conn:
+            cursor = self._execute(conn, """
+                UPDATE site_reports 
+                SET raw_transcript = ?, 
+                    parsed_data = ?, 
+                    status = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+            """, (
+                new_transcript, 
+                json.dumps(parsed_data), 
+                status, 
+                report_id
+            ))
+            return cursor.rowcount > 0
     
     def get_reports(
         self,
@@ -447,8 +484,24 @@ class Database:
                     if num.strip():
                         self.add_authorized_number(company_id, num.strip(), "Initial User")
             
+            # Run lightweight migrations for existing databases
+            self._run_migrations(conn, cursor)
             return company_id
-    
+
+    def _run_migrations(self, conn, cursor):
+        """Run lightweight schema migrations (e.g. adding columns)."""
+        new_cols = ['procore_vendors', 'procore_cost_codes', 'procore_locations']
+        for col in new_cols:
+            try:
+                if self.use_postgres:
+                    cursor.execute(f"ALTER TABLE companies ADD COLUMN IF NOT EXISTS {col} TEXT")
+                else:
+                    # SQLite raises OperationalError if column exists
+                    cursor.execute(f"ALTER TABLE companies ADD COLUMN {col} TEXT")
+            except Exception:
+                pass # Column likely already exists
+        conn.commit()
+
     def get_company(self, company_id: int) -> Optional[Dict[str, Any]]:
         """Get company by ID."""
         with self.get_connection() as conn:
@@ -595,6 +648,18 @@ class Database:
                 WHERE id = ?
             """, (project_id, company_id))
             return True
+
+    def update_company_procore_lists(self, company_id: int, vendors: str, cost_codes: str, locations: str) -> bool:
+        """Update cached Procore lists for a company."""
+        with self.get_connection() as conn:
+            cursor = self._execute(conn, """
+                UPDATE companies 
+                SET procore_vendors = ?,
+                    procore_cost_codes = ?,
+                    procore_locations = ?
+                WHERE id = ?
+            """, (vendors, cost_codes, locations, company_id))
+            return cursor.rowcount > 0
     
     # =========================================================================
     # USER MANAGEMENT

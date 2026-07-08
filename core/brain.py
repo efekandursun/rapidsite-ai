@@ -30,9 +30,9 @@ class ConstructionBrain:
         self.llm_model = "gpt-4o-mini"  # Fast, cheap, excellent JSON parsing
         self.whisper_model = "whisper-1"  # Speech-to-text
     
-    def get_system_prompt(self):
+    def get_system_prompt(self, company: dict = None):
         """Professional US construction jargon parser prompt."""
-        return """You are an expert US construction site engineer and data analyst. 
+        base_prompt = """You are an expert US construction site engineer and data analyst. 
 Your job is to parse field reports from construction foremen into structured JSON for ERP systems like Procore.
 
 ## CONSTRUCTION JARGON DICTIONARY:
@@ -61,6 +61,8 @@ Your job is to parse field reports from construction foremen into structured JSO
 You MUST return a JSON ARRAY containing one or more event objects. If the message describes multiple independent events (e.g. manpower and equipment separately), separate them into multiple objects in the array. If there is only one event, return an array with a single object.
 [
   {
+    "status": "complete|incomplete",
+    "follow_up_question": "string (Turkish, ONLY if status is incomplete) or null",
     "log_type": "production|materials|delivery|manpower|equipment|safety|notes",
     "description": "Brief professional summary for comments/notes fields",
     "item": "Main item name (Equipment Name, Material Name, Safety Subject, etc.)",
@@ -115,7 +117,33 @@ You MUST return a JSON ARRAY containing one or more event objects. If the messag
 3. Infer cost codes from context
 4. Urgency is "critical" for safety issues, "high" for delays
 5. Parse "idle" time distinct from "operating" time for equipment
-6. Extract Vendor names for deliveries and subcontractors for manpower checks"""
+6. Extract Vendor names for deliveries and subcontractors for manpower checks
+7. CRITICAL - MISSING INFO CHECK: If a REQUIRED field for the log_type is missing from the message, set "status": "incomplete" and write a friendly follow_up_question in Turkish asking for the specific missing info.
+   - For 'manpower': Requires worker count and hours.
+   - For 'equipment': Requires hours_operating.
+   - For 'delivery': Requires item and quantity.
+   If all required info is present, set "status": "complete" and follow_up_question to null."""
+        
+        # Inject Procore Master Data (Fuzzy Matching constraint) if available
+        if company:
+            vendors = company.get('procore_vendors')
+            cost_codes = company.get('procore_cost_codes')
+            locations = company.get('procore_locations')
+            
+            master_data_prompt = "\n\n## MASTER DATA (CRITICAL):\n"
+            master_data_prompt += "You MUST map the identified company, cost code, and location to ONE of the exact names/codes provided below. Use your best fuzzy matching judgment. If there is absolutely no reasonable match, use null.\n"
+            
+            if vendors and vendors != "[]":
+                master_data_prompt += f"\n- VALID VENDORS: {vendors}"
+            if cost_codes and cost_codes != "[]":
+                master_data_prompt += f"\n- VALID COST CODES: {cost_codes}"
+            if locations and locations != "[]":
+                master_data_prompt += f"\n- VALID LOCATIONS: {locations}"
+                
+            if "VALID" in master_data_prompt:
+                base_prompt += master_data_prompt
+                
+        return base_prompt
 
     def transcribe_audio(self, audio_file_path: str) -> str:
         """
@@ -138,10 +166,10 @@ You MUST return a JSON ARRAY containing one or more event objects. If the messag
         except Exception as e:
             raise TranscriptionError(f"Whisper transcription failed: {str(e)}")
 
-    def parse_text(self, text: str) -> dict:
+    def parse_text(self, text: str, company: dict = None) -> dict:
         """
         Parse construction report text into structured JSON.
-        Uses OpenRouter API with Meta Llama 3.1 (free tier).
+        Uses GPT-4o-mini API.
         
         Args:
             text: Raw transcript or typed message
@@ -154,7 +182,7 @@ You MUST return a JSON ARRAY containing one or more event objects. If the messag
             response = self.openai_client.chat.completions.create(
                 model=self.llm_model,
                 messages=[
-                    {"role": "system", "content": self.get_system_prompt()},
+                    {"role": "system", "content": self.get_system_prompt(company)},
                     {"role": "user", "content": text}
                 ],
                 temperature=0.1,
@@ -179,18 +207,19 @@ You MUST return a JSON ARRAY containing one or more event objects. If the messag
         except Exception as e:
             raise ParsingError(f"LLM parsing failed: {str(e)}")
 
-    def process_audio(self, audio_file_path: str) -> dict:
+    def process_audio(self, audio_file_path: str, company: dict = None) -> dict:
         """
         Full pipeline: Audio -> Text -> Structured JSON.
         
         Args:
             audio_file_path: Path to audio file
+            company: Company dict for Procore metadata context
             
         Returns:
             Dict with 'transcript' and 'parsed_data'
         """
         transcript = self.transcribe_audio(audio_file_path)
-        parsed_data = self.parse_text(transcript)
+        parsed_data = self.parse_text(transcript, company=company)
         
         return {
             "transcript": transcript,
