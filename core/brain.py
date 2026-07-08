@@ -124,6 +124,7 @@ You MUST return a JSON ARRAY containing one or more event objects. If the messag
    - For 'equipment': Requires hours_operating.
    - For 'delivery': Requires item and quantity.
    If all required info is present, set "status": "complete" and follow_up_question to null.
+   IMPORTANT EXCEPTION: If the input is written in shorthand or telegraphic style (e.g., "4 guys. 8 hrs.", "20 tons"), and logically implies the required data, DO NOT mark it as incomplete. Be smart about parsing numbers.
 8. TRANSLATE TO ENGLISH: ALL output text fields (such as 'description', 'item', 'safety_notice', 'contents') MUST be translated into Professional US Construction English, regardless of the input language."""
         
         # Inject Procore Master Data (Fuzzy Matching constraint) if available
