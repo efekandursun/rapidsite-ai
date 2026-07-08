@@ -122,7 +122,8 @@ You MUST return a JSON ARRAY containing one or more event objects. If the messag
    - For 'manpower': Requires worker count and hours.
    - For 'equipment': Requires hours_operating.
    - For 'delivery': Requires item and quantity.
-   If all required info is present, set "status": "complete" and follow_up_question to null."""
+   If all required info is present, set "status": "complete" and follow_up_question to null.
+8. TRANSLATE TO ENGLISH: ALL output text fields (such as 'description', 'item', 'safety_notice', 'contents') MUST be translated into Professional US Construction English, regardless of the input language."""
         
         # Inject Procore Master Data (Fuzzy Matching constraint) if available
         if company:
@@ -130,8 +131,8 @@ You MUST return a JSON ARRAY containing one or more event objects. If the messag
             cost_codes = company.get('procore_cost_codes')
             locations = company.get('procore_locations')
             
-            master_data_prompt = "\n\n## MASTER DATA (CRITICAL):\n"
-            master_data_prompt += "You MUST map the identified company, cost code, and location to ONE of the exact names/codes provided below. Use your best fuzzy matching judgment. If there is absolutely no reasonable match, use null.\n"
+            master_data_prompt = "\n\n## MASTER DATA (CRITICAL STRICT MATCHING):\n"
+            master_data_prompt += "You MUST map the identified company, cost code, and location to ONE of the exact names/codes provided below. Use your best fuzzy matching judgment. If there is absolutely no reasonable match, you MUST use null. NEVER invent or hallucinate a new vendor or location that is not in this list. It is better to use null than to make up a value.\n"
             
             if vendors and vendors != "[]":
                 master_data_prompt += f"\n- VALID VENDORS: {vendors}"
