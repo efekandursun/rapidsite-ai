@@ -17,7 +17,7 @@ import logging
 import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
-from flask import Blueprint, request, abort
+from flask import Blueprint, request, abort, Response
 from twilio.twiml.messaging_response import MessagingResponse
 from twilio.rest import Client as TwilioClient
 from twilio.request_validator import RequestValidator
@@ -70,6 +70,10 @@ def whatsapp_webhook():
     if request_validator:
         signature = request.headers.get('X-Twilio-Signature', '')
         url = request.url
+        # Proxy fix for Render/Heroku (they terminate SSL so request.url is http://)
+        if request.headers.get('X-Forwarded-Proto') == 'https':
+            url = url.replace('http://', 'https://', 1)
+            
         params = request.form.to_dict()  # Twilio signs form params
         if not request_validator.validate(url, params, signature):
             abort(403)
@@ -85,7 +89,7 @@ def whatsapp_webhook():
             # Already handled; acknowledge to Twilio
             resp = MessagingResponse()
             resp.message("✅ Already received. Processing underway.")
-            return str(resp)
+            return Response(str(resp), mimetype='application/xml')
         processed_sids[message_sid] = time.time()
 
     from_number = request.values.get('From', '')
@@ -99,7 +103,7 @@ def whatsapp_webhook():
     # Kick background processing
     executor.submit(handle_message_async, message_sid, from_number, message_body, num_media, request.values)
 
-    return str(ack)
+    return Response(str(ack), mimetype='application/xml')
 
 
 def handle_message_async(message_sid: str, from_number: str, message_body: str, num_media: int, values):
