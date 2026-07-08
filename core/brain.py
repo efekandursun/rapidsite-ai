@@ -229,6 +229,82 @@ You MUST return a JSON ARRAY containing one or more event objects. If the messag
         }
 
 
+    def resolve_incomplete(self, incomplete_json: dict, new_text: str, company: dict = None) -> dict:
+        """
+        Intelligently resolves an incomplete report with new user input.
+        Returns a JSON with 'updated_incomplete_event' (if it answers the question)
+        and 'new_events' (if the input contains new, unrelated reports).
+        """
+        try:
+            # Re-use the master data logic if available
+            master_data_prompt = ""
+            if company:
+                vendors = company.get('procore_vendors')
+                cost_codes = company.get('procore_cost_codes')
+                locations = company.get('procore_locations')
+                
+                master_data_prompt = "\n\n## MASTER DATA (CRITICAL STRICT MATCHING):\n"
+                master_data_prompt += "Map any identified company, cost code, and location to ONE of the exact names/codes provided below. If there is absolutely no reasonable match, use null.\n"
+                
+                if vendors and vendors != "[]":
+                    master_data_prompt += f"- VALID VENDORS: {vendors}\n"
+                if cost_codes and cost_codes != "[]":
+                    master_data_prompt += f"- VALID COST CODES: {cost_codes}\n"
+                if locations and locations != "[]":
+                    master_data_prompt += f"- VALID LOCATIONS: {locations}\n"
+                    
+                if "- VALID" not in master_data_prompt:
+                    master_data_prompt = ""
+            
+            system_prompt = f"""You are an expert US construction site data parser.
+The user previously sent an incomplete report that is missing some information.
+The incomplete report JSON is:
+{json.dumps(incomplete_json, ensure_ascii=False, indent=2)}
+
+The user just sent a NEW MESSAGE: "{new_text}"
+
+YOUR TASK:
+1. Determine if the NEW MESSAGE provides the missing information for the incomplete report.
+2. If it DOES, update the incomplete report JSON with the new information. If the required fields are now present, change its "status" to "complete" and "follow_up_question" to null.
+3. If it DOES NOT, or if the new message ALSO contains completely new and unrelated construction events (e.g. a new delivery, a different crew, a safety issue), parse those new events into a separate list.
+4. If the new message is COMPLETELY UNRELATED to the incomplete report, leave "updated_incomplete_event" as null.
+
+{master_data_prompt}
+
+## OUTPUT JSON FORMAT:
+You MUST return ONLY a valid JSON object with the following exact structure:
+{{
+  "updated_incomplete_event": {{ ... updated json of the old report ... }} or null,
+  "new_events": [ {{ ... new event json ... }}, {{ ... another new event ... }} ] or []
+}}
+
+For "new_events", follow the standard output schema (log_type, item, quantity, unit, cost_code, etc.) and translate output text to US Construction English.
+If the user's input is telegraphic/shorthand but implies the required info (like "4 guys. 8 hrs."), be smart and do not mark it incomplete.
+"""
+
+            response = self.openai_client.chat.completions.create(
+                model=self.llm_model,
+                messages=[
+                    {"role": "system", "content": system_prompt}
+                ],
+                temperature=0.1,
+                max_tokens=1500
+            )
+            
+            content = response.choices[0].message.content.strip()
+            
+            if content.startswith("```"):
+                content = content.split("```")[1]
+                if content.startswith("json"):
+                    content = content[4:]
+            content = content.strip()
+            
+            return json.loads(content)
+            
+        except Exception as e:
+            raise ParsingError(f"LLM resolve_incomplete failed: {str(e)}")
+
+
 class TranscriptionError(Exception):
     """Raised when Whisper transcription fails."""
     pass

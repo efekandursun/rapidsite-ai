@@ -248,72 +248,75 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
     # Check if there is an incomplete report for this user
     incomplete_report = db.get_incomplete_report_for_user(from_number)
     
+    parsed_data_list = []
+    report_ids = []
+    final_transcript = text
+    
+    # Flag to determine if we should fallback to normal parsing
+    use_normal_parsing = True
+    
     if incomplete_report:
-        # Append new text to old transcript
-        combined_transcript = incomplete_report['raw_transcript'] + f"\n[EK BİLGİ]: {text}"
-        
-        # Parse combined text
-        parsed_data = brain.parse_text(combined_transcript, company=company)
-        if not isinstance(parsed_data, list):
-            parsed_data = [parsed_data]
+        try:
+            resolution = brain.resolve_incomplete(incomplete_report['parsed_data'], text, company)
+            updated_event = resolution.get('updated_incomplete_event')
+            new_events = resolution.get('new_events', [])
             
-        # Update the incomplete report with the FIRST item (assuming it completes the flow)
-        # If there are multiple items now, we update the first and create new for rest
-        first_item = parsed_data[0]
-        new_status = first_item.get('status', 'pending')
-        if new_status == 'complete':
-            new_status = 'pending' # Ready for approval
-            
-        # Join new media paths with existing if necessary
-        media_json = json.dumps(media_paths) if media_paths else None
-            
-        db.update_incomplete_report(
-            incomplete_report['id'], 
-            combined_transcript, 
-            first_item, 
-            new_status,
-            media_json
-        )
-        
-        report_ids = [incomplete_report['id']]
-        
-        # If LLM extracted more events from combined text, save them as new
-        for item in parsed_data[1:]:
-            s = item.get('status', 'pending')
-            if s == 'complete': s = 'pending'
-            rid = db.create_report(
-                raw_transcript=combined_transcript,
-                parsed_data=item,
-                project_id=project_id,
-                reported_by=from_number,
-                company_id=company_id,
-                media_paths=media_json
-            )
-            # manually set status (create_report defaults to pending, we might need an update_status here if we want it to be incomplete, 
-            # but for simplicity let's assume the follow up completes the main issue)
-            if s == 'incomplete':
-                with db.get_connection() as conn:
-                    db._execute(conn, "UPDATE site_reports SET status='incomplete' WHERE id=?", (rid,))
-            report_ids.append(rid)
-            
-        return {
-            'transcript': combined_transcript,
-            'parsed_data_list': parsed_data,
-            'report_ids': report_ids,
-            'company_name': company['name']
-        }
-    else:
-        # Normal flow: brand new message
+            if updated_event or new_events:
+                use_normal_parsing = False
+                
+            if updated_event:
+                combined_transcript = incomplete_report['raw_transcript'] + f"\n[EK BİLGİ]: {text}"
+                final_transcript = combined_transcript
+                
+                new_status = updated_event.get('status', 'pending')
+                if new_status == 'complete':
+                    new_status = 'pending'
+                    
+                media_json = json.dumps(media_paths) if media_paths else None
+                
+                db.update_incomplete_report(
+                    incomplete_report['id'], 
+                    combined_transcript, 
+                    updated_event, 
+                    new_status,
+                    media_json
+                )
+                report_ids.append(incomplete_report['id'])
+                parsed_data_list.append(updated_event)
+                
+            for item in new_events:
+                s = item.get('status', 'pending')
+                if s == 'complete': s = 'pending'
+                
+                media_json = json.dumps(media_paths) if media_paths else None
+                rid = db.create_report(
+                    raw_transcript=text,
+                    parsed_data=item,
+                    project_id=project_id,
+                    reported_by=from_number,
+                    company_id=company_id,
+                    media_paths=media_json
+                )
+                if s == 'incomplete':
+                    with db.get_connection() as conn:
+                        db._execute(conn, "UPDATE site_reports SET status='incomplete' WHERE id=?", (rid,))
+                report_ids.append(rid)
+                parsed_data_list.append(item)
+                
+        except Exception as e:
+            logging.error(f"Error resolving incomplete report: {e}")
+            use_normal_parsing = True
+
+    if use_normal_parsing:
         parsed_data = brain.parse_text(text, company=company)
         if not isinstance(parsed_data, list):
             parsed_data = [parsed_data]
-        
-        report_ids = []
-        media_json = json.dumps(media_paths) if media_paths else None
-        for item in parsed_data:
-            status = item.get('status', 'pending')
-            if status == 'complete': status = 'pending'
             
+        for item in parsed_data:
+            s = item.get('status', 'pending')
+            if s == 'complete': s = 'pending'
+            
+            media_json = json.dumps(media_paths) if media_paths else None
             rid = db.create_report(
                 raw_transcript=text,
                 parsed_data=item,
@@ -322,22 +325,18 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
                 company_id=company_id,
                 media_paths=media_json
             )
-            
-            # Since create_report hardcodes 'pending' or we can't pass status yet without schema changes,
-            # we'll run a quick update if it's incomplete
-            if status == 'incomplete':
+            if s == 'incomplete':
                 with db.get_connection() as conn:
                     db._execute(conn, "UPDATE site_reports SET status='incomplete' WHERE id=?", (rid,))
-                    conn.commit()
-            
             report_ids.append(rid)
-        
-        return {
-            'transcript': text,
-            'parsed_data_list': parsed_data,
-            'report_ids': report_ids,
-            'company_name': company['name']
-        }
+            parsed_data_list.append(item)
+            
+    return {
+        'transcript': final_transcript,
+        'parsed_data_list': parsed_data_list,
+        'report_ids': report_ids,
+        'company_name': company['name']
+    }
 
 def download_media(url: str, suffix: str = ".ogg", permanent: bool = False) -> str:
     """
