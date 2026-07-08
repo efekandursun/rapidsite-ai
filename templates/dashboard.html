@@ -109,6 +109,7 @@
     .source-panel {
         padding: 1.25rem 1.5rem;
         border-right: 1px solid var(--border-light);
+        background: #f8fafc; /* Different color for left side */
     }
     .source-label {
         font-size: 0.7rem;
@@ -175,7 +176,7 @@
     /* Destination Panel (right) */
     .dest-panel {
         padding: 1.25rem 1.5rem;
-        background: #fafbfc;
+        background: #ffffff;
     }
     .dest-label {
         font-size: 0.7rem;
@@ -472,6 +473,11 @@
                 <div class="source-panel">
                     <div class="source-label">📱 Source Message</div>
                     <div class="source-transcript">{{ report.raw_transcript }}</div>
+                    
+                    {% if report.parsed_data.translated_transcript %}
+                    <div class="source-label" style="margin-top: 1rem; color: var(--accent-secondary);">🌐 English Translation</div>
+                    <div class="source-transcript" style="border-left-color: var(--accent-secondary);">{{ report.parsed_data.translated_transcript }}</div>
+                    {% endif %}
 
                     {% if report.media_paths and report.media_paths | length > 0 %}
                     <div class="source-label" style="margin-top: 0.75rem;">📎 Attachments ({{ report.media_paths | length }})</div>
