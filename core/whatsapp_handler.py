@@ -173,7 +173,8 @@ def send_followup(to_number: str, response_xml: str):
     # messages. We extract <Body> content when possible.
     body = extract_body_from_twiml(response_xml)
     if not body:
-        body = "✅ Processed."
+        # Fallback if it's just a raw string
+        body = response_xml if "<" not in response_xml else "✅ Processed."
 
     # Ensure WhatsApp prefix
     if not to_number.startswith('whatsapp:'):
