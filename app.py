@@ -265,12 +265,16 @@ def dashboard():
     company = get_current_company()
     user = get_current_user()
     
+    page = request.args.get('page', 1, type=int)
+    per_page = 20
+    offset = (page - 1) * per_page
+    
     if company:
-        raw_reports = db.get_reports_by_company(company['id'], limit=50)
+        raw_reports = db.get_reports_by_company(company['id'], limit=per_page, offset=offset)
         stats = db.get_stats_by_company(company['id'])
     else:
         # Fallback for users without company (shouldn't happen)
-        raw_reports = db.get_reports(limit=50)
+        raw_reports = db.get_reports(limit=per_page, offset=offset)
         stats = db.get_stats()
         
     grouped_reports = []
@@ -287,14 +291,33 @@ def dashboard():
             group['overall_status'] = r['status']
             grouped_reports.append(group)
             
-    total = len(raw_reports)
+    total_db_reports = stats.get('total', 0)
+    total_pages = (total_db_reports + per_page - 1) // per_page
     
-    return render_template('dashboard.html', reports=grouped_reports, total_reports=total, stats=stats, user=user, company=company)
+    return render_template('dashboard.html', 
+                           reports=grouped_reports, 
+                           total_reports=total_db_reports, 
+                           stats=stats, 
+                           user=user, 
+                           company=company,
+                           page=page,
+                           total_pages=total_pages)
 
 
 # =============================================================================
 # API ROUTES
 # =============================================================================
+
+@app.route('/api/v1/latest_report_id')
+@login_required
+def latest_report_id():
+    company = get_current_company()
+    if not company:
+        return jsonify({"latest_id": 0})
+    
+    reports = db.get_reports_by_company(company['id'], limit=1)
+    latest_id = reports[0]['id'] if reports else 0
+    return jsonify({"latest_id": latest_id})
 
 @app.route('/api/v1/reports', methods=['GET'])
 def api_list_reports():
