@@ -152,6 +152,7 @@ class Database:
                         status TEXT DEFAULT 'pending',
                         erp_synced INTEGER DEFAULT 0,
                         erp_sync_id TEXT,
+                        media_paths TEXT,
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         reported_by TEXT,
@@ -212,6 +213,7 @@ class Database:
                         status TEXT DEFAULT 'pending',
                         erp_synced INTEGER DEFAULT 0,
                         erp_sync_id TEXT,
+                        media_paths TEXT,
                         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                         updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
                         reported_by TEXT,
@@ -248,9 +250,25 @@ class Database:
                          cursor.execute("ALTER TABLE companies ADD COLUMN procore_expires_at TIMESTAMP")
                          cursor.execute("ALTER TABLE companies ADD COLUMN procore_company_id TEXT")
                          cursor.execute("ALTER TABLE companies ADD COLUMN procore_default_project_id TEXT")
-
+                         
             except Exception as e:
-                print(f"⚠️ Migration warning: {e}")
+                print(f"⚠️ Error checking/migrating schema: {e}")
+                
+            # ADD MIGRATION FOR media_paths IF MISSING
+            try:
+                if not self.use_postgres:
+                    cursor.execute("PRAGMA table_info(site_reports)")
+                    columns = [row['name'] for row in cursor.fetchall()]
+                    if 'media_paths' not in columns:
+                        cursor.execute("ALTER TABLE site_reports ADD COLUMN media_paths TEXT")
+                else:
+                    cursor.execute("SELECT column_name FROM information_schema.columns WHERE table_name='site_reports' and column_name='media_paths'")
+                    if not cursor.fetchone():
+                        cursor.execute("ALTER TABLE site_reports ADD COLUMN media_paths TEXT")
+            except Exception as e:
+                pass
+
+            conn.commit()
     
     def _execute(self, conn, query: str, params: tuple = None):
         """Execute query with proper placeholder replacement."""
@@ -293,14 +311,15 @@ class Database:
         parsed_data: dict,
         project_id: str = None,
         reported_by: str = None,
-        company_id: int = None
+        company_id: int = None,
+        media_paths: str = None
     ) -> int:
         """Create a new site report."""
         with self.get_connection() as conn:
             cursor = self._execute(conn, """
                 INSERT INTO site_reports 
-                (company_id, project_id, raw_transcript, parsed_data, log_type, cost_code, reported_by)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
+                (company_id, project_id, raw_transcript, parsed_data, log_type, cost_code, reported_by, media_paths)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 company_id,
                 project_id,
@@ -308,7 +327,8 @@ class Database:
                 json.dumps(parsed_data),
                 parsed_data.get("log_type"),
                 parsed_data.get("cost_code"),
-                reported_by
+                reported_by,
+                media_paths
             ))
             
             if self.use_postgres:
@@ -345,22 +365,41 @@ class Database:
                 return self._row_to_dict(row)
             return None
             
-    def update_incomplete_report(self, report_id: int, new_transcript: str, parsed_data: dict, status: str) -> bool:
+    def update_incomplete_report(self, report_id: int, new_transcript: str, parsed_data: dict, status: str, extra_media_paths: str = None) -> bool:
         """Update an incomplete report with new transcript and data."""
         with self.get_connection() as conn:
-            cursor = self._execute(conn, """
-                UPDATE site_reports 
-                SET raw_transcript = ?, 
-                    parsed_data = ?, 
-                    status = ?,
-                    updated_at = CURRENT_TIMESTAMP
-                WHERE id = ?
-            """, (
-                new_transcript, 
-                json.dumps(parsed_data), 
-                status, 
-                report_id
-            ))
+            # First fetch existing media_paths if we have extra
+            if extra_media_paths:
+                cursor = self._execute(conn, "SELECT media_paths FROM site_reports WHERE id = ?", (report_id,))
+                row = self._fetchone(cursor)
+                if row and row['media_paths']:
+                    # append them
+                    try:
+                        existing = json.loads(row['media_paths'])
+                        new_paths = json.loads(extra_media_paths)
+                        extra_media_paths = json.dumps(existing + new_paths)
+                    except:
+                        extra_media_paths = extra_media_paths
+                        
+                cursor = self._execute(conn, """
+                    UPDATE site_reports 
+                    SET raw_transcript = ?, 
+                        parsed_data = ?, 
+                        status = ?,
+                        media_paths = ?,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                """, (new_transcript, json.dumps(parsed_data), status, extra_media_paths, report_id))
+            else:
+                cursor = self._execute(conn, """
+                    UPDATE site_reports 
+                    SET raw_transcript = ?, 
+                        parsed_data = ?, 
+                        status = ?,
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE id = ?
+                """, (new_transcript, json.dumps(parsed_data), status, report_id))
+                
             return cursor.rowcount > 0
     
     def get_reports(
@@ -810,6 +849,12 @@ class Database:
                 d['parsed_data'] = json.loads(d['parsed_data'])
             except (json.JSONDecodeError, TypeError):
                 pass
+        
+        if 'media_paths' in d and d['media_paths']:
+            try:
+                d['media_paths'] = json.loads(d['media_paths'])
+            except (json.JSONDecodeError, TypeError):
+                d['media_paths'] = []
         return d
 
 

@@ -159,100 +159,133 @@
 
 <div class="table-container">
     {% if reports %}
-    <table class="premium-table">
-        <thead>
-            <tr>
-                <th>Report ID</th>
-                <th>Type</th>
-                <th>Project / Item</th>
-                <th>Cost Code</th>
-                <th>Status</th>
-                <th>Date</th>
-                <th>Quick Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for report in reports %}
-            <tr>
-                <td>
-                    <span style="font-family: monospace; color: var(--accent-primary); font-weight: 600;">
-                        #{{ report.id }}
-                    </span>
-                </td>
-                <td>
-                    <div style="display: flex; align-items: center; gap: 0.5rem;">
-                        <span style="font-size: 1.2rem;">
-                            {% if report.parsed_data.log_type == 'production' %}🏗️
-                            {% elif report.parsed_data.log_type == 'materials' %}📦
-                            {% elif report.parsed_data.log_type == 'manpower' %}👷
-                            {% elif report.parsed_data.log_type == 'safety' %}⚠️
-                            {% else %}📝{% endif %}
-                        </span>
-                        <span style="font-weight: 500; text-transform: capitalize;">
-                            {{ report.parsed_data.log_type or 'General' }}
-                        </span>
-                    </div>
-                </td>
-                <td>
-                    <div style="font-weight: 600; color: white;">{{ report.parsed_data.item or 'Unknown Item' }}</div>
-                    <div
-                        style="font-size: 0.8rem; color: var(--text-muted); max-width: 300px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
-                        {{ report.raw_transcript }}
-                    </div>
-                </td>
-                <td>
-                    <span
-                        style="background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 6px; font-family: monospace; font-size: 0.8rem;">
-                        {{ report.cost_code or '—' }}
-                    </span>
-                </td>
-                <td>
-                    <span class="badge badge-{{ report.status }}">
-                        {{ report.status }}
-                    </span>
-                </td>
-                <td>
+    {% if reports %}
+    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+        {% for report in reports %}
+        <div class="glass-card" style="padding: 1.5rem; position: relative; border-left: 4px solid {% if report.status == 'approved' %}var(--accent-success){% elif report.status == 'pending' %}var(--accent-warning){% elif report.status == 'synced' %}var(--accent-primary){% else %}var(--accent-danger){% endif %};">
+            
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <span style="font-family: monospace; color: var(--text-muted); font-size: 0.9rem;">#{{ report.id }}</span>
+                    <span class="badge badge-{{ report.status }}" style="font-size: 0.75rem;">{{ report.status | upper }}</span>
                     <span style="color: var(--text-muted); font-size: 0.85rem;">
-                        {% if report.created_at is string %}
-                        {{ report.created_at[:10] }}
-                        {% else %}
-                        {{ report.created_at.strftime('%Y-%m-%d') }}
-                        {% endif %}
+                        🕒 {% if report.created_at is string %}{{ report.created_at[:16] }}{% else %}{{ report.created_at.strftime('%Y-%m-%d %H:%M') }}{% endif %}
                     </span>
-                </td>
-                <td>
-                    <div style="display: flex; gap: 0.5rem;">
-                        {% if report.status == 'pending' %}
-                        <button type="button" class="btn btn-secondary" 
-                            style="padding: 0.4rem 0.8rem; font-size: 0.8rem; color: white; border-color: rgba(255,255,255,0.3);"
-                            onclick="openEditModal('{{ report.id }}', '{{ report.parsed_data | tojson | forceescape }}')">
-                            ✏️ Edit
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    {% if report.status == 'pending' %}
+                    <button type="button" class="btn btn-secondary" 
+                        style="padding: 0.4rem 0.8rem; font-size: 0.8rem; color: white; border-color: rgba(255,255,255,0.3);"
+                        onclick="openEditModal('{{ report.id }}', '{{ report.parsed_data | tojson | forceescape }}')">
+                        ✏️ Edit
+                    </button>
+                    <form action="/dashboard/approve/{{ report.id }}" method="POST" style="display: inline;">
+                        <button class="btn btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; background: var(--accent-success);">
+                            ✅ Approve
                         </button>
-                        <form action="/dashboard/approve/{{ report.id }}" method="POST" style="display: inline;">
-                            <button class="btn btn-primary"
-                                style="padding: 0.4rem 0.8rem; font-size: 0.8rem; background: var(--accent-success);">
-                                ✅ Approve
-                            </button>
-                        </form>
-                        <form action="/dashboard/reject/{{ report.id }}" method="POST" style="display: inline;">
-                            <button class="btn btn-secondary"
-                                style="padding: 0.4rem 0.8rem; font-size: 0.8rem; color: var(--accent-danger); border-color: rgba(239,68,68,0.3);">
-                                ❌ Reject
-                            </button>
-                        </form>
-                        {% elif report.status == 'approved' %}
-                        <form action="/dashboard/sync/{{ report.id }}" method="POST" style="display: inline;">
-                            <button class="btn btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
-                                🔄 Sync ERP
-                            </button>
-                        </form>
+                    </form>
+                    <form action="/dashboard/reject/{{ report.id }}" method="POST" style="display: inline;">
+                        <button class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; color: var(--accent-danger); border-color: rgba(239,68,68,0.3);">
+                            ❌ Reject
+                        </button>
+                    </form>
+                    {% elif report.status == 'approved' %}
+                    <form action="/dashboard/sync/{{ report.id }}" method="POST" style="display: inline;">
+                        <button class="btn btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
+                            🔄 Sync to Procore
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                <!-- Source / WhatsApp Data -->
+                <div style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px;">
+                    <div style="color: var(--text-secondary); font-size: 0.75rem; text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 1px;">📱 WhatsApp Kaynağı</div>
+                    <div style="font-style: italic; color: #d1d5db; margin-bottom: 1rem; line-height: 1.5; font-size: 0.95rem;">
+                        "{{ report.raw_transcript }}"
+                    </div>
+                    
+                    <!-- Media Attachments -->
+                    {% if report.media_paths and report.media_paths | length > 0 %}
+                    <div style="margin-top: 1rem;">
+                        <div style="color: var(--text-secondary); font-size: 0.75rem; text-transform: uppercase; margin-bottom: 0.5rem;">📎 Ekler ({{ report.media_paths|length }})</div>
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                            {% for media in report.media_paths %}
+                                {% if media.endswith('.jpg') or media.endswith('.png') or media.endswith('.jpeg') %}
+                                <a href="/{{ media }}" target="_blank" style="display: block; width: 60px; height: 60px; border-radius: 6px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
+                                    <img src="/{{ media }}" style="width: 100%; height: 100%; object-fit: cover;" alt="Attachment">
+                                </a>
+                                {% elif media.endswith('.mp4') %}
+                                <a href="/{{ media }}" target="_blank" style="display: flex; align-items: center; justify-content: center; width: 60px; height: 60px; border-radius: 6px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); color: white; text-decoration: none;">
+                                    🎥
+                                </a>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Parsed Data / Procore Destination -->
+                <div style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); padding: 1rem; border-radius: 8px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <div style="color: var(--accent-success); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 1px;">🎯 Procore Hedefi</div>
+                        <div style="background: var(--accent-primary); color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; font-weight: bold;">
+                            {{ report.parsed_data.log_type | upper }} LOG
+                        </div>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 1rem;">
+                        {% if report.parsed_data.item %}
+                        <div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted);">ITEM / VENDOR</div>
+                            <div style="font-weight: 500; color: white;">{{ report.parsed_data.item }}</div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if report.cost_code %}
+                        <div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted);">COST CODE</div>
+                            <div style="font-family: monospace; background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px; display: inline-block;">{{ report.cost_code }}</div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if report.parsed_data.quantity %}
+                        <div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted);">QUANTITY</div>
+                            <div style="font-weight: 500; color: white;">{{ report.parsed_data.quantity }} {{ report.parsed_data.unit }}</div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if report.parsed_data.hours_operating %}
+                        <div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted);">HOURS (OP/IDLE)</div>
+                            <div style="font-weight: 500; color: white;">{{ report.parsed_data.hours_operating }} / {{ report.parsed_data.hours_idle or '0' }}</div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if report.parsed_data.workers_count %}
+                        <div>
+                            <div style="font-size: 0.7rem; color: var(--text-muted);">WORKERS / HOURS</div>
+                            <div style="font-weight: 500; color: white;">{{ report.parsed_data.workers_count }} workers, {{ report.parsed_data.hours_per_worker }} hrs</div>
+                        </div>
                         {% endif %}
                     </div>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+                    
+                    {% if report.parsed_data.description %}
+                    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.05);">
+                        <div style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.25rem;">DESCRIPTION</div>
+                        <div style="font-size: 0.9rem; color: #e5e7eb;">{{ report.parsed_data.description }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+        </div>
+        {% endfor %}
+    </div>
     {% else %}
     <div style="text-align: center; padding: 4rem; color: var(--text-muted);">
         <div style="font-size: 4rem; opacity: 0.2; margin-bottom: 1rem;">📭</div>

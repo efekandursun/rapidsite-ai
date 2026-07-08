@@ -107,24 +107,39 @@ def handle_message_async(message_sid: str, from_number: str, message_body: str, 
         project_id = extract_project_id(message_body) or None
         response = MessagingResponse()
 
+        audio_url = None
+        media_paths = []
+        
+        # Process all media
         if num_media > 0:
-            media_url = values.get('MediaUrl0', '')
-            media_type = values.get('MediaContentType0', '')
-            if 'audio' in media_type or 'ogg' in media_type:
-                result = process_voice_message(media_url, project_id, from_number)
-            else:
-                response.message("⚠️ Please send a voice message or text. Images are not supported yet.")
-                return send_followup(from_number, str(response))
+            for i in range(num_media):
+                url = values.get(f'MediaUrl{i}', '')
+                mtype = values.get(f'MediaContentType{i}', '')
+                
+                if 'audio' in mtype or 'ogg' in mtype:
+                    audio_url = url
+                elif 'image' in mtype or 'video' in mtype:
+                    ext = ".jpg" if 'image' in mtype else ".mp4"
+                    path = download_media(url, suffix=ext, permanent=True)
+                    media_paths.append(path)
+
+        if audio_url:
+            # Voice message (with optional attachments)
+            result = process_voice_message(audio_url, project_id, from_number, media_paths)
         else:
-            if not message_body.strip():
+            # Text message (with optional attachments)
+            if not message_body.strip() and not media_paths:
                 response.message("👋 Welcome to FieldFlow AI! Send a voice note or text report.")
                 return send_followup(from_number, str(response))
 
             if message_body.lower().startswith('register '):
                 response.message("🛠 Registration flow coming soon. Please ask your supervisor to add your number for now.")
                 return send_followup(from_number, str(response))
+                
+            if not message_body.strip() and media_paths:
+                message_body = "Ekli fotoğraf/video gönderildi."
 
-            result = process_text_message(message_body, project_id, from_number)
+            result = process_text_message(message_body, project_id, from_number, media_paths)
 
         if result.get('company_name'):
             confirm_msg = format_confirmation(result)
@@ -178,19 +193,20 @@ def extract_body_from_twiml(twiml_xml: str) -> str:
     return None
 
 
-def process_voice_message(media_url: str, project_id: str, from_number: str) -> dict:
-    """
-    Process voice message: Download → Transcribe → Parse → Save.
-    """
-    # Download audio file
-    audio_path = download_media(media_url)
+def process_voice_message(audio_url: str, project_id: str, from_number: str, media_paths: list = None) -> dict:
+    """Process voice message through AI Brain."""
+    if media_paths is None: media_paths = []
     
-    # Find company early for Procore Master Data matching
+    # 1. Download audio temp file
+    audio_path = download_media(audio_url, suffix=".ogg", permanent=False)
+    
+    db = Database()
+    
+    # Get company from sender's number
     company = db.get_company_by_whatsapp(from_number)
     company_id = company['id'] if company else None
     
     if not company_id:
-        # Without company, we can't save anyway
         return {'error': 'Unknown number'}
         
     try:
@@ -198,7 +214,7 @@ def process_voice_message(media_url: str, project_id: str, from_number: str) -> 
         new_transcript = brain.transcribe_audio(audio_path)
         
         # 2. Process with memory (append to incomplete report if exists)
-        return _process_text_with_memory(new_transcript, project_id, from_number, company)
+        return _process_text_with_memory(new_transcript, project_id, from_number, company, media_paths)
         
     finally:
         # Cleanup temp file
@@ -206,20 +222,21 @@ def process_voice_message(media_url: str, project_id: str, from_number: str) -> 
             os.unlink(audio_path)
 
 
-def process_text_message(text: str, project_id: str, from_number: str) -> dict:
-    """
-    Process text message: Parse → Save.
-    """
-    # Find company
+def process_text_message(text: str, project_id: str, from_number: str, media_paths: list = None) -> dict:
+    """Process text message through AI Brain."""
+    if media_paths is None: media_paths = []
+    db = Database()
+    
+    # Get company context
     company = db.get_company_by_whatsapp(from_number)
     company_id = company['id'] if company else None
     
     if not company_id:
         return {'error': 'Unknown number', 'transcript': text}
 
-    return _process_text_with_memory(text, project_id, from_number, company)
+    return _process_text_with_memory(text, project_id, from_number, company, media_paths)
 
-def _process_text_with_memory(text: str, project_id: str, from_number: str, company: dict) -> dict:
+def _process_text_with_memory(text: str, project_id: str, from_number: str, company: dict, media_paths: list) -> dict:
     company_id = company['id']
     
     # Check if there is an incomplete report for this user
@@ -241,11 +258,15 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
         if new_status == 'complete':
             new_status = 'pending' # Ready for approval
             
+        # Join new media paths with existing if necessary
+        media_json = json.dumps(media_paths) if media_paths else None
+            
         db.update_incomplete_report(
             incomplete_report['id'], 
             combined_transcript, 
             first_item, 
-            new_status
+            new_status,
+            media_json
         )
         
         report_ids = [incomplete_report['id']]
@@ -259,7 +280,8 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
                 parsed_data=item,
                 project_id=project_id,
                 reported_by=from_number,
-                company_id=company_id
+                company_id=company_id,
+                media_paths=media_json
             )
             # manually set status (create_report defaults to pending, we might need an update_status here if we want it to be incomplete, 
             # but for simplicity let's assume the follow up completes the main issue)
@@ -280,6 +302,7 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
             parsed_data = [parsed_data]
         
         report_ids = []
+        media_json = json.dumps(media_paths) if media_paths else None
         for item in parsed_data:
             status = item.get('status', 'pending')
             if status == 'complete': status = 'pending'
@@ -289,7 +312,8 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
                 parsed_data=item,
                 project_id=project_id,
                 reported_by=from_number,
-                company_id=company_id
+                company_id=company_id,
+                media_paths=media_json
             )
             
             # Since create_report hardcodes 'pending' or we can't pass status yet without schema changes,
@@ -308,9 +332,10 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
             'company_name': company['name']
         }
 
-def download_media(url: str) -> str:
+def download_media(url: str, suffix: str = ".ogg", permanent: bool = False) -> str:
     """
-    Download media file from Twilio to temp file.
+    Download media file from Twilio to temp file or permanent storage.
+    Returns relative path if permanent, absolute temp path otherwise.
     """
     # Get Twilio auth for media download
     auth = None
@@ -320,11 +345,21 @@ def download_media(url: str) -> str:
     response = requests.get(url, auth=auth)
     response.raise_for_status()
     
-    # Save to temp file
-    suffix = ".ogg"  # WhatsApp voice messages are OGG format
-    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as f:
-        f.write(response.content)
-        return f.name
+    if permanent:
+        import uuid
+        filename = f"{uuid.uuid4().hex}{suffix}"
+        media_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "media")
+        os.makedirs(media_dir, exist_ok=True)
+        filepath = os.path.join(media_dir, filename)
+        with open(filepath, "wb") as f:
+            f.write(response.content)
+        # return relative path from static
+        return f"media/{filename}"
+    else:
+        # Save to temp file
+        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as f:
+            f.write(response.content)
+            return f.name
 
 
 def extract_project_id(text: str) -> str:

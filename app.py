@@ -26,6 +26,13 @@ db = Database()
 # Initialize mailer
 mail = init_mail(app)
 
+# Serve media files
+@app.route('/media/<path:filename>')
+def serve_media(filename):
+    from flask import send_from_directory
+    media_dir = os.path.join(os.path.dirname(__file__), 'data', 'media')
+    return send_from_directory(media_dir, filename)
+
 # Lazy init of Procore connector (token-based or OAuth)
 def get_procore_connector(company_id: int = None):
     try:
