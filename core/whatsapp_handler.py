@@ -10,6 +10,7 @@ Improvements in this version:
 """
 
 import os
+import json
 import tempfile
 import requests
 import logging
@@ -286,7 +287,8 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
             # manually set status (create_report defaults to pending, we might need an update_status here if we want it to be incomplete, 
             # but for simplicity let's assume the follow up completes the main issue)
             if s == 'incomplete':
-                db._execute(db.get_connection(), "UPDATE site_reports SET status='incomplete' WHERE id=?", (rid,))
+                with db.get_connection() as conn:
+                    db._execute(conn, "UPDATE site_reports SET status='incomplete' WHERE id=?", (rid,))
             report_ids.append(rid)
             
         return {

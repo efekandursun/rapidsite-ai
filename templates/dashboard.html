@@ -2,44 +2,339 @@
 
 {% block styles %}
 <style>
-    /* Dashboard specific tweaks can go here if absolutely needed */
     .stats-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 1.5rem;
-        margin-bottom: 2.5rem;
-    }
-
-    .stat-sparkline {
-        height: 4px;
-        width: 100%;
-        background: rgba(255, 255, 255, 0.1);
-        margin-top: 1rem;
-        border-radius: 2px;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .stat-sparkline::after {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        height: 100%;
-        width: 60%;
-        background: var(--accent-color);
-        border-radius: 2px;
-    }
-
-    .filters-bar {
-        display: flex;
-        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.25rem;
         margin-bottom: 2rem;
     }
 
-    .search-input {
+    .stat-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-md);
+        padding: 1.25rem 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.2s ease;
+    }
+    .stat-card:hover {
+        box-shadow: var(--shadow-md);
+        transform: translateY(-2px);
+    }
+    .stat-label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text-muted);
+    }
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        margin-top: 0.25rem;
+    }
+    .stat-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+    }
+
+    /* Report Cards */
+    .report-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+        transition: all 0.2s ease;
+    }
+    .report-card:hover {
+        box-shadow: var(--shadow-md);
+    }
+    .report-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--border-light);
+        background: #f8fafc;
+    }
+    .report-header-left {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+    .report-id {
+        font-family: 'SF Mono', 'Fira Code', monospace;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--accent-secondary);
+    }
+    .report-type-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        background: #f1f5f9;
+        border: 1px solid var(--border-light);
+        border-radius: 4px;
+        padding: 0.2rem 0.6rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: var(--text-secondary);
+    }
+    .report-date {
+        font-size: 0.8rem;
+        color: var(--text-muted);
+    }
+    .report-body {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0;
+    }
+    @media (max-width: 900px) {
+        .report-body { grid-template-columns: 1fr; }
+    }
+
+    /* Source Panel (left) */
+    .source-panel {
+        padding: 1.25rem 1.5rem;
+        border-right: 1px solid var(--border-light);
+    }
+    .source-label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: var(--text-muted);
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+    }
+    .source-transcript {
+        font-size: 0.9rem;
+        line-height: 1.6;
+        color: var(--text-secondary);
+        font-style: italic;
+        border-left: 3px solid var(--border-light);
+        padding-left: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+    .media-grid {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin-top: 0.75rem;
+    }
+    .media-thumb {
+        width: 56px;
+        height: 56px;
+        border-radius: 6px;
+        overflow: hidden;
+        border: 1px solid var(--border-light);
+        display: block;
+        transition: transform 0.15s;
+    }
+    .media-thumb:hover {
+        transform: scale(1.08);
+        box-shadow: var(--shadow-md);
+    }
+    .media-thumb img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    .media-thumb-video {
+        width: 56px;
+        height: 56px;
+        border-radius: 6px;
+        background: #f1f5f9;
+        border: 1px solid var(--border-light);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        text-decoration: none;
+        transition: transform 0.15s;
+    }
+    .media-thumb-video:hover {
+        transform: scale(1.08);
+        background: #e2e8f0;
+    }
+
+    /* Destination Panel (right) */
+    .dest-panel {
+        padding: 1.25rem 1.5rem;
+        background: #fafbfc;
+    }
+    .dest-label {
+        font-size: 0.7rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        color: var(--accent-success);
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .dest-log-badge {
+        background: var(--accent-secondary);
+        color: white;
+        font-size: 0.65rem;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 3px;
+        letter-spacing: 0.5px;
+    }
+    .dest-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+    }
+    .dest-field-label {
+        font-size: 0.65rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: var(--text-muted);
+        margin-bottom: 0.15rem;
+    }
+    .dest-field-value {
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--text-primary);
+    }
+    .dest-code {
+        font-family: 'SF Mono', 'Fira Code', monospace;
+        background: #f1f5f9;
+        border: 1px solid var(--border-light);
+        padding: 1px 6px;
+        border-radius: 3px;
+        font-size: 0.8rem;
+        color: var(--text-primary);
+    }
+    .dest-description {
+        grid-column: 1 / -1;
+        padding-top: 0.75rem;
+        margin-top: 0.5rem;
+        border-top: 1px solid var(--border-light);
+    }
+    .dest-description p {
+        font-size: 0.85rem;
+        line-height: 1.5;
+        color: var(--text-secondary);
+    }
+
+    /* Actions bar */
+    .report-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    /* Filter bar */
+    .filter-bar {
+        background: var(--bg-card);
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-md);
+        padding: 0.75rem 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        box-shadow: var(--shadow-sm);
+    }
+    .filter-bar input {
         flex: 1;
-        min-width: 300px;
+        border: none;
+        background: transparent;
+        font-size: 0.9rem;
+        color: var(--text-primary);
+        outline: none;
+    }
+    .filter-bar input::placeholder {
+        color: var(--text-muted);
+    }
+    .filter-divider {
+        width: 1px;
+        height: 24px;
+        background: var(--border-light);
+    }
+    .filter-select {
+        border: none;
+        background: transparent;
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+        cursor: pointer;
+        outline: none;
+        font-family: inherit;
+        font-weight: 500;
+    }
+
+    /* Section heading */
+    .section-heading {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .section-count {
+        background: #f1f5f9;
+        border: 1px solid var(--border-light);
+        font-size: 0.75rem;
+        font-weight: 600;
+        padding: 0.1rem 0.5rem;
+        border-radius: 100px;
+        color: var(--text-muted);
+    }
+
+    /* Status indicator line */
+    .status-line {
+        width: 4px;
+        border-radius: 4px 0 0 4px;
+        position: absolute;
+        top: 0;
+        left: 0;
+        bottom: 0;
+    }
+    .status-line-pending { background: var(--accent-warning); }
+    .status-line-approved { background: var(--accent-success); }
+    .status-line-synced { background: var(--accent-secondary); }
+    .status-line-rejected { background: var(--accent-danger); }
+    .status-line-incomplete { background: var(--text-muted); }
+
+    /* Empty state */
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: var(--text-muted);
+    }
+    .empty-state-icon {
+        font-size: 3rem;
+        opacity: 0.3;
+        margin-bottom: 0.75rem;
+    }
+    .empty-state h3 {
+        color: var(--text-secondary);
+        font-size: 1rem;
+        margin-bottom: 0.25rem;
+    }
+    .empty-state p {
+        font-size: 0.85rem;
     }
 </style>
 {% endblock %}
@@ -48,261 +343,237 @@
 <!-- Page Header -->
 <div class="page-header">
     <div>
-        <h1 class="page-title">Overview</h1>
-        <p class="page-subtitle">Real-time construction construction reporting & insights</p>
+        <h1 class="page-title">Dashboard</h1>
+        <p class="page-subtitle">Real-time construction reporting & insights</p>
     </div>
-    <button class="btn btn-primary" onclick="alert('Export functionality initializing...')">
-        📥 Export Data
-    </button>
 </div>
 
-<!-- Stats Widgets -->
+<!-- Stats -->
 <div class="stats-grid">
-    <!-- Pending -->
-    <div class="glass-card" style="--accent-color: var(--accent-warning);">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <div>
-                <div
-                    style="color: var(--text-secondary); font-size: 0.85rem; font-weight: 600; text-transform: uppercase;">
-                    Pending Reviews
-                </div>
-                <div style="font-size: 2.5rem; font-weight: 800; color: white; margin-top: 0.5rem;">
-                    {{ stats.pending }}
-                </div>
-            </div>
-            <div
-                style="background: rgba(245, 158, 11, 0.1); padding: 0.75rem; border-radius: 12px; color: var(--accent-warning);">
-                ⏳
-            </div>
+    <div class="stat-card">
+        <div>
+            <div class="stat-label">Pending Review</div>
+            <div class="stat-value" style="color: var(--accent-warning);">{{ stats.pending }}</div>
         </div>
-        <div class="stat-sparkline"></div>
+        <div class="stat-icon" style="background: #fff7ed; color: var(--accent-warning);">⏳</div>
     </div>
-
-    <!-- Approved -->
-    <div class="glass-card" style="--accent-color: var(--accent-success);">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <div>
-                <div
-                    style="color: var(--text-secondary); font-size: 0.85rem; font-weight: 600; text-transform: uppercase;">
-                    Approved
-                </div>
-                <div style="font-size: 2.5rem; font-weight: 800; color: white; margin-top: 0.5rem;">
-                    {{ stats.approved }}
-                </div>
-            </div>
-            <div
-                style="background: rgba(16, 185, 129, 0.1); padding: 0.75rem; border-radius: 12px; color: var(--accent-success);">
-                ✅
-            </div>
+    <div class="stat-card">
+        <div>
+            <div class="stat-label">Approved</div>
+            <div class="stat-value" style="color: var(--accent-success);">{{ stats.approved }}</div>
         </div>
-        <div class="stat-sparkline" style="width: 80% !important;"></div>
+        <div class="stat-icon" style="background: #f0fdf4; color: var(--accent-success);">✅</div>
     </div>
-
-    <!-- Synced -->
-    <div class="glass-card" style="--accent-color: var(--accent-primary);">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <div>
-                <div
-                    style="color: var(--text-secondary); font-size: 0.85rem; font-weight: 600; text-transform: uppercase;">
-                    Synced to ERP
-                </div>
-                <div style="font-size: 2.5rem; font-weight: 800; color: white; margin-top: 0.5rem;">
-                    {{ stats.synced }}
-                </div>
-            </div>
-            <div
-                style="background: rgba(59, 130, 246, 0.1); padding: 0.75rem; border-radius: 12px; color: var(--accent-primary);">
-                🔄
-            </div>
+    <div class="stat-card">
+        <div>
+            <div class="stat-label">Synced to Procore</div>
+            <div class="stat-value" style="color: var(--accent-secondary);">{{ stats.synced }}</div>
         </div>
-        <div class="stat-sparkline" style="width: 40% !important;"></div>
+        <div class="stat-icon" style="background: #eff6ff; color: var(--accent-secondary);">🔄</div>
     </div>
-
-    <!-- Rejected -->
-    <div class="glass-card" style="--accent-color: var(--accent-danger);">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-            <div>
-                <div
-                    style="color: var(--text-secondary); font-size: 0.85rem; font-weight: 600; text-transform: uppercase;">
-                    Rejected
-                </div>
-                <div style="font-size: 2.5rem; font-weight: 800; color: white; margin-top: 0.5rem;">
-                    {{ stats.rejected }}
-                </div>
-            </div>
-            <div
-                style="background: rgba(239, 68, 68, 0.1); padding: 0.75rem; border-radius: 12px; color: var(--accent-danger);">
-                ❌
-            </div>
+    <div class="stat-card">
+        <div>
+            <div class="stat-label">Rejected</div>
+            <div class="stat-value" style="color: var(--accent-danger);">{{ stats.rejected }}</div>
         </div>
-        <div class="stat-sparkline" style="width: 15% !important;"></div>
+        <div class="stat-icon" style="background: #fef2f2; color: var(--accent-danger);">✕</div>
     </div>
 </div>
 
 <!-- Filters -->
-<div class="glass-card" style="padding: 1rem; margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem;">
-    <span style="font-size: 1.2rem; color: var(--text-muted);">🔍</span>
-    <input type="text" class="form-control" placeholder="Search reports by location, item, or description..."
-        style="border: none; background: transparent; padding: 0;">
-
-    <div style="height: 24px; width: 1px; background: var(--border-light);"></div>
-
-    <select class="form-control" style="width: auto; background: transparent; border: none;">
+<div class="filter-bar">
+    <span style="color: var(--text-muted); font-size: 1.1rem;">🔍</span>
+    <input type="text" id="searchInput" placeholder="Search by item, location, description..." oninput="filterReports()">
+    <div class="filter-divider"></div>
+    <select class="filter-select" id="statusFilter" onchange="filterReports()">
         <option value="">All Statuses</option>
         <option value="pending">Pending</option>
+        <option value="incomplete">Incomplete</option>
         <option value="approved">Approved</option>
+        <option value="synced">Synced</option>
+        <option value="rejected">Rejected</option>
+    </select>
+    <div class="filter-divider"></div>
+    <select class="filter-select" id="typeFilter" onchange="filterReports()">
+        <option value="">All Types</option>
+        <option value="production">Production</option>
+        <option value="materials">Materials</option>
+        <option value="manpower">Manpower</option>
+        <option value="equipment">Equipment</option>
+        <option value="safety">Safety</option>
+        <option value="delivery">Delivery</option>
     </select>
 </div>
 
-<!-- Recent Reports Table -->
-<h2 style="font-size: 1.25rem; font-weight: 700; margin-bottom: 1.5rem; color: white;">Recent Activity</h2>
+<!-- Reports -->
+<div class="section-heading">
+    Recent Activity
+    <span class="section-count">{{ reports | length }}</span>
+</div>
 
-<div class="table-container">
+<div id="reportsContainer" style="display: flex; flex-direction: column; gap: 1rem;">
     {% if reports %}
-    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
         {% for report in reports %}
-        <div class="glass-card" style="padding: 1.5rem; position: relative; border-left: 4px solid {% if report.status == 'approved' %}var(--accent-success){% elif report.status == 'pending' %}var(--accent-warning){% elif report.status == 'synced' %}var(--accent-primary){% else %}var(--accent-danger){% endif %};">
-            
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
-                <div style="display: flex; align-items: center; gap: 1rem;">
-                    <span style="font-family: monospace; color: var(--text-muted); font-size: 0.9rem;">#{{ report.id }}</span>
-                    <span class="badge badge-{{ report.status }}" style="font-size: 0.75rem;">{{ report.status | upper }}</span>
-                    <span style="color: var(--text-muted); font-size: 0.85rem;">
-                        🕒 {% if report.created_at is string %}{{ report.created_at[:16] }}{% else %}{{ report.created_at.strftime('%Y-%m-%d %H:%M') }}{% endif %}
+        <div class="report-card" data-status="{{ report.status }}" data-type="{{ report.parsed_data.log_type | default('notes', true) }}" data-search="{{ report.raw_transcript | lower }} {{ (report.parsed_data.item | default('', true)) | lower }} {{ (report.parsed_data.description | default('', true)) | lower }}" style="position: relative;">
+
+            <!-- Status indicator line -->
+            <div class="status-line status-line-{{ report.status }}"></div>
+
+            <!-- Header -->
+            <div class="report-header" style="padding-left: calc(1.5rem + 4px);">
+                <div class="report-header-left">
+                    <span class="report-id">#{{ report.id }}</span>
+                    <span class="badge badge-{{ report.status }}">{{ report.status | upper }}</span>
+                    <span class="report-type-badge">
+                        {% if report.parsed_data.log_type | default('notes', true) == 'production' %}🏗️
+                        {% elif report.parsed_data.log_type | default('notes', true) == 'materials' %}📦
+                        {% elif report.parsed_data.log_type | default('notes', true) == 'manpower' %}👷
+                        {% elif report.parsed_data.log_type | default('notes', true) == 'equipment' %}🚜
+                        {% elif report.parsed_data.log_type | default('notes', true) == 'safety' %}⚠️
+                        {% elif report.parsed_data.log_type | default('notes', true) == 'delivery' %}🚚
+                        {% else %}📝{% endif %}
+                        {{ report.parsed_data.log_type | default('notes', true) | title }}
+                    </span>
+                    <span class="report-date">
+                        {% if report.created_at is string %}{{ report.created_at[:16] }}{% else %}{{ report.created_at.strftime('%Y-%m-%d %H:%M') }}{% endif %}
                     </span>
                 </div>
-                <div style="display: flex; gap: 0.5rem;">
+                <div class="report-actions">
                     {% if report.status == 'pending' %}
-                    <button type="button" class="btn btn-secondary" 
-                        style="padding: 0.4rem 0.8rem; font-size: 0.8rem; color: white; border-color: rgba(255,255,255,0.3);"
+                    <button type="button" class="btn btn-secondary" style="padding: 0.35rem 0.7rem; font-size: 0.8rem;"
                         onclick="openEditModal('{{ report.id }}', '{{ report.parsed_data | tojson | forceescape }}')">
                         ✏️ Edit
                     </button>
-                    <form action="/dashboard/approve/{{ report.id }}" method="POST" style="display: inline;">
-                        <button class="btn btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; background: var(--accent-success);">
-                            ✅ Approve
+                    <form action="/dashboard/approve/{{ report.id }}" method="POST" style="display:inline;">
+                        <button class="btn btn-primary" style="padding: 0.35rem 0.7rem; font-size: 0.8rem; background: var(--accent-success); border-color: var(--accent-success);">
+                            ✓ Approve
                         </button>
                     </form>
-                    <form action="/dashboard/reject/{{ report.id }}" method="POST" style="display: inline;">
-                        <button class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem; color: var(--accent-danger); border-color: rgba(239,68,68,0.3);">
-                            ❌ Reject
+                    <form action="/dashboard/reject/{{ report.id }}" method="POST" style="display:inline;">
+                        <button class="btn btn-secondary" style="padding: 0.35rem 0.7rem; font-size: 0.8rem; color: var(--accent-danger);">
+                            ✕ Reject
                         </button>
                     </form>
                     {% elif report.status == 'approved' %}
-                    <form action="/dashboard/sync/{{ report.id }}" method="POST" style="display: inline;">
-                        <button class="btn btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
+                    <form action="/dashboard/sync/{{ report.id }}" method="POST" style="display:inline;">
+                        <button class="btn btn-primary" style="padding: 0.35rem 0.7rem; font-size: 0.8rem;">
                             🔄 Sync to Procore
                         </button>
                     </form>
+                    {% elif report.status == 'synced' %}
+                    <span style="font-size: 0.8rem; color: var(--accent-success); font-weight: 600;">✓ Synced</span>
                     {% endif %}
                 </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
-                <!-- Source / WhatsApp Data -->
-                <div style="background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 8px;">
-                    <div style="color: var(--text-secondary); font-size: 0.75rem; text-transform: uppercase; margin-bottom: 0.5rem; letter-spacing: 1px;">📱 WhatsApp Kaynağı</div>
-                    <div style="font-style: italic; color: #d1d5db; margin-bottom: 1rem; line-height: 1.5; font-size: 0.95rem;">
-                        "{{ report.raw_transcript }}"
-                    </div>
-                    
-                    <!-- Media Attachments -->
+            <!-- Body -->
+            <div class="report-body">
+                <!-- Source: WhatsApp Message -->
+                <div class="source-panel">
+                    <div class="source-label">📱 Source Message</div>
+                    <div class="source-transcript">{{ report.raw_transcript }}</div>
+
                     {% if report.media_paths and report.media_paths | length > 0 %}
-                    <div style="margin-top: 1rem;">
-                        <div style="color: var(--text-secondary); font-size: 0.75rem; text-transform: uppercase; margin-bottom: 0.5rem;">📎 Ekler ({{ report.media_paths|length }})</div>
-                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
-                            {% for media in report.media_paths %}
-                                {% if media.endswith('.jpg') or media.endswith('.png') or media.endswith('.jpeg') %}
-                                <a href="/{{ media }}" target="_blank" style="display: block; width: 60px; height: 60px; border-radius: 6px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);">
-                                    <img src="/{{ media }}" style="width: 100%; height: 100%; object-fit: cover;" alt="Attachment">
-                                </a>
-                                {% elif media.endswith('.mp4') %}
-                                <a href="/{{ media }}" target="_blank" style="display: flex; align-items: center; justify-content: center; width: 60px; height: 60px; border-radius: 6px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1); color: white; text-decoration: none;">
-                                    🎥
-                                </a>
-                                {% endif %}
-                            {% endfor %}
-                        </div>
+                    <div class="source-label" style="margin-top: 0.75rem;">📎 Attachments ({{ report.media_paths | length }})</div>
+                    <div class="media-grid">
+                        {% for media in report.media_paths %}
+                            {% if media.endswith('.jpg') or media.endswith('.png') or media.endswith('.jpeg') %}
+                            <a href="/{{ media }}" target="_blank" class="media-thumb">
+                                <img src="/{{ media }}" alt="Photo">
+                            </a>
+                            {% elif media.endswith('.mp4') %}
+                            <a href="/{{ media }}" target="_blank" class="media-thumb-video">🎥</a>
+                            {% endif %}
+                        {% endfor %}
                     </div>
                     {% endif %}
                 </div>
 
-                <!-- Parsed Data / Procore Destination -->
-                <div style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); padding: 1rem; border-radius: 8px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
-                        <div style="color: var(--accent-success); font-size: 0.75rem; text-transform: uppercase; font-weight: 600; letter-spacing: 1px;">🎯 Procore Hedefi</div>
-                        <div style="background: var(--accent-primary); color: white; font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; font-weight: bold;">
-                            {{ report.parsed_data.log_type | upper }} LOG
-                        </div>
+                <!-- Destination: Procore Target -->
+                <div class="dest-panel">
+                    <div class="dest-label">
+                        <span>🎯 Procore Destination</span>
+                        <span class="dest-log-badge">{{ report.parsed_data.log_type | default('NOTES', true) | upper }} LOG</span>
                     </div>
-                    
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-top: 1rem;">
-                        {% if report.parsed_data.item %}
+                    <div class="dest-grid">
+                        {% if report.parsed_data.item | default(none, true) %}
                         <div>
-                            <div style="font-size: 0.7rem; color: var(--text-muted);">ITEM / VENDOR</div>
-                            <div style="font-weight: 500; color: white;">{{ report.parsed_data.item }}</div>
+                            <div class="dest-field-label">Item / Vendor</div>
+                            <div class="dest-field-value">{{ report.parsed_data.item }}</div>
                         </div>
                         {% endif %}
-                        
+
                         {% if report.cost_code %}
                         <div>
-                            <div style="font-size: 0.7rem; color: var(--text-muted);">COST CODE</div>
-                            <div style="font-family: monospace; background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px; display: inline-block;">{{ report.cost_code }}</div>
+                            <div class="dest-field-label">Cost Code</div>
+                            <div><span class="dest-code">{{ report.cost_code }}</span></div>
                         </div>
                         {% endif %}
-                        
-                        {% if report.parsed_data.quantity %}
+
+                        {% if report.parsed_data.quantity | default(none, true) %}
                         <div>
-                            <div style="font-size: 0.7rem; color: var(--text-muted);">QUANTITY</div>
-                            <div style="font-weight: 500; color: white;">{{ report.parsed_data.quantity }} {{ report.parsed_data.unit }}</div>
+                            <div class="dest-field-label">Quantity</div>
+                            <div class="dest-field-value">{{ report.parsed_data.quantity }} {{ report.parsed_data.unit | default('', true) }}</div>
                         </div>
                         {% endif %}
-                        
-                        {% if report.parsed_data.hours_operating %}
+
+                        {% if report.parsed_data.location | default(none, true) %}
                         <div>
-                            <div style="font-size: 0.7rem; color: var(--text-muted);">HOURS (OP/IDLE)</div>
-                            <div style="font-weight: 500; color: white;">{{ report.parsed_data.hours_operating }} / {{ report.parsed_data.hours_idle or '0' }}</div>
+                            <div class="dest-field-label">Location</div>
+                            <div class="dest-field-value">
+                                {% if report.parsed_data.location is mapping %}
+                                    {{ report.parsed_data.location.name | default('—', true) }}
+                                {% else %}
+                                    {{ report.parsed_data.location }}
+                                {% endif %}
+                            </div>
                         </div>
                         {% endif %}
-                        
-                        {% if report.parsed_data.workers_count %}
+
+                        {% if report.parsed_data.equipment_details | default(none, true) %}
                         <div>
-                            <div style="font-size: 0.7rem; color: var(--text-muted);">WORKERS / HOURS</div>
-                            <div style="font-weight: 500; color: white;">{{ report.parsed_data.workers_count }} workers, {{ report.parsed_data.hours_per_worker }} hrs</div>
+                            <div class="dest-field-label">Hours (Op / Idle)</div>
+                            <div class="dest-field-value">{{ report.parsed_data.equipment_details.hours_operating | default('0', true) }}h / {{ report.parsed_data.equipment_details.hours_idle | default('0', true) }}h</div>
+                        </div>
+                        {% endif %}
+
+                        {% if report.parsed_data.crew | default(none, true) %}
+                        <div>
+                            <div class="dest-field-label">Crew</div>
+                            <div class="dest-field-value">{{ report.parsed_data.crew.count | default('?', true) }} workers, {{ report.parsed_data.crew.hours | default('8', true) }}h</div>
+                        </div>
+                        {% endif %}
+
+                        {% if report.parsed_data.description | default(none, true) %}
+                        <div class="dest-description">
+                            <div class="dest-field-label">Description</div>
+                            <p>{{ report.parsed_data.description }}</p>
                         </div>
                         {% endif %}
                     </div>
-                    
-                    {% if report.parsed_data.description %}
-                    <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.05);">
-                        <div style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.25rem;">DESCRIPTION</div>
-                        <div style="font-size: 0.9rem; color: #e5e7eb;">{{ report.parsed_data.description }}</div>
-                    </div>
-                    {% endif %}
                 </div>
             </div>
-            
+
         </div>
         {% endfor %}
-    </div>
     {% else %}
-    <div style="text-align: center; padding: 4rem; color: var(--text-muted);">
-        <div style="font-size: 4rem; opacity: 0.2; margin-bottom: 1rem;">📭</div>
-        <h3>No reports found</h3>
-        <p>New reports from WhatsApp will appear here instantly.</p>
+    <div class="empty-state">
+        <div class="empty-state-icon">📭</div>
+        <h3>No reports yet</h3>
+        <p>Reports from WhatsApp will appear here in real-time.</p>
     </div>
     {% endif %}
 </div>
 
 <!-- Edit Modal -->
-<div id="editModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center;">
-    <div class="glass-card" style="width: 90%; max-width: 600px; padding: 2rem; position: relative;">
-        <h3 style="margin-bottom: 1rem; color: white;">Edit Report Data</h3>
-        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
-            You can modify the parsed JSON data before approving. Ensure the structure remains valid JSON.
+<div id="editModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
+    <div style="background:white; width:90%; max-width:640px; border-radius:var(--radius-md); box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); padding:2rem; position:relative;">
+        <h3 style="margin-bottom:0.5rem; color:var(--text-primary); font-size:1.1rem;">Edit Report Data</h3>
+        <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:1rem;">
+            Modify the JSON structure below before approving. Ensure valid JSON format.
         </p>
-        <textarea id="editJsonData" style="width: 100%; height: 300px; background: rgba(0,0,0,0.5); border: 1px solid var(--border-light); border-radius: 8px; color: #a5d6ff; padding: 1rem; font-family: monospace; margin-bottom: 1rem; resize: vertical;"></textarea>
-        <div style="display: flex; justify-content: flex-end; gap: 1rem;">
+        <textarea id="editJsonData" style="width:100%; height:300px; background:#f8fafc; border:1px solid var(--border-light); border-radius:var(--radius-sm); color:var(--text-primary); padding:1rem; font-family:'SF Mono','Fira Code',monospace; font-size:0.85rem; margin-bottom:1rem; resize:vertical;"></textarea>
+        <div style="display:flex; justify-content:flex-end; gap:0.75rem;">
             <button class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
             <button class="btn btn-primary" onclick="saveEditedData()">Save Changes</button>
         </div>
@@ -335,7 +606,7 @@
         try {
             jsonData = JSON.parse(textData);
         } catch (e) {
-            alert('Invalid JSON format. Please fix any syntax errors before saving.');
+            alert('Invalid JSON format. Please fix syntax errors before saving.');
             return;
         }
 
@@ -349,11 +620,41 @@
             if (result.success) {
                 location.reload();
             } else {
-                alert('Error saving data: ' + (result.error || 'Unknown error'));
+                alert('Error saving: ' + (result.error || 'Unknown error'));
             }
         } catch (e) {
             alert('Network error while saving.');
         }
+    }
+
+    // Client-side filtering
+    function filterReports() {
+        const search = document.getElementById('searchInput').value.toLowerCase();
+        const status = document.getElementById('statusFilter').value;
+        const type = document.getElementById('typeFilter').value;
+
+        const cards = document.querySelectorAll('.report-card');
+        let visible = 0;
+
+        cards.forEach(card => {
+            const cardStatus = card.dataset.status;
+            const cardType = card.dataset.type;
+            const cardSearch = card.dataset.search;
+
+            const matchStatus = !status || cardStatus === status;
+            const matchType = !type || cardType === type;
+            const matchSearch = !search || cardSearch.includes(search);
+
+            if (matchStatus && matchType && matchSearch) {
+                card.style.display = '';
+                visible++;
+            } else {
+                card.style.display = 'none';
+            }
+        });
+
+        // Update count
+        document.querySelector('.section-count').textContent = visible;
     }
 </script>
 {% endblock %}
