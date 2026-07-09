@@ -195,7 +195,7 @@ You MUST return a JSON ARRAY containing one or more event objects. If the messag
                     {"role": "user", "content": text}
                 ],
                 temperature=0.1,
-                max_tokens=1000
+                max_tokens=4000
             )
             
             content = response.choices[0].message.content.strip()
@@ -296,7 +296,7 @@ If the user's input is telegraphic/shorthand but implies the required info (like
                     {"role": "system", "content": system_prompt}
                 ],
                 temperature=0.1,
-                max_tokens=1500
+                max_tokens=4000
             )
             
             content = response.choices[0].message.content.strip()
