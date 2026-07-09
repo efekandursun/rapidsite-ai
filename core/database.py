@@ -434,16 +434,23 @@ class Database:
         return self.get_reports(status="pending")
     
     def update_report_parsed_data(self, report_id: int, parsed_data: Dict[str, Any]) -> bool:
-        """Update the parsed JSON data of a report."""
+        """Update the parsed JSON data of a report, and sync top-level columns."""
         import json
         with self.get_connection() as conn:
             now = datetime.utcnow().isoformat()
+            
+            # Extract top-level fields from parsed_data to keep columns in sync
+            log_type = parsed_data.get('log_type')
+            cost_code = parsed_data.get('cost_code')
+            
             cursor = self._execute(conn, """
                 UPDATE site_reports 
                 SET parsed_data = ?,
+                    log_type = ?,
+                    cost_code = ?,
                     updated_at = ?
                 WHERE id = ?
-            """, (json.dumps(parsed_data, ensure_ascii=False), now, report_id))
+            """, (json.dumps(parsed_data, ensure_ascii=False), log_type, cost_code, now, report_id))
             return cursor.rowcount > 0
     
     def approve_report(self, report_id: int, approved_by: str = None) -> bool:
