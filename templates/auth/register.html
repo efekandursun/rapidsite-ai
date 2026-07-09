@@ -187,6 +187,7 @@
         {% endwith %}
 
         <form method="POST" action="{{ url_for('auth.register') }}" class="auth-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <div class="section-title">Company Information</div>
 
             <div class="form-group">

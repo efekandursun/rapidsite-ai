@@ -7,7 +7,32 @@ load_dotenv()
 
 # Create Flask app
 app = Flask(__name__, template_folder='templates', static_folder='static')
-app.secret_key = os.getenv('FLASK_SECRET_KEY', 'dev-secret-key-change-in-production')
+secret_key = os.getenv('FLASK_SECRET_KEY')
+if not secret_key:
+    raise RuntimeError("CRITICAL: FLASK_SECRET_KEY environment variable is missing. Refusing to start.")
+app.secret_key = secret_key
+
+# Session Security Configuration
+app.config.update(
+    SESSION_COOKIE_SECURE=os.getenv('FLASK_ENV') != 'development',
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SAMESITE='Lax',
+    PERMANENT_SESSION_LIFETIME=86400  # 24 hours
+)
+
+# CSRF Protection
+from flask_wtf.csrf import CSRFProtect
+csrf = CSRFProtect(app)
+
+# Rate Limiting
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+limiter = Limiter(
+    get_remote_address,
+    app=app,
+    default_limits=["200 per day", "50 per hour"],
+    storage_uri="memory://"
+)
 
 # Import and register blueprints
 from core.whatsapp_handler import whatsapp_bp
@@ -16,6 +41,9 @@ from core.database import Database
 from core.mailer import init_mail
 from connectors.procore import ProcoreConnector
 from connectors.base import ERPError
+
+# Disable CSRF for webhook endpoints (Twilio handles its own signature validation)
+csrf.exempt(whatsapp_bp)
 
 app.register_blueprint(whatsapp_bp)
 app.register_blueprint(auth_bp)

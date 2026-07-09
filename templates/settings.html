@@ -40,7 +40,8 @@
                         </td>
                         <td style="text-align: right;">
                             <form method="POST" action="{{ url_for('delete_authorized_number', number_id=num.id) }}"
-                                style="display: inline;">
+                                onsubmit="return confirm('Remove {{ num.employee_name or num.phone_number }}?');" style="display: inline;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                 <button type="submit" class="btn btn-secondary"
                                     style="padding: 0.3rem 0.6rem; font-size: 0.75rem; color: var(--accent-danger);">
                                     Remove
@@ -67,6 +68,7 @@
             </div>
             <form method="POST" action="{{ url_for('add_authorized_number') }}"
                 style="display: flex; gap: 0.75rem; align-items: flex-end;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <div class="form-group" style="flex: 1; margin-bottom: 0;">
                     <label class="form-label">Employee Name</label>
                     <input type="text" name="employee_name" class="form-control" placeholder="e.g. John Foreman" required>
@@ -105,6 +107,7 @@
             <div style="display: flex; align-items: center; gap: 0.75rem;">
                 <span class="badge badge-approved">Connected</span>
                 <form method="POST" action="{{ url_for('procore_disconnect') }}" style="display: inline;">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                     <button type="submit" class="btn btn-secondary"
                         style="color: var(--accent-danger); font-size: 0.8rem; padding: 0.35rem 0.7rem;">
                         Disconnect
@@ -159,6 +162,7 @@
         </form>
 
         <form method="POST" action="{{ url_for('sync_master_data') }}" style="margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid var(--border-light);">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <div class="form-group" style="margin-bottom: 0;">
                 <label class="form-label">Procore Master Data</label>
                 <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.75rem;">

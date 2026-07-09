@@ -8,6 +8,7 @@ import os
 import json
 import requests
 from dotenv import load_dotenv
+from core.utils import retry_on_exception
 
 load_dotenv()
 
@@ -148,6 +149,7 @@ You MUST return a JSON ARRAY containing one or more event objects. If the messag
                 
         return base_prompt
 
+    @retry_on_exception(exceptions=(Exception,), max_retries=3, initial_delay=1.0)
     def transcribe_audio(self, audio_file_path: str) -> str:
         """
         Transcribe audio file to text using OpenAI Whisper.
@@ -168,6 +170,7 @@ You MUST return a JSON ARRAY containing one or more event objects. If the messag
         except Exception as e:
             raise TranscriptionError(f"Whisper transcription failed: {str(e)}")
 
+    @retry_on_exception(exceptions=(Exception,), max_retries=3, initial_delay=1.0)
     def parse_text(self, text: str, company: dict = None) -> dict:
         """
         Parse construction report text into structured JSON.
@@ -229,6 +232,7 @@ You MUST return a JSON ARRAY containing one or more event objects. If the messag
         }
 
 
+    @retry_on_exception(exceptions=(Exception,), max_retries=3, initial_delay=1.0)
     def resolve_incomplete(self, incomplete_json: dict, new_text: str, company: dict = None) -> dict:
         """
         Intelligently resolves an incomplete report with new user input.

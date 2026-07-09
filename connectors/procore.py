@@ -8,6 +8,7 @@ import json
 import requests
 from typing import Dict, Any, List, Optional
 from datetime import datetime
+from core.utils import retry_on_exception
 
 from connectors.base import (
     ERPConnector, 
@@ -425,6 +426,7 @@ class ProcoreConnector(ERPConnector):
         print(f"⚠️ No Cost Code match for '{search_str}'")
         return None
 
+    @retry_on_exception(exceptions=(requests.RequestException,), max_retries=2, initial_delay=1.0)
     def push_daily_log(self, project_id: str, log_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Push a daily log entry to the correct Procore Daily Log category.

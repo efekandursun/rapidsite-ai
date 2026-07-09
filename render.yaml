@@ -4,8 +4,8 @@ services:
     name: fieldflow-ai
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT
-    plan: free
+    startCommand: gunicorn app:app --worker-class gthread --threads 4 --workers 2 --bind 0.0.0.0:$PORT
+    plan: starter
     envVars:
       - key: FLASK_SECRET_KEY
         generateValue: true

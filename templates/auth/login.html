@@ -147,6 +147,7 @@
         {% endwith %}
 
         <form method="POST" action="{{ url_for('auth.login') }}" class="auth-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <div class="form-group">
                 <label class="form-label">Email</label>
                 <input type="email" name="email" class="form-control" placeholder="your@email.com" required>

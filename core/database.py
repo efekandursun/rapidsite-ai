@@ -23,17 +23,29 @@ USE_POSTGRES = DATABASE_URL is not None and DATABASE_URL.startswith("postgresql"
 class Database:
     """Database manager supporting SQLite and PostgreSQL."""
     
+    _pool = None
+    
     def __init__(self, db_path: str = None):
         self.use_postgres = USE_POSTGRES
         
         try:
             if self.use_postgres:
                 import psycopg
+                from psycopg_pool import ConnectionPool
                 from psycopg.rows import dict_row
                 self.psycopg = psycopg
                 self.dict_row = dict_row
                 self.db_url = DATABASE_URL
                 print(f"🐘 Using PostgreSQL (Supabase) with psycopg3")
+                
+                if Database._pool is None:
+                    print("🔄 Initializing PostgreSQL Connection Pool...")
+                    Database._pool = ConnectionPool(
+                        conninfo=self.db_url,
+                        min_size=1,
+                        max_size=20,
+                        kwargs={"row_factory": dict_row}
+                    )
             else:
                 import sqlite3
                 self.sqlite3 = sqlite3
@@ -59,15 +71,13 @@ class Database:
     def get_connection(self):
         """Context manager for database connections."""
         if self.use_postgres:
-            conn = self.psycopg.connect(self.db_url, row_factory=self.dict_row)
-            try:
-                yield conn
-                conn.commit()
-            except Exception:
-                conn.rollback()
-                raise
-            finally:
-                conn.close()
+            with Database._pool.connection() as conn:
+                try:
+                    yield conn
+                    conn.commit()
+                except Exception:
+                    conn.rollback()
+                    raise
         else:
             conn = self.sqlite3.connect(self.db_path)
             conn.row_factory = self.sqlite3.Row

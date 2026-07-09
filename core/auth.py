@@ -101,6 +101,7 @@ def login():
         user = db.get_user_by_email(email)
         
         if user and verify_password(password, user['password_hash']):
+            session.permanent = True
             session['user_id'] = user['id']
             session['company_id'] = user['company_id']
             session['user_name'] = user['name']
@@ -222,6 +223,7 @@ def verify_email():
             user = db.get_user_by_email(email)
             if user:
                 session.pop('pending_verification_email', None)
+                session.permanent = True
                 session['user_id'] = user['id']
                 session['company_id'] = user['company_id']
                 session['user_name'] = user['name']
