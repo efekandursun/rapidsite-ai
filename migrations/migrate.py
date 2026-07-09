@@ -9,7 +9,7 @@ import os
 import importlib.util
 from pathlib import Path
 
-DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'fieldflow.db')
+DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'rapidsite.db')
 MIGRATIONS_DIR = os.path.dirname(__file__)
 
 def ensure_migrations_table():

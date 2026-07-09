@@ -1,5 +1,5 @@
 """
-FieldFlow AI - WhatsApp Handler
+RapidSite AI - WhatsApp Handler
 Twilio webhook handler for WhatsApp voice/text messages.
 
 Improvements in this version:
@@ -134,7 +134,7 @@ def handle_message_async(message_sid: str, from_number: str, message_body: str, 
         else:
             # Text message (with optional attachments)
             if not message_body.strip() and not media_paths:
-                response.message("👋 Welcome to FieldFlow AI! Send a voice note or text report.")
+                response.message("👋 Welcome to RapidSite AI! Send a voice note or text report.")
                 return send_followup(from_number, str(response))
 
             if message_body.lower().startswith('register '):

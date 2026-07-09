@@ -1,5 +1,5 @@
 """
-FieldFlow AI - Database Module
+RapidSite AI - Database Module
 Supports both SQLite (development) and PostgreSQL (production via Supabase).
 """
 
@@ -14,7 +14,7 @@ load_dotenv()
 
 # Check for PostgreSQL connection string (Supabase)
 DATABASE_URL = os.getenv("DATABASE_URL")
-DATABASE_PATH = os.getenv("DATABASE_PATH", "./data/fieldflow.db")
+DATABASE_PATH = os.getenv("DATABASE_PATH", "./data/rapidsite.db")
 
 # Detect database type
 USE_POSTGRES = DATABASE_URL is not None and DATABASE_URL.startswith("postgresql")
@@ -880,7 +880,7 @@ if __name__ == "__main__":
     db = Database()
     
     print("=" * 60)
-    print("FieldFlow AI - Database Module Test")
+    print("RapidSite AI - Database Module Test")
     print("=" * 60)
     print(f"Database type: {'PostgreSQL (Supabase)' if db.use_postgres else 'SQLite'}")
     

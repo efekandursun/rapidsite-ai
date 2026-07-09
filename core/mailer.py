@@ -1,5 +1,5 @@
 """
-Email sending module for FieldFlow AI
+Email sending module for RapidSite AI
 Supports SMTP providers like Gmail, SendGrid, etc.
 """
 import os
@@ -29,7 +29,7 @@ def send_verification_email(email: str, code: str, company_name: str):
     """Send verification code email to user"""
     try:
         msg = Message(
-            subject='Verify Your FieldFlow AI Account',
+            subject='Verify Your RapidSite AI Account',
             recipients=[email]
         )
         
@@ -94,12 +94,12 @@ def send_verification_email(email: str, code: str, company_name: str):
         <body>
             <div class="container">
                 <div class="header">
-                    <div class="logo">🏗️ FieldFlow AI</div>
+                    <div class="logo">🏗️ RapidSite AI</div>
                 </div>
                 <div class="content">
-                    <h2>Welcome to FieldFlow AI!</h2>
+                    <h2>Welcome to RapidSite AI!</h2>
                     <p>Hi there,</p>
-                    <p>Thank you for registering <strong>{company_name}</strong> on FieldFlow AI.</p>
+                    <p>Thank you for registering <strong>{company_name}</strong> on RapidSite AI.</p>
                     <p>Please use the verification code below to complete your registration:</p>
                     
                     <div class="code-box">
@@ -114,7 +114,7 @@ def send_verification_email(email: str, code: str, company_name: str):
                     </p>
                 </div>
                 <div class="footer">
-                    <p>FieldFlow AI - Construction Report System</p>
+                    <p>RapidSite AI - Construction Report System</p>
                     <p>This is an automated message, please do not reply.</p>
                 </div>
             </div>

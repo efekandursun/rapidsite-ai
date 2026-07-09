@@ -277,7 +277,7 @@ def health_check():
     """Health check endpoint."""
     return jsonify({
         "status": "healthy",
-        "service": "FieldFlow AI",
+        "service": "RapidSite AI",
         "version": "1.0.0"
     })
 
@@ -777,7 +777,7 @@ if __name__ == '__main__':
     debug = os.getenv('FLASK_ENV') == 'development'
     
     print("=" * 60)
-    print("🏗️  FieldFlow AI - Construction Report System")
+    print("🏗️  RapidSite AI - Construction Report System")
     print("=" * 60)
     print(f"🌐 Dashboard: http://localhost:{port}")
     print(f"📡 WhatsApp Webhook: http://localhost:{port}/webhook/whatsapp")

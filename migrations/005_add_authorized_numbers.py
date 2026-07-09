@@ -76,7 +76,7 @@ if __name__ == "__main__":
             print(f"✗ Migration failed: {e}")
     else:
         print("📁 Applying migration to SQLite...")
-        db_path = "data/fieldflow.db"
+        db_path = "data/rapidsite.db"
         conn = sqlite3.connect(db_path)
         
         try:

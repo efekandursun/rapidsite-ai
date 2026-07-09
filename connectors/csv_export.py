@@ -1,5 +1,5 @@
 """
-FieldFlow AI - CSV Export Connector
+RapidSite AI - CSV Export Connector
 Fallback connector for exporting reports to CSV files.
 """
 

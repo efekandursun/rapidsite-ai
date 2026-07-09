@@ -29,7 +29,7 @@ if user:
         payload = {
             "company_id": procore.company_id,
             "vendor": {
-                "name": "FieldFlow Test Vendor"
+                "name": "RapidSite Test Vendor"
             }
         }
         resp = requests.post(url, headers=procore.headers, json=payload)

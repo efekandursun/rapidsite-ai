@@ -1,5 +1,5 @@
 """
-FieldFlow AI - Brain Module
+RapidSite AI - Brain Module
 US Construction Site Voice/Text Analysis Engine
 
 """
@@ -332,7 +332,7 @@ if __name__ == "__main__":
     ]
     
     print("=" * 60)
-    print("FieldFlow AI - Brain Module Test")
+    print("RapidSite AI - Brain Module Test")
     print("=" * 60)
     
     for i, msg in enumerate(test_messages, 1):

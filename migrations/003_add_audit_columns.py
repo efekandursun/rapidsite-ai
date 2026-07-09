@@ -6,7 +6,7 @@ Adds updated_at, updated_by, and deleted_at to all tables for change tracking.
 import sqlite3
 import os
 
-DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'fieldflow.db')
+DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'rapidsite.db')
 
 def migrate():
     """Add audit trail columns to all tables"""

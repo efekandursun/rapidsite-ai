@@ -6,7 +6,7 @@ Adds indexes to frequently queried columns for 10-100x performance improvement.
 import sqlite3
 import os
 
-DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'fieldflow.db')
+DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'rapidsite.db')
 
 def migrate():
     """Add performance indexes to database"""

@@ -1,5 +1,5 @@
 """
-FieldFlow AI - Authentication Module
+RapidSite AI - Authentication Module
 Handles user registration, login, and session management.
 """
 
@@ -41,7 +41,7 @@ def verify_password(password: str, password_hash: str) -> bool:
             return False
     else:
         # Legacy SHA-256 hash - support for old passwords
-        salt = os.getenv('PASSWORD_SALT', 'fieldflow-default-salt')
+        salt = os.getenv('PASSWORD_SALT', 'rapidsite-default-salt')
         legacy_hash = hashlib.sha256(f"{password}{salt}".encode()).hexdigest()
         return legacy_hash == password_hash
 
@@ -229,7 +229,7 @@ def verify_email():
                 session['user_name'] = user['name']
                 session['user_email'] = user['email']
                 
-                flash(f'Email verified! Welcome to FieldFlow AI, {user["name"]}!', 'success')
+                flash(f'Email verified! Welcome to RapidSite AI, {user["name"]}!', 'success')
                 return redirect(url_for('dashboard'))
         else:
             flash('Invalid or expired verification code.', 'error')

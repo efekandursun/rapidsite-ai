@@ -1,5 +1,5 @@
 """
-FieldFlow AI - ERP Connector Base
+RapidSite AI - ERP Connector Base
 Abstract base class for ERP integrations.
 """
 

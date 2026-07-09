@@ -6,7 +6,7 @@ Run this once to update your existing database.
 import sqlite3
 import os
 
-DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'fieldflow.db')
+DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'rapidsite.db')
 
 def migrate():
     """Add email verification columns to users table"""

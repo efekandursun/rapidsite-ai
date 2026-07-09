@@ -30,7 +30,7 @@ def downgrade(conn):
 
 
 if __name__ == "__main__":
-    db_path = "data/fieldflow.db"
+    db_path = "data/rapidsite.db"
     conn = sqlite3.connect(db_path)
     
     try:

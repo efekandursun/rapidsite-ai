@@ -1,5 +1,5 @@
 """
-FieldFlow AI - Procore Connector
+RapidSite AI - Procore Connector
 Integration with Procore construction management software.
 """
 
