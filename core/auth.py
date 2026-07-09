@@ -88,7 +88,10 @@ def slugify(text: str) -> str:
 def login():
     """Login page."""
     if 'user_id' in session:
-        return redirect(url_for('dashboard'))
+        if get_current_user():
+            return redirect(url_for('dashboard'))
+        else:
+            session.clear()
     
     if request.method == 'POST':
         email = request.form.get('email', '').strip().lower()
@@ -119,7 +122,10 @@ def login():
 def register():
     """Registration page for new companies."""
     if 'user_id' in session:
-        return redirect(url_for('dashboard'))
+        if get_current_user():
+            return redirect(url_for('dashboard'))
+        else:
+            session.clear()
     
     if request.method == 'POST':
         # Company info
