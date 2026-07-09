@@ -28,7 +28,7 @@ class ConstructionBrain:
         self.openai_client = OpenAI(api_key=api_key)
         
         # Model configuration
-        self.llm_model = "gpt-4o-mini"  # Fast, cheap, excellent JSON parsing
+        self.llm_model = "gpt-4o"  # Most capable model for complex extraction
         self.whisper_model = "whisper-1"  # Speech-to-text
     
     def get_system_prompt(self, company: dict = None):
@@ -112,21 +112,25 @@ You MUST return a JSON ARRAY containing one or more event objects. If the messag
     "procore_ready": true
   }
 ]
+]
 
 ## RULES:
-1. Always respond with ONLY a valid JSON ARRAY, no extra text or markdown formatting.
-2. Use null for missing/unknown values
-3. Infer cost codes from context
-4. Urgency is "critical" for safety issues, "high" for delays
-5. Parse "idle" time distinct from "operating" time for equipment
-6. Extract Vendor names for deliveries and subcontractors for manpower checks
-7. CRITICAL - MISSING INFO CHECK: If a REQUIRED field for the log_type is missing from the message, set "status": "incomplete" and write a friendly follow_up_question in Turkish asking for the specific missing info.
-   - For 'manpower': Requires worker count and hours.
-   - For 'equipment': Requires hours_operating.
-   - For 'delivery': Requires item and quantity.
-   If all required info is present, set "status": "complete" and follow_up_question to null.
-   IMPORTANT EXCEPTION: If the input is written in shorthand or telegraphic style (e.g., "4 guys. 8 hrs.", "20 tons"), and logically implies the required data, DO NOT mark it as incomplete. Be smart about parsing numbers.
-8. TRANSLATE TO ENGLISH: ALL output text fields (such as 'description', 'item', 'safety_notice', 'contents') MUST be translated into Professional US Construction English, regardless of the input language."""
+1. EXHAUSTIVE EXTRACTION (CRITICAL): You MUST extract EVERY SINGLE distinct event, material, equipment, delay, and weather condition mentioned in the input. Do not omit anything. If two different materials are delivered (e.g., cement and sand), create TWO separate 'delivery' objects.
+2. WEATHER AND DELAYS: If the user mentions weather conditions or delays, always capture them as a separate 'notes' or 'delay' log_type.
+3. PRECISE QUANTITIES: Pay close attention to numbers. If an equipment works for "8 hours", set the 'quantity' or 'hours_operating' to 8. Do not lose numeric data.
+4. Always respond with ONLY a valid JSON ARRAY, no extra text or markdown formatting.
+5. Use null for missing/unknown/unquantifiable values (e.g., do not use the string "None" for unit; use null).
+6. Infer cost codes from context.
+7. Urgency is "critical" for safety issues, "high" for delays.
+8. Parse "idle" time distinct from "operating" time for equipment.
+9. Extract Vendor names for deliveries and subcontractors for manpower checks.
+10. CRITICAL - MISSING INFO CHECK: If a REQUIRED field for the log_type is missing from the message, set "status": "incomplete" and write a friendly follow_up_question in Turkish asking for the specific missing info.
+    - For 'manpower': Requires worker count and hours.
+    - For 'equipment': Requires hours_operating.
+    - For 'delivery': Requires item and quantity.
+    If all required info is present, set "status": "complete" and follow_up_question to null.
+    IMPORTANT EXCEPTION: If the input is written in shorthand or telegraphic style (e.g., "4 guys. 8 hrs.", "20 tons"), and logically implies the required data, DO NOT mark it as incomplete. Be smart about parsing numbers.
+11. TRANSLATE TO ENGLISH: ALL output text fields (such as 'description', 'item', 'safety_notice', 'contents') MUST be translated into Professional US Construction English, regardless of the input language."""
         
         # Inject Procore Master Data (Fuzzy Matching constraint) if available
         if company:
