@@ -185,17 +185,29 @@ def send_followup(to_number: str, response_xml: str):
         from_number = f"whatsapp:{from_number}"
 
     try:
-        twilio_client.messages.create(body=body, from_=from_number, to=to_number)
-    except Exception:
+        print(f"📤 Sending WhatsApp follow-up to {to_number}")
+        print(f"📝 Body preview: {body[:200]}")
+        msg = twilio_client.messages.create(body=body, from_=from_number, to=to_number)
+        print(f"✅ Twilio message sent: SID={msg.sid}")
+    except Exception as e:
+        print(f"❌ Failed to send WhatsApp follow-up: {e}")
         logging.exception("Failed to send WhatsApp follow-up")
 
 
 def extract_body_from_twiml(twiml_xml: str) -> str:
     """Best-effort extraction of message body from MessagingResponse XML."""
     import re
-    match = re.search(r"<Message>(.*?)</Message>", twiml_xml, re.DOTALL)
+    # Twilio TwiML format: <Response><Message><Body>text</Body></Message></Response>
+    match = re.search(r'<Body>(.*?)</Body>', twiml_xml, re.DOTALL)
     if match:
         return match.group(1).strip()
+    # Fallback: try <Message> directly (older format)
+    match = re.search(r'<Message>(.*?)</Message>', twiml_xml, re.DOTALL)
+    if match:
+        body = match.group(1).strip()
+        # Remove any nested tags
+        body = re.sub(r'<[^>]+>', '', body).strip()
+        return body if body else None
     return None
 
 
