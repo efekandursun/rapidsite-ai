@@ -211,22 +211,26 @@ def register():
 @auth_bp.route('/verify-email', methods=['GET', 'POST'])
 def verify_email():
     """Email verification page."""
-    email = session.get('pending_verification_email')
-    
-    if not email:
-        flash('No pending verification found.', 'warning')
-        return redirect(url_for('auth.login'))
+    email = session.get('pending_verification_email', '')
     
     if request.method == 'POST':
+        form_email = request.form.get('email', '').strip().lower()
         code = request.form.get('code', '').strip()
         
+        # Prefer form email over session email to allow manual entry
+        verify_email_addr = form_email or email
+        
+        if not verify_email_addr:
+            flash('Please enter your email address.', 'error')
+            return render_template('auth/verify_email.html', email=verify_email_addr)
+            
         if not code:
             flash('Please enter verification code.', 'error')
-            return render_template('auth/verify_email.html', email=email)
+            return render_template('auth/verify_email.html', email=verify_email_addr)
         
-        if db.verify_email(email, code):
+        if db.verify_email(verify_email_addr, code):
             # Get user and auto-login
-            user = db.get_user_by_email(email)
+            user = db.get_user_by_email(verify_email_addr)
             if user:
                 session.pop('pending_verification_email', None)
                 session.permanent = True

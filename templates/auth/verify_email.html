@@ -172,7 +172,7 @@
         <h2>Verify Your Email</h2>
 
         <div class="email-display">
-            📧 {{ email }}
+            Enter the email you registered with and the code we sent you.
         </div>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -185,6 +185,11 @@
 
         <form method="POST" class="auth-form">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+            <div class="form-group">
+                <label class="form-label">Email Address</label>
+                <input type="email" name="email" class="form-control" value="{{ email }}" placeholder="your@email.com" required {% if not email %}autofocus{% endif %}>
+            </div>
+
             <div class="form-group">
                 <label class="form-label">6-Digit Verification Code</label>
                 <input type="text" name="code" class="form-control" maxlength="6" pattern="[0-9]{6}" placeholder="000000" required
