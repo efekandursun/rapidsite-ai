@@ -22,6 +22,7 @@
                 <thead>
                     <tr>
                         <th>Employee</th>
+                        <th>Job Title</th>
                         <th>WhatsApp Number</th>
                         <th style="text-align: right;">Action</th>
                     </tr>
@@ -32,6 +33,9 @@
                     <tr>
                         <td>
                             <div style="font-weight: 600; color: var(--text-primary);">{{ num.employee_name }}</div>
+                        </td>
+                        <td>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem;">{{ num.job_title or '—' }}</div>
                         </td>
                         <td>
                             <span style="font-family: monospace; color: var(--accent-secondary);">
@@ -53,7 +57,7 @@
                     {% endfor %}
                     {% else %}
                     <tr>
-                        <td colspan="3" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                        <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 2rem;">
                             No authorized numbers yet. Add one below.
                         </td>
                     </tr>
@@ -75,6 +79,10 @@
                     <label class="form-label">Employee Name</label>
                     <input type="text" name="employee_name" class="form-control" placeholder="e.g. John Foreman"
                         required>
+                </div>
+                <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                    <label class="form-label">Job Title</label>
+                    <input type="text" name="job_title" class="form-control" placeholder="e.g. Site Foreman">
                 </div>
                 <div class="form-group" style="flex: 1; margin-bottom: 0;">
                     <label class="form-label">WhatsApp Number</label>
@@ -200,6 +208,7 @@
                 <thead>
                     <tr>
                         <th>User</th>
+                        <th>Job Title</th>
                         <th>Email</th>
                         <th>WhatsApp</th>
                         <th>Role</th>
@@ -210,6 +219,9 @@
                     <tr>
                         <td>
                             <div style="font-weight: 600; color: var(--text-primary);">{{ team_user.name }}</div>
+                        </td>
+                        <td>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem;">{{ team_user.job_title or '—' }}</div>
                         </td>
                         <td style="color: var(--text-secondary);">{{ team_user.email }}</td>
                         <td>
@@ -230,6 +242,47 @@
         {% else %}
         <p style="color: var(--text-muted); font-size: 0.9rem;">No team members found.</p>
         {% endif %}
+
+        <!-- Add New Team Member -->
+        <div style="margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid var(--border-light);">
+            <div
+                style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 0.75rem;">
+                Add Team Member
+            </div>
+            <form method="POST" action="{{ url_for('add_team_member') }}"
+                style="display: flex; gap: 0.75rem; align-items: flex-end; flex-wrap: wrap;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <div class="form-group" style="flex: 1; min-width: 150px; margin-bottom: 0;">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" name="name" class="form-control" placeholder="Jane Doe" required>
+                </div>
+                <div class="form-group" style="flex: 1; min-width: 150px; margin-bottom: 0;">
+                    <label class="form-label">Email</label>
+                    <input type="email" name="email" class="form-control" placeholder="jane@company.com" required>
+                </div>
+                <div class="form-group" style="flex: 1; min-width: 120px; margin-bottom: 0;">
+                    <label class="form-label">Job Title</label>
+                    <input type="text" name="job_title" class="form-control" placeholder="Project Manager">
+                </div>
+                <div class="form-group" style="flex: 1; min-width: 120px; margin-bottom: 0;">
+                    <label class="form-label">Password</label>
+                    <input type="password" name="password" class="form-control" placeholder="Temporary password" required>
+                </div>
+                <div class="form-group" style="width: 120px; margin-bottom: 0;">
+                    <label class="form-label">Role</label>
+                    <select name="role" class="form-control">
+                        <option value="supervisor">Supervisor</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary" style="margin-bottom: 0; white-space: nowrap;">
+                    + Invite
+                </button>
+            </form>
+            <p style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.5rem;">
+                The user can log in with this email and password immediately.
+            </p>
+        </div>
     </div>
 
     <!-- Your Profile -->

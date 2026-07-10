@@ -747,10 +747,50 @@ def add_authorized_number():
     
     name = request.form.get('employee_name')
     number = request.form.get('phone_number')
+    job_title = request.form.get('job_title')
     
     if name and number:
-        db.add_authorized_number(user['company_id'], number, name)
+        db.add_authorized_number(user['company_id'], number, name, job_title)
     
+    return redirect(url_for('settings'))
+
+@app.route('/settings/team/add', methods=['POST'])
+@login_required
+def add_team_member():
+    """Add a new team member (dashboard user)."""
+    user = get_current_user()
+    if user['role'] != 'admin':
+        flash("Unauthorized. Only admins can add team members.", "error")
+        return redirect(url_for('settings'))
+        
+    name = request.form.get('name', '').strip()
+    email = request.form.get('email', '').strip().lower()
+    job_title = request.form.get('job_title', '').strip()
+    role = request.form.get('role', 'supervisor')
+    password = request.form.get('password', '')
+    
+    if not name or not email or not password:
+        flash("Name, Email, and Password are required for a team member.", "error")
+        return redirect(url_for('settings'))
+        
+    if db.get_user_by_email(email):
+        flash("A user with this email already exists.", "error")
+        return redirect(url_for('settings'))
+        
+    try:
+        from core.auth import hash_password
+        db.create_user(
+            email=email,
+            password_hash=hash_password(password),
+            name=name,
+            company_id=user['company_id'],
+            role=role,
+            job_title=job_title
+        )
+        flash(f"Team member {name} added successfully!", "success")
+    except Exception as e:
+        flash(f"Failed to add team member: {str(e)}", "error")
+        
     return redirect(url_for('settings'))
 
 

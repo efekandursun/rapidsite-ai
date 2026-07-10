@@ -128,6 +128,7 @@ class Database:
                         company_id INTEGER NOT NULL REFERENCES companies(id),
                         phone_number TEXT NOT NULL,
                         employee_name TEXT,
+                        job_title TEXT,
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         UNIQUE(company_id, phone_number)
                     )
@@ -141,6 +142,7 @@ class Database:
                         name TEXT NOT NULL,
                         company_id INTEGER REFERENCES companies(id),
                         role TEXT DEFAULT 'supervisor',
+                        job_title TEXT,
                         is_active INTEGER DEFAULT 1,
                         email_verified INTEGER DEFAULT 0,
                         verification_code TEXT,
@@ -201,6 +203,7 @@ class Database:
                         name TEXT NOT NULL,
                         company_id INTEGER,
                         role TEXT DEFAULT 'supervisor',
+                        job_title TEXT,
                         is_active INTEGER DEFAULT 1,
                         email_verified INTEGER DEFAULT 0,
                         verification_code TEXT,
@@ -208,6 +211,19 @@ class Database:
                         whatsapp_number TEXT,
                         created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                         FOREIGN KEY (company_id) REFERENCES companies(id)
+                    )
+                """)
+                
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS company_authorized_numbers (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        company_id INTEGER NOT NULL,
+                        phone_number TEXT NOT NULL,
+                        employee_name TEXT,
+                        job_title TEXT,
+                        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                        FOREIGN KEY (company_id) REFERENCES companies(id),
+                        UNIQUE(company_id, phone_number)
                     )
                 """)
                 
@@ -275,6 +291,29 @@ class Database:
                     cursor.execute("SELECT column_name FROM information_schema.columns WHERE table_name='site_reports' and column_name='media_paths'")
                     if not cursor.fetchone():
                         cursor.execute("ALTER TABLE site_reports ADD COLUMN media_paths TEXT")
+            except Exception as e:
+                pass
+                
+            # ADD MIGRATION FOR job_title IF MISSING
+            try:
+                if not self.use_postgres:
+                    cursor.execute("PRAGMA table_info(company_authorized_numbers)")
+                    columns = [row['name'] for row in cursor.fetchall()]
+                    if 'job_title' not in columns:
+                        cursor.execute("ALTER TABLE company_authorized_numbers ADD COLUMN job_title TEXT")
+                        
+                    cursor.execute("PRAGMA table_info(users)")
+                    columns = [row['name'] for row in cursor.fetchall()]
+                    if 'job_title' not in columns:
+                        cursor.execute("ALTER TABLE users ADD COLUMN job_title TEXT")
+                else:
+                    cursor.execute("SELECT column_name FROM information_schema.columns WHERE table_name='company_authorized_numbers' and column_name='job_title'")
+                    if not cursor.fetchone():
+                        cursor.execute("ALTER TABLE company_authorized_numbers ADD COLUMN job_title TEXT")
+                        
+                    cursor.execute("SELECT column_name FROM information_schema.columns WHERE table_name='users' and column_name='job_title'")
+                    if not cursor.fetchone():
+                        cursor.execute("ALTER TABLE users ADD COLUMN job_title TEXT")
             except Exception as e:
                 pass
 
@@ -582,7 +621,7 @@ class Database:
         with self.get_connection() as conn:
             # Check new table first
             cursor = self._execute(conn, """
-                SELECT c.*, an.employee_name 
+                SELECT c.*, an.employee_name, an.job_title 
                 FROM companies c
                 JOIN company_authorized_numbers an ON c.id = an.company_id
                 WHERE an.phone_number = ?
@@ -591,12 +630,12 @@ class Database:
             row = self._fetchone(cursor)
             
             if row:
-                print(f"   ✅ Match found in authorized numbers (Employee: {row.get('employee_name')})")
+                print(f"   ✅ Match found in authorized numbers (Employee: {row.get('employee_name')} - {row.get('job_title')})")
                 return row
             
             # Fallback for + prefix issues
             cursor = self._execute(conn, """
-                SELECT c.*, an.employee_name 
+                SELECT c.*, an.employee_name, an.job_title 
                 FROM companies c
                 JOIN company_authorized_numbers an ON c.id = an.company_id
                 WHERE an.phone_number LIKE ?
@@ -620,15 +659,15 @@ class Database:
             """, (company_id,))
             return self._fetchall(cursor)
     
-    def add_authorized_number(self, company_id: int, phone: str, name: str = None) -> bool:
+    def add_authorized_number(self, company_id: int, phone: str, name: str = None, job_title: str = None) -> bool:
         """Add an authorized WhatsApp number."""
         clean_phone = phone.strip()
         with self.get_connection() as conn:
             try:
                 self._execute(conn, """
-                    INSERT INTO company_authorized_numbers (company_id, phone_number, employee_name)
-                    VALUES (?, ?, ?)
-                """, (company_id, clean_phone, name or "Unknown User"))
+                    INSERT INTO company_authorized_numbers (company_id, phone_number, employee_name, job_title)
+                    VALUES (?, ?, ?, ?)
+                """, (company_id, clean_phone, name or "Unknown User", job_title))
                 return True
             except Exception as e:
                 print(f"Error adding number: {e}")
@@ -722,13 +761,13 @@ class Database:
     # =========================================================================
     
     def create_user(self, email: str, password_hash: str, name: str, 
-                    company_id: int, role: str = 'supervisor') -> int:
+                    company_id: int, role: str = 'supervisor', job_title: str = None) -> int:
         """Create a new user."""
         with self.get_connection() as conn:
             cursor = self._execute(conn, """
-                INSERT INTO users (email, password_hash, name, company_id, role)
-                VALUES (?, ?, ?, ?, ?)
-            """, (email, password_hash, name, company_id, role))
+                INSERT INTO users (email, password_hash, name, company_id, role, job_title)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (email, password_hash, name, company_id, role, job_title))
             
             if self.use_postgres:
                 cursor.execute("SELECT lastval()")

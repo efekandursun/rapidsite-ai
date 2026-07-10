@@ -257,8 +257,17 @@ def process_text_message(text: str, project_id: str, from_number: str, media_pat
 def _process_text_with_memory(text: str, project_id: str, from_number: str, company: dict, media_paths: list) -> dict:
     company_id = company['id']
     
+    emp_name = company.get('employee_name')
+    job_title = company.get('job_title')
+    if emp_name and job_title:
+        reporter_str = f"{emp_name} - {job_title}"
+    elif emp_name:
+        reporter_str = emp_name
+    else:
+        reporter_str = from_number
+    
     # Check if there is an incomplete report for this user
-    incomplete_report = db.get_incomplete_report_for_user(from_number)
+    incomplete_report = db.get_incomplete_report_for_user(reporter_str) or db.get_incomplete_report_for_user(from_number)
     
     parsed_data_list = []
     report_ids = []
@@ -305,7 +314,7 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
                     raw_transcript=text,
                     parsed_data=item,
                     project_id=project_id,
-                    reported_by=from_number,
+                    reported_by=reporter_str,
                     company_id=company_id,
                     media_paths=media_json
                 )
@@ -333,7 +342,7 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
                 raw_transcript=text,
                 parsed_data=item,
                 project_id=project_id,
-                reported_by=from_number,
+                reported_by=reporter_str,
                 company_id=company_id,
                 media_paths=media_json
             )
