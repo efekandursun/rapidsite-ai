@@ -10,6 +10,11 @@
 </head>
 
 <body>
+    <!-- Mobile Header -->
+    <div class="mobile-header">
+        <div class="logo-text" style="margin-bottom: 0;">RapidSite AI</div>
+        <button id="mobile-menu-btn" class="hamburger-btn">☰</button>
+    </div>
 
     <!-- Sidebar Navigation -->
     <aside class="sidebar">
@@ -224,6 +229,21 @@
         // Start polling (every 10 seconds)
         checkNotifications();
         setInterval(checkNotifications, 10000);
+
+        // Mobile Sidebar Toggle
+        const mobileBtn = document.getElementById('mobile-menu-btn');
+        const sidebar = document.querySelector('.sidebar');
+        if (mobileBtn && sidebar) {
+            mobileBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('open');
+            });
+            // Close sidebar when clicking outside on mobile
+            document.addEventListener('click', (e) => {
+                if (window.innerWidth <= 768 && !sidebar.contains(e.target) && !mobileBtn.contains(e.target)) {
+                    sidebar.classList.remove('open');
+                }
+            });
+        }
 
         // Handle Server-Side Flash Messages
         document.addEventListener('DOMContentLoaded', function () {
