@@ -38,14 +38,8 @@ class Database:
                 self.db_url = DATABASE_URL
                 print(f"🐘 Using PostgreSQL (Supabase) with psycopg3")
                 
-                if Database._pool is None:
-                    print("🔄 Initializing PostgreSQL Connection Pool...")
-                    Database._pool = ConnectionPool(
-                        conninfo=self.db_url,
-                        min_size=1,
-                        max_size=20,
-                        kwargs={"row_factory": dict_row}
-                    )
+                self.ConnectionPool = ConnectionPool
+                print(f"🐘 Using PostgreSQL (Supabase) with psycopg3 (Lazy Pool)")
             else:
                 import sqlite3
                 self.sqlite3 = sqlite3
@@ -67,11 +61,24 @@ class Database:
             if data_dir and not os.path.exists(data_dir):
                 os.makedirs(data_dir)
     
+    def _get_pool(self):
+        """Lazily initialize the connection pool."""
+        if Database._pool is None and self.use_postgres:
+            print("🔄 Initializing PostgreSQL Connection Pool...")
+            Database._pool = self.ConnectionPool(
+                conninfo=self.db_url,
+                min_size=1,
+                max_size=20,
+                kwargs={"row_factory": self.dict_row}
+            )
+        return Database._pool
+    
     @contextmanager
     def get_connection(self):
         """Context manager for database connections."""
         if self.use_postgres:
-            with Database._pool.connection() as conn:
+            pool = self._get_pool()
+            with pool.connection() as conn:
                 try:
                     yield conn
                     conn.commit()
@@ -97,9 +104,24 @@ class Database:
             return "%s"
         return "?"
     
+    @contextmanager
+    def _get_schema_connection(self):
+        """Get a direct connection for schema initialization to avoid pool issues in master process."""
+        if self.use_postgres:
+            with self.psycopg.connect(self.db_url) as conn:
+                try:
+                    yield conn
+                    conn.commit()
+                except Exception:
+                    conn.rollback()
+                    raise
+        else:
+            with self.get_connection() as conn:
+                yield conn
+
     def _init_schema(self):
         """Initialize database schema."""
-        with self.get_connection() as conn:
+        with self._get_schema_connection() as conn:
             cursor = conn.cursor()
             
             if self.use_postgres:
