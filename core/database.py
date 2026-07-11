@@ -68,7 +68,7 @@ class Database:
             Database._pool = self.ConnectionPool(
                 conninfo=self.db_url,
                 min_size=1,
-                max_size=20,
+                max_size=5,
                 kwargs={"row_factory": self.dict_row}
             )
         return Database._pool
