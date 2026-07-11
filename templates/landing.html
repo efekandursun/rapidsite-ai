@@ -24,14 +24,14 @@
     <!-- Hero Section -->
     <header class="hero">
         <div class="hero-content">
+            <div class="hero-badge">
+                <span class="badge-icon">⚡</span> Speeds up field data entry by 98%
+            </div>
             <h1>Voice in, <span>structured data</span> out.</h1>
             <p>Eliminate manual data entry on construction sites. Field workers send messages (voice, text, or media) via WhatsApp in any language, and our AI instantly structures it into English reports for your ERP.</p>
             <div class="hero-cta">
                 <a href="{{ url_for('auth.register') }}" class="btn-primary-large">Start 14-Day Free Trial</a>
                 <a href="#pricing" class="btn-secondary-large">View Pricing</a>
-            </div>
-            <div style="margin-top: 3.5rem; display: flex; justify-content: center; align-items: center; gap: 0.75rem; color: var(--brand-primary); font-weight: 700; font-size: 1.15rem; background: rgba(249,115,22,0.1); padding: 0.75rem 1.5rem; border-radius: 50px; width: fit-content; margin-left: auto; margin-right: auto; box-shadow: 0 4px 6px -1px rgba(249, 115, 22, 0.1);">
-                <span style="font-size: 1.3rem;">⚡</span> Speeds up field data entry by 98%
             </div>
         </div>
     </header>
@@ -45,7 +45,7 @@
                 <div class="flow-visual">
                     <div class="mock-phone">
                         <div class="mock-phone-header">WhatsApp</div>
-                        <div class="mock-msg msg-in">Hola, trabajamos 8 horas en el bloque B. 📸</div>
+                        <div class="mock-msg msg-in">"Hola jefe. Bloque C: 4 carpinteros de Apex (8 hrs). Usamos 15 sacos de cemento y grúa por 4 hrs. Retraso por lluvia 1 hr." 🎤</div>
                         <div class="mock-msg msg-out">Got it! Report logged.</div>
                     </div>
                 </div>
@@ -64,7 +64,7 @@
                     <div class="mock-ai">
                         <div class="ai-brain">🧠</div>
                         <div class="ai-scan-line"></div>
-                        <div class="ai-text">Translating & Structuring...</div>
+                        <div class="ai-text">Extracting Manpower, Materials, Delays...</div>
                     </div>
                 </div>
                 <h3 class="step-title">2. AI Parsing</h3>
@@ -80,9 +80,15 @@
             <div class="flow-step">
                 <div class="flow-visual">
                     <div class="mock-dashboard">
-                        <div class="mock-dash-header">Dashboard</div>
+                        <div class="mock-dash-header">Procore Daily Log</div>
                         <div class="mock-dash-row">
-                            <span class="mock-badge">Ready</span> 8 Hours - Block B
+                            <span class="mock-badge">Labor</span> Apex Carpenters: 32 hrs
+                        </div>
+                        <div class="mock-dash-row">
+                            <span class="mock-badge">Material</span> 15 Bags Cement
+                        </div>
+                        <div class="mock-dash-row">
+                            <span class="mock-badge" style="background:#fee2e2;color:#991b1b;">Delay</span> Weather: Rain (1 hr)
                         </div>
                         <div class="mock-dash-btn">Sync to Procore</div>
                     </div>
