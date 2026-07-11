@@ -64,7 +64,7 @@ You MUST return a JSON ARRAY containing one or more event objects. If the messag
   {
     "status": "complete|incomplete",
     "follow_up_question": "string (English, ONLY if status is incomplete) or null",
-    "translated_transcript": "Direct English translation of the source message",
+    "translated_transcript": "Direct English translation of the source message (return null if the source message is already in English)",
     "log_type": "production|materials|delivery|manpower|equipment|safety|notes",
     "description": "Brief professional summary for comments/notes fields",
     "item": "Main item name (Equipment Name, Material Name, Safety Subject, etc.)",

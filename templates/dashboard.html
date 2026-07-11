@@ -427,7 +427,7 @@
                     <div class="source-label">📱 Source Message</div>
                     <div class="source-transcript">{{ group.raw_transcript }}</div>
                     
-                    {% if group.parsed_data.translated_transcript %}
+                    {% if group.parsed_data.translated_transcript and group.parsed_data.translated_transcript|lower != group.raw_transcript|lower %}
                     <div class="source-label" style="margin-top: 1rem; color: var(--accent-secondary);">🌐 English Translation</div>
                     <div class="source-transcript" style="border-left-color: var(--accent-secondary);">{{ group.parsed_data.translated_transcript }}</div>
                     {% endif %}
