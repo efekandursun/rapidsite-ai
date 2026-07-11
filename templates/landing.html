@@ -25,7 +25,7 @@
     <header class="hero">
         <div class="hero-content">
             <h1>Voice in, <span>structured data</span> out.</h1>
-            <p>We eliminate hours of manual data entry on construction sites. Your workers just send voice notes, texts, photos, or videos via WhatsApp in their native language, and our AI instantly organizes it into English reports for your ERP system.</p>
+            <p>Eliminate manual data entry on construction sites. Field workers send messages (voice, text, or media) via WhatsApp in any language, and our AI instantly structures it into English reports for your ERP.</p>
             <div class="hero-cta">
                 <a href="{{ url_for('auth.register') }}" class="btn-primary-large">Start 14-Day Free Trial</a>
                 <a href="#pricing" class="btn-secondary-large">View Pricing</a>
@@ -39,21 +39,56 @@
     <!-- How It Works -->
     <section id="how-it-works" class="section">
         <h2 class="section-title">How It Works</h2>
-        <div class="steps-grid">
-            <div class="step-card">
-                <div class="step-icon">📱</div>
+        <div class="flow-container">
+            <!-- Step 1: Phone -->
+            <div class="flow-step">
+                <div class="flow-visual">
+                    <div class="mock-phone">
+                        <div class="mock-phone-header">WhatsApp</div>
+                        <div class="mock-msg msg-in">Hola, trabajamos 8 horas en el bloque B. 📸</div>
+                        <div class="mock-msg msg-out">Got it! Report logged.</div>
+                    </div>
+                </div>
                 <h3 class="step-title">1. Send a Message</h3>
-                <p class="step-desc">A worker sends a quick WhatsApp voice message, text, photo, or video from the field. No apps to install.</p>
+                <p class="step-desc">Worker sends a voice note, text, or photo from the field.</p>
             </div>
-            <div class="step-card">
-                <div class="step-icon">🧠</div>
+
+            <!-- Arrow/Animation -->
+            <div class="flow-arrow">
+                <div class="animated-dots"></div>
+            </div>
+
+            <!-- Step 2: AI Processing -->
+            <div class="flow-step">
+                <div class="flow-visual">
+                    <div class="mock-ai">
+                        <div class="ai-brain">🧠</div>
+                        <div class="ai-scan-line"></div>
+                        <div class="ai-text">Translating & Structuring...</div>
+                    </div>
+                </div>
                 <h3 class="step-title">2. AI Parsing</h3>
-                <p class="step-desc">RapidSite AI instantly transcribes, translates, and structures the unstructured data into cost codes, quantities, and logs.</p>
+                <p class="step-desc">Instantly translated to English and structured into cost codes.</p>
             </div>
-            <div class="step-card">
-                <div class="step-icon">⚡</div>
-                <h3 class="step-title">3. ERP Sync</h3>
-                <p class="step-desc">Perfectly structured data is instantly synced to Procore. Saving your team hours of manual data entry.</p>
+
+            <!-- Arrow/Animation -->
+            <div class="flow-arrow">
+                <div class="animated-dots"></div>
+            </div>
+
+            <!-- Step 3: Dashboard & Procore Sync -->
+            <div class="flow-step">
+                <div class="flow-visual">
+                    <div class="mock-dashboard">
+                        <div class="mock-dash-header">Dashboard</div>
+                        <div class="mock-dash-row">
+                            <span class="mock-badge">Ready</span> 8 Hours - Block B
+                        </div>
+                        <div class="mock-dash-btn">Sync to Procore</div>
+                    </div>
+                </div>
+                <h3 class="step-title">3. Push to ERP</h3>
+                <p class="step-desc">Review on your dashboard and push to Procore with one click.</p>
             </div>
         </div>
     </section>
