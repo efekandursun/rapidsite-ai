@@ -169,7 +169,7 @@ You MUST return a JSON ARRAY containing one or more event objects. If the messag
                 transcript = self.openai_client.audio.transcriptions.create(
                     model=self.whisper_model,
                     file=audio_file,
-                    language="en"
+                    prompt="Hello boss, we took 4 workers. Hola jefe, tenemos 4 trabajadores. Merhaba patron, 4 işçi aldık."
                 )
             return transcript.text
         except Exception as e:
