@@ -1,4 +1,8 @@
 /* static/css/landing.css - Premium Landing Page Styles */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
 :root {
     --brand-dark: #0f172a;
     --brand-primary: #f97316;
@@ -10,10 +14,15 @@
     --white: #ffffff;
 }
 
-body {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+html, body {
+    overflow-x: hidden;
+    width: 100%;
     margin: 0;
     padding: 0;
+}
+
+body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     color: var(--text-main);
     background-color: var(--bg-light);
     line-height: 1.6;
