@@ -168,7 +168,8 @@ You MUST return a JSON ARRAY containing one or more event objects. If the messag
             with open(audio_file_path, "rb") as audio_file:
                 transcript = self.openai_client.audio.transcriptions.create(
                     model=self.whisper_model,
-                    file=audio_file
+                    file=audio_file,
+                    language="en"
                 )
             return transcript.text
         except Exception as e:
