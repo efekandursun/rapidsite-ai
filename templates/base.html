@@ -37,6 +37,26 @@
             </a>
         </nav>
 
+        {% if g.subscription_status == 'trialing' %}
+        <div class="trial-widget" style="margin: 0 1.5rem 1.5rem 1.5rem; padding: 1rem; background: rgba(var(--accent-primary-rgb, 59,130,246), 0.1); border-radius: 12px; border: 1px solid var(--accent-primary);">
+            <div style="font-size: 0.8rem; font-weight: 600; color: var(--accent-primary); margin-bottom: 0.25rem;">TRIAL ACTIVE</div>
+            <div style="font-size: 0.9rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.75rem;">
+                {% if g.trial_days_left is not none %}
+                    {{ g.trial_days_left }} days remaining
+                {% else %}
+                    Expired
+                {% endif %}
+            </div>
+            <a href="{{ url_for('pricing') }}" class="btn-primary" style="display: block; text-align: center; font-size: 0.85rem; padding: 0.5rem; text-decoration: none; color: white; border-radius: 8px;">Upgrade Now</a>
+        </div>
+        {% elif g.subscription_status == 'expired' or g.trial_expired %}
+        <div class="trial-widget" style="margin: 0 1.5rem 1.5rem 1.5rem; padding: 1rem; background: rgba(239,68,68, 0.1); border-radius: 12px; border: 1px solid var(--danger);">
+            <div style="font-size: 0.8rem; font-weight: 600; color: var(--danger); margin-bottom: 0.25rem;">TRIAL EXPIRED</div>
+            <div style="font-size: 0.9rem; font-weight: 500; color: var(--text-primary); margin-bottom: 0.75rem;">Please upgrade to continue</div>
+            <a href="{{ url_for('pricing') }}" class="btn-primary" style="display: block; text-align: center; font-size: 0.85rem; padding: 0.5rem; background: var(--danger); text-decoration: none; color: white; border-radius: 8px;">See Plans</a>
+        </div>
+        {% endif %}
+
         <!-- User Profile Widget -->
         <div class="user-panel">
             <div class="user-info">

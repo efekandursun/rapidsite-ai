@@ -54,6 +54,47 @@ db = Database()
 # Initialize mailer
 mail = init_mail(app)
 
+from flask import g
+
+@app.before_request
+def check_trial_status():
+    g.trial_days_left = None
+    g.trial_expired = False
+    g.subscription_plan = 'pro'
+    
+    # Do not enforce on static or unauthenticated routes
+    if request.endpoint and (request.endpoint.startswith('static') or request.endpoint.startswith('auth.')):
+        return
+        
+    company = get_current_company()
+    if company and company.get('trial_ends_at'):
+        try:
+            trial_end_str = company['trial_ends_at']
+            if isinstance(trial_end_str, datetime):
+                trial_end = trial_end_str
+            else:
+                try:
+                    trial_end = datetime.fromisoformat(trial_end_str)
+                except ValueError:
+                    trial_end = datetime.strptime(trial_end_str.split('.')[0], "%Y-%m-%d %H:%M:%S")
+            
+            now = datetime.utcnow()
+            diff = trial_end - now
+            
+            g.subscription_plan = company.get('subscription_plan', 'pro')
+            g.subscription_status = company.get('subscription_status', 'trialing')
+            
+            if g.subscription_status == 'trialing':
+                if diff.total_seconds() > 0:
+                    g.trial_days_left = diff.days
+                else:
+                    g.trial_expired = True
+                    if request.endpoint not in ['pricing', 'logout', 'serve_media']:
+                        flash("Your 14-day free trial has expired. Please upgrade to continue using RapidSite AI.", "warning")
+                        return redirect(url_for('pricing'))
+        except Exception as e:
+            print(f"Error parsing trial_ends_at: {e}")
+
 # Serve media files
 @app.route('/media/<path:filename>')
 def serve_media(filename):

@@ -9,7 +9,7 @@ Supports both SQLite (development) and PostgreSQL (production via Supabase).
 
 import os
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional, List, Dict, Any
 from contextlib import contextmanager
 from dotenv import load_dotenv
@@ -138,6 +138,9 @@ class Database:
                     procore_vendors TEXT,
                     procore_cost_codes TEXT,
                     procore_locations TEXT,
+                    subscription_plan TEXT DEFAULT 'pro',
+                    subscription_status TEXT DEFAULT 'trialing',
+                    trial_ends_at TIMESTAMP,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
@@ -211,6 +214,9 @@ class Database:
                     procore_expires_at TEXT,
                     procore_company_id TEXT,
                     procore_default_project_id TEXT,
+                    subscription_plan TEXT DEFAULT 'pro',
+                    subscription_status TEXT DEFAULT 'trialing',
+                    trial_ends_at TEXT,
                     created_at TEXT DEFAULT CURRENT_TIMESTAMP
                 )
             """)
@@ -336,6 +342,27 @@ class Database:
                     cursor.execute("ALTER TABLE users ADD COLUMN job_title TEXT")
         except Exception as e:
             pass
+
+        # ADD MIGRATION FOR SUBSCRIPTION COLUMNS
+        try:
+            if not self.use_postgres:
+                cursor.execute("PRAGMA table_info(companies)")
+                columns = [row['name'] for row in cursor.fetchall()]
+                if 'subscription_plan' not in columns:
+                    cursor.execute("ALTER TABLE companies ADD COLUMN subscription_plan TEXT DEFAULT 'pro'")
+                if 'subscription_status' not in columns:
+                    cursor.execute("ALTER TABLE companies ADD COLUMN subscription_status TEXT DEFAULT 'trialing'")
+                if 'trial_ends_at' not in columns:
+                    cursor.execute("ALTER TABLE companies ADD COLUMN trial_ends_at TEXT")
+            else:
+                cursor.execute("SELECT column_name FROM information_schema.columns WHERE table_name='companies' and column_name='subscription_plan'")
+                if not cursor.fetchone():
+                    cursor.execute("ALTER TABLE companies ADD COLUMN subscription_plan TEXT DEFAULT 'pro'")
+                    cursor.execute("ALTER TABLE companies ADD COLUMN subscription_status TEXT DEFAULT 'trialing'")
+                    cursor.execute("ALTER TABLE companies ADD COLUMN trial_ends_at TIMESTAMP")
+        except Exception as e:
+            print(f"⚠️ Error migrating billing columns: {e}")
+
 
 
     def _execute(self, conn, query: str, params: tuple = None):
@@ -580,11 +607,16 @@ class Database:
     
     def create_company(self, name: str, slug: str, whatsapp_numbers: str = None) -> int:
         """Create a new company. (Legacy whatsapp_numbers support kept for compatibility)"""
+        # Calculate trial end date (14 days from now)
+        trial_ends_at = datetime.utcnow() + timedelta(days=14)
+        if not self.use_postgres:
+            trial_ends_at = trial_ends_at.isoformat()
+            
         with self.get_connection() as conn:
             cursor = self._execute(conn, """
-                INSERT INTO companies (name, slug, whatsapp_numbers)
-                VALUES (?, ?, ?)
-            """, (name, slug, whatsapp_numbers))
+                INSERT INTO companies (name, slug, whatsapp_numbers, subscription_plan, subscription_status, trial_ends_at)
+                VALUES (?, ?, ?, 'pro', 'trialing', ?)
+            """, (name, slug, whatsapp_numbers, trial_ends_at))
             
             if self.use_postgres:
                 cursor.execute("SELECT lastval()")
