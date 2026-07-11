@@ -142,7 +142,7 @@ def handle_message_async(message_sid: str, from_number: str, message_body: str, 
                 return send_followup(from_number, str(response))
                 
             if not message_body.strip() and media_paths:
-                message_body = "Ekli fotoğraf/video gönderildi."
+                message_body = "Attached photo/video received."
 
             result = process_text_message(message_body, project_id, from_number, media_paths)
 
@@ -409,7 +409,7 @@ def format_confirmation(result: dict) -> str:
     report_ids = result.get('report_ids', [])
     
     if not parsed_list:
-        return "⚠️ Mesajınız alındı ama işlenemedi."
+        return "⚠️ Message received but could not be processed."
         
     completed_msgs = []
     incomplete_msgs = []
@@ -418,7 +418,7 @@ def format_confirmation(result: dict) -> str:
         r_id = report_ids[i] if i < len(report_ids) else 'N/A'
         
         if parsed.get('status') == 'incomplete' and parsed.get('follow_up_question'):
-            incomplete_msgs.append(f"❓ *EKSİK BİLGİ:* {parsed.get('follow_up_question')}")
+            incomplete_msgs.append(f"❓ *MISSING INFO:* {parsed.get('follow_up_question')}")
         else:
             msg = f"📋 *ID:* #{r_id} | *Type:* {parsed.get('log_type', 'N/A').title()}\n"
             if parsed.get('item'):
@@ -432,7 +432,7 @@ def format_confirmation(result: dict) -> str:
             
     final_response = ""
     if completed_msgs:
-        final_response += f"✅ *{len(completed_msgs)} Rapor Alındı!*\n" + "\n".join(completed_msgs) + "\n"
+        final_response += f"✅ *{len(completed_msgs)} Report(s) Received!*\n" + "\n".join(completed_msgs) + "\n"
         
     if incomplete_msgs:
         if final_response:
@@ -440,6 +440,6 @@ def format_confirmation(result: dict) -> str:
         final_response += "\n\n".join(incomplete_msgs)
         
     if not incomplete_msgs and completed_msgs:
-        final_response += "\n⏳ _Onay bekliyor_"
+        final_response += "\n⏳ _Pending approval_"
         
     return final_response

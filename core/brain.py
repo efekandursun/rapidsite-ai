@@ -63,7 +63,7 @@ You MUST return a JSON ARRAY containing one or more event objects. If the messag
 [
   {
     "status": "complete|incomplete",
-    "follow_up_question": "string (Turkish, ONLY if status is incomplete) or null",
+    "follow_up_question": "string (English, ONLY if status is incomplete) or null",
     "translated_transcript": "Direct English translation of the source message",
     "log_type": "production|materials|delivery|manpower|equipment|safety|notes",
     "description": "Brief professional summary for comments/notes fields",
@@ -124,7 +124,7 @@ You MUST return a JSON ARRAY containing one or more event objects. If the messag
 7. Urgency is "critical" for safety issues, "high" for delays.
 8. Parse "idle" time distinct from "operating" time for equipment.
 9. Extract Vendor names for deliveries and subcontractors for manpower checks.
-10. CRITICAL - MISSING INFO CHECK: If a REQUIRED field for the log_type is missing from the message, set "status": "incomplete" and write a friendly follow_up_question in Turkish asking for the specific missing info.
+10. CRITICAL - MISSING INFO CHECK: If a REQUIRED field for the log_type is missing from the message, set "status": "incomplete" and write a friendly follow_up_question in English asking for the specific missing info.
     - For 'manpower': Requires worker count and hours.
     - For 'equipment': Requires hours_operating.
     - For 'delivery': Requires item and quantity.
