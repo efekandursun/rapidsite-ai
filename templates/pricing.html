@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+
+{% block styles %}
+<style>
+    .pricing-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+
+    .pricing-title {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        margin-bottom: 1rem;
+        letter-spacing: -1px;
+    }
+
+    .pricing-subtitle {
+        font-size: 1.1rem;
+        color: var(--text-secondary);
+        max-width: 600px;
+        margin: 0 auto;
+    }
+
+    .pricing-cards {
+        display: flex;
+        justify-content: center;
+        gap: 2rem;
+        flex-wrap: wrap;
+        max-width: 1000px;
+        margin: 0 auto;
+    }
+
+    .pricing-card {
+        background: var(--bg-card);
+        border: 1px solid var(--border-light);
+        border-radius: 16px;
+        padding: 2.5rem 2rem;
+        width: 100%;
+        max-width: 350px;
+        box-shadow: var(--shadow-sm);
+        display: flex;
+        flex-direction: column;
+        position: relative;
+    }
+
+    .pricing-card.popular {
+        border: 2px solid var(--accent-primary);
+        box-shadow: var(--shadow-md);
+        transform: scale(1.02);
+    }
+
+    .popular-badge {
+        position: absolute;
+        top: -12px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--accent-primary);
+        color: white;
+        padding: 0.25rem 1rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+
+    .plan-name {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin-bottom: 0.5rem;
+    }
+
+    .plan-price-container {
+        display: flex;
+        align-items: baseline;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .plan-price {
+        font-size: 3rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        letter-spacing: -1px;
+    }
+    
+    .plan-price-strike {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: var(--text-muted);
+        text-decoration: line-through;
+    }
+
+    .plan-period {
+        color: var(--text-secondary);
+        font-weight: 500;
+    }
+
+    .plan-features {
+        list-style: none;
+        margin-bottom: 2.5rem;
+        flex-grow: 1;
+    }
+
+    .plan-features li {
+        display: flex;
+        align-items: flex-start;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+        color: var(--text-secondary);
+        font-size: 0.95rem;
+    }
+
+    .feature-icon {
+        color: var(--accent-success);
+        font-weight: bold;
+    }
+    
+    .feature-icon.missing {
+        color: var(--text-muted);
+        opacity: 0.5;
+    }
+
+    .btn-plan {
+        width: 100%;
+        padding: 0.875rem;
+        border-radius: var(--radius-md);
+        font-weight: 600;
+        font-size: 1rem;
+        text-align: center;
+        text-decoration: none;
+        transition: all 0.2s;
+    }
+
+    .btn-plan-primary {
+        background: var(--accent-primary);
+        color: white;
+        border: none;
+    }
+
+    .btn-plan-primary:hover {
+        background: var(--accent-primary-hover);
+        color: white;
+    }
+
+    .btn-plan-secondary {
+        background: white;
+        color: var(--text-primary);
+        border: 1px solid var(--border-dark);
+    }
+
+    .btn-plan-secondary:hover {
+        background: var(--bg-card-hover);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="pricing-header">
+    <h1 class="pricing-title">Simple, transparent pricing</h1>
+    <p class="pricing-subtitle">Start turning your field voice notes into structured Procore data today. No hidden fees.</p>
+</div>
+
+<div class="pricing-cards">
+    <!-- Free Trial Card -->
+    <div class="pricing-card">
+        <div class="plan-name">Free Trial</div>
+        <div class="plan-price-container">
+            <div class="plan-price">$0</div>
+            <div class="plan-period">/ 14 days</div>
+        </div>
+        <ul class="plan-features">
+            <li><span class="feature-icon">✓</span> Full AI Parsing Engine</li>
+            <li><span class="feature-icon">✓</span> WhatsApp Integration</li>
+            <li><span class="feature-icon">✓</span> Up to 50 Reports</li>
+            <li><span class="feature-icon">✓</span> Procore Sync</li>
+            <li><span class="feature-icon missing">✕</span> Dedicated Support</li>
+        </ul>
+        {% if g.subscription_status == 'trialing' %}
+        <a href="#" class="btn-plan btn-plan-secondary" style="pointer-events: none; opacity: 0.7;">Current Plan</a>
+        {% else %}
+        <a href="#" class="btn-plan btn-plan-secondary">Start Trial</a>
+        {% endif %}
+    </div>
+
+    <!-- Pro Card -->
+    <div class="pricing-card popular">
+        <div class="popular-badge">Launch Special</div>
+        <div class="plan-name">Pro</div>
+        <div class="plan-price-container">
+            <div class="plan-price-strike">$1500</div>
+            <div class="plan-price">$199</div>
+            <div class="plan-period">/ mo</div>
+        </div>
+        <ul class="plan-features">
+            <li><span class="feature-icon">✓</span> Unlimited AI Parsing</li>
+            <li><span class="feature-icon">✓</span> Unlimited WhatsApp Reports</li>
+            <li><span class="feature-icon">✓</span> Direct Procore Sync</li>
+            <li><span class="feature-icon">✓</span> Multi-language Support</li>
+            <li><span class="feature-icon">✓</span> Priority Email Support</li>
+        </ul>
+        <a href="#" class="btn-plan btn-plan-primary">Upgrade to Pro</a>
+    </div>
+
+    <!-- Enterprise Card -->
+    <div class="pricing-card">
+        <div class="plan-name">Enterprise</div>
+        <div class="plan-price-container">
+            <div class="plan-price">Custom</div>
+        </div>
+        <ul class="plan-features">
+            <li><span class="feature-icon">✓</span> Everything in Pro</li>
+            <li><span class="feature-icon">✓</span> Custom ERP Integrations</li>
+            <li><span class="feature-icon">✓</span> Multiple Projects/Tenants</li>
+            <li><span class="feature-icon">✓</span> Dedicated Success Manager</li>
+            <li><span class="feature-icon">✓</span> Custom AI Prompting</li>
+        </ul>
+        <a href="mailto:support@rapidsite.ai" class="btn-plan btn-plan-secondary">Contact Sales</a>
+    </div>
+</div>
+{% endblock %}
