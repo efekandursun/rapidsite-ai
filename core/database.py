@@ -1,3 +1,7 @@
+
+
+
+
 """
 RapidSite AI - Database Module
 Supports both SQLite (development) and PostgreSQL (production via Supabase).
@@ -36,8 +40,6 @@ class Database:
                 self.psycopg = psycopg
                 self.dict_row = dict_row
                 self.db_url = DATABASE_URL
-                print(f"🐘 Using PostgreSQL (Supabase) with psycopg3")
-                
                 self.ConnectionPool = ConnectionPool
                 print(f"🐘 Using PostgreSQL (Supabase) with psycopg3 (Lazy Pool)")
             else:
@@ -68,7 +70,7 @@ class Database:
             Database._pool = self.ConnectionPool(
                 conninfo=self.db_url,
                 min_size=1,
-                max_size=5,
+                max_size=20,
                 kwargs={"row_factory": self.dict_row}
             )
         return Database._pool
@@ -104,27 +106,22 @@ class Database:
             return "%s"
         return "?"
     
-    @contextmanager
-    def _get_schema_connection(self):
-        """Get a direct connection for schema initialization to avoid pool issues in master process."""
-        if self.use_postgres:
-            with self.psycopg.connect(self.db_url) as conn:
-                try:
-                    yield conn
-                    conn.commit()
-                except Exception:
-                    conn.rollback()
-                    raise
-        else:
-            with self.get_connection() as conn:
-                yield conn
-
     def _init_schema(self):
         """Initialize database schema."""
-        with self._get_schema_connection() as conn:
-            cursor = conn.cursor()
-            
-            if self.use_postgres:
+        if self.use_postgres:
+            # Direct connection bypassing the pool for master process safety
+            with self.psycopg.connect(self.db_url) as conn:
+                cursor = conn.cursor()
+                self._execute_schema_queries(cursor, is_postgres=True)
+                conn.commit()
+        else:
+            with self.get_connection() as conn:
+                cursor = conn.cursor()
+                self._execute_schema_queries(cursor, is_postgres=False)
+
+    def _execute_schema_queries(self, cursor, is_postgres: bool):
+        """Helper to run the schema creation queries."""
+        if is_postgres:
                 # PostgreSQL schema
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS companies (
@@ -200,8 +197,8 @@ class Database:
                 cursor.execute("CREATE INDEX IF NOT EXISTS idx_reports_company ON site_reports(company_id)")
                 cursor.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)")
                 
-            else:
-                # SQLite schema (original)
+        else:
+            # SQLite schema (original)
                 cursor.execute("""
                     CREATE TABLE IF NOT EXISTS companies (
                         id INTEGER PRIMARY KEY AUTOINCREMENT,
