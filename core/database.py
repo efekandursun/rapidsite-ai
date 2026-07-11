@@ -49,7 +49,8 @@ class Database:
                 self._ensure_data_dir()
                 print(f"📁 Using SQLite: {self.db_path}")
             
-            self._init_schema()
+            if not self.use_postgres:
+                self._init_schema()
         except Exception as e:
             print(f"❌ Database initialization error: {e}")
             import traceback
