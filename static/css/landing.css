@@ -249,13 +249,39 @@ body {
 }
 
 @media (max-width: 900px) {
-    .flow-arrow {
-        display: none;
-    }
     .flow-container {
         flex-direction: column;
-        gap: 3rem;
+        gap: 1.5rem;
     }
+    .flow-arrow {
+        flex-basis: auto;
+        width: 2px;
+        height: 40px;
+    }
+    .animated-dots {
+        background-image: linear-gradient(180deg, var(--brand-primary) 50%, transparent 50%);
+        background-size: 2px 20px;
+        animation: flow-move-vertical 1.5s linear infinite;
+    }
+    .pricing-cards {
+        flex-direction: column;
+        align-items: center;
+    }
+    .pricing-card {
+        width: 100%;
+        max-width: 400px;
+    }
+    .nav-links {
+        gap: 1rem;
+    }
+    .nav-link {
+        display: none;
+    }
+}
+
+@keyframes flow-move-vertical {
+    from { background-position: 0 0; }
+    to { background-position: 0 20px; }
 }
 
 .animated-dots {
@@ -534,10 +560,28 @@ footer {
     .hero h1 {
         font-size: 2.5rem;
     }
+    .hero p {
+        font-size: 1.1rem;
+    }
     .hero-cta {
         flex-direction: column;
+        align-items: stretch;
     }
-    .nav-links .btn-login {
-        display: none;
+    .hero-cta a {
+        text-align: center;
+    }
+    .section {
+        padding: 4rem 5%;
+    }
+    .hero-badge {
+        font-size: 0.8rem;
+        padding: 0.4rem 0.8rem;
+    }
+    .mock-dashboard {
+        width: 100%;
+    }
+    .nav-links .btn-signup {
+        font-size: 0.85rem;
+        padding: 0.5rem 1rem;
     }
 }
