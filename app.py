@@ -328,6 +328,14 @@ def health_check():
 # =============================================================================
 
 @app.route('/')
+def landing():
+    """Main landing page."""
+    # If user is already logged in, redirect to dashboard
+    if 'user_id' in session:
+        return redirect(url_for('dashboard'))
+    return render_template('landing.html')
+
+@app.route('/dashboard')
 @login_required
 def dashboard():
     """Main dashboard - shows pending reports for user's company."""

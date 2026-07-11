@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RapidSite AI | Voice in, structured data out</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="landing-nav">
+        <a href="/" class="nav-brand">RapidSite AI</a>
+        <div class="nav-links">
+            <a href="#how-it-works" class="nav-link">How it works</a>
+            <a href="#features" class="nav-link">Features</a>
+            <a href="#pricing" class="nav-link">Pricing</a>
+            <a href="{{ url_for('auth.login') }}" class="nav-link btn-login">Sign In</a>
+            <a href="{{ url_for('auth.register') }}" class="btn-signup">Start 14-Day Free Trial</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="hero">
+        <div class="hero-content">
+            <h1>Voice in, <span>structured data</span> out.</h1>
+            <p>We eliminate hours of manual data entry on construction sites. Your workers just speak into WhatsApp in their native language, and our AI instantly organizes it into English reports for your ERP system.</p>
+            <div class="hero-cta">
+                <a href="{{ url_for('auth.register') }}" class="btn-primary-large">Start 14-Day Free Trial</a>
+                <a href="#pricing" class="btn-secondary-large">View Pricing</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- How It Works -->
+    <section id="how-it-works" class="section">
+        <h2 class="section-title">How It Works</h2>
+        <div class="steps-grid">
+            <div class="step-card">
+                <div class="step-icon">🎙️</div>
+                <h3 class="step-title">1. Record a Voice Note</h3>
+                <p class="step-desc">A worker or superintendent sends a quick WhatsApp voice message from the field. No apps to install.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-icon">🧠</div>
+                <h3 class="step-title">2. AI Parsing</h3>
+                <p class="step-desc">RapidSite AI instantly transcribes, translates, and structures the unstructured data into cost codes, quantities, and logs.</p>
+            </div>
+            <div class="step-card">
+                <div class="step-icon">⚡</div>
+                <h3 class="step-title">3. ERP Sync</h3>
+                <p class="step-desc">Perfectly structured data is instantly synced to Procore. Saving your team hours of manual data entry.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section id="features" class="section" style="background: var(--white); border-radius: 40px;">
+        <h2 class="section-title">Why Construction Teams Love Us</h2>
+        <div class="features-grid">
+            <div class="feature-box">
+                <div class="feature-icon-wrapper">🌍</div>
+                <div class="feature-content">
+                    <h4>Multi-Language Translation</h4>
+                    <p>Workers speak in Spanish or Turkish, but the output on your ERP is always perfectly professional English.</p>
+                </div>
+            </div>
+            <div class="feature-box">
+                <div class="feature-icon-wrapper">💬</div>
+                <div class="feature-content">
+                    <h4>No New Apps to Learn</h4>
+                    <p>Everything happens via WhatsApp. If your team knows how to text their friends, they know how to use RapidSite AI.</p>
+                </div>
+            </div>
+            <div class="feature-box">
+                <div class="feature-icon-wrapper">🤖</div>
+                <div class="feature-content">
+                    <h4>Smart Follow-ups</h4>
+                    <p>If a worker forgets to mention the hours or the building block, our AI replies back to ask for the missing info automatically.</p>
+                </div>
+            </div>
+            <div class="feature-box">
+                <div class="feature-icon-wrapper">🔄</div>
+                <div class="feature-content">
+                    <h4>Native Procore Sync</h4>
+                    <p>Deep integration with Procore Daily Logs. What used to take 2 hours at the end of the shift now takes 5 seconds on the field.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pricing (Imported from our existing pricing styles) -->
+    <section id="pricing" class="section">
+        <h2 class="section-title">Simple, Transparent Pricing</h2>
+        <style>
+            /* Embed Pricing Card Styles for Landing Page */
+            .pricing-cards {
+                display: flex;
+                justify-content: center;
+                gap: 2rem;
+                flex-wrap: wrap;
+                max-width: 1000px;
+                margin: 0 auto;
+            }
+        
+            .pricing-card {
+                background: var(--white);
+                border: 1px solid #e2e8f0;
+                border-radius: 16px;
+                padding: 2.5rem 2rem;
+                width: 100%;
+                max-width: 350px;
+                box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+                display: flex;
+                flex-direction: column;
+                position: relative;
+            }
+        
+            .pricing-card.popular {
+                border: 2px solid var(--brand-primary);
+                box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+                transform: scale(1.02);
+            }
+        
+            .popular-badge {
+                position: absolute;
+                top: -12px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: var(--brand-primary);
+                color: white;
+                padding: 0.25rem 1rem;
+                border-radius: 20px;
+                font-size: 0.8rem;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+            }
+        
+            .plan-name {
+                font-size: 1.25rem;
+                font-weight: 700;
+                margin-bottom: 0.5rem;
+            }
+        
+            .plan-price-container {
+                display: flex;
+                align-items: baseline;
+                gap: 0.5rem;
+                margin-bottom: 1.5rem;
+            }
+        
+            .plan-price {
+                font-size: 3rem;
+                font-weight: 800;
+                letter-spacing: -1px;
+            }
+            
+            .plan-price-strike {
+                font-size: 1.5rem;
+                font-weight: 600;
+                color: #94a3b8;
+                text-decoration: line-through;
+            }
+        
+            .plan-period {
+                color: var(--text-light);
+                font-weight: 500;
+            }
+        
+            .plan-features {
+                list-style: none;
+                margin-bottom: 2.5rem;
+                flex-grow: 1;
+                padding: 0;
+            }
+        
+            .plan-features li {
+                display: flex;
+                align-items: flex-start;
+                gap: 0.75rem;
+                margin-bottom: 1rem;
+                color: var(--text-light);
+                font-size: 0.95rem;
+            }
+        
+            .feature-icon {
+                color: #15803d;
+                font-weight: bold;
+            }
+            
+            .feature-icon.missing {
+                color: #94a3b8;
+                opacity: 0.5;
+            }
+        
+            .btn-plan {
+                width: 100%;
+                padding: 0.875rem;
+                border-radius: 8px;
+                font-weight: 600;
+                font-size: 1rem;
+                text-align: center;
+                text-decoration: none;
+                transition: all 0.2s;
+                box-sizing: border-box;
+                display: block;
+            }
+        
+            .btn-plan-primary {
+                background: var(--brand-primary);
+                color: white;
+                border: none;
+            }
+        
+            .btn-plan-primary:hover {
+                background: var(--brand-primary-hover);
+                color: white;
+            }
+        
+            .btn-plan-secondary {
+                background: white;
+                color: var(--text-main);
+                border: 1px solid #cbd5e1;
+            }
+        
+            .btn-plan-secondary:hover {
+                background: #f1f5f9;
+            }
+        </style>
+        <div class="pricing-cards">
+            <!-- Free Trial Card -->
+            <div class="pricing-card">
+                <div class="plan-name">Free Trial</div>
+                <div class="plan-price-container">
+                    <div class="plan-price">$0</div>
+                    <div class="plan-period">/ 14 days</div>
+                </div>
+                <ul class="plan-features">
+                    <li><span class="feature-icon">✓</span> Full AI Parsing Engine</li>
+                    <li><span class="feature-icon">✓</span> WhatsApp Integration</li>
+                    <li><span class="feature-icon">✓</span> Up to 50 Reports</li>
+                    <li><span class="feature-icon">✓</span> Procore Sync</li>
+                    <li><span class="feature-icon missing">✕</span> Dedicated Support</li>
+                </ul>
+                <a href="{{ url_for('auth.register') }}" class="btn-plan btn-plan-secondary">Start Trial</a>
+            </div>
+        
+            <!-- Pro Card -->
+            <div class="pricing-card popular">
+                <div class="popular-badge">Launch Special</div>
+                <div class="plan-name">Pro</div>
+                <div class="plan-price-container">
+                    <div class="plan-price-strike">$1500</div>
+                    <div class="plan-price">$199</div>
+                    <div class="plan-period">/ mo</div>
+                </div>
+                <ul class="plan-features">
+                    <li><span class="feature-icon">✓</span> Unlimited AI Parsing</li>
+                    <li><span class="feature-icon">✓</span> Unlimited WhatsApp Reports</li>
+                    <li><span class="feature-icon">✓</span> Direct Procore Sync</li>
+                    <li><span class="feature-icon">✓</span> Multi-language Support</li>
+                    <li><span class="feature-icon">✓</span> Priority Email Support</li>
+                </ul>
+                <a href="{{ url_for('auth.register') }}" class="btn-plan btn-plan-primary">Upgrade to Pro</a>
+            </div>
+        
+            <!-- Enterprise Card -->
+            <div class="pricing-card">
+                <div class="plan-name">Enterprise</div>
+                <div class="plan-price-container">
+                    <div class="plan-price">Custom</div>
+                </div>
+                <ul class="plan-features">
+                    <li><span class="feature-icon">✓</span> Everything in Pro</li>
+                    <li><span class="feature-icon">✓</span> Custom ERP Integrations</li>
+                    <li><span class="feature-icon">✓</span> Multiple Projects/Tenants</li>
+                    <li><span class="feature-icon">✓</span> Dedicated Success Manager</li>
+                    <li><span class="feature-icon">✓</span> Custom AI Prompting</li>
+                </ul>
+                <a href="mailto:support@rapidsite.ai" class="btn-plan btn-plan-secondary">Contact Sales</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="nav-brand" style="color: white; margin-bottom: 1rem;">RapidSite AI</div>
+        <p class="footer-text">© 2026 RapidSite AI. All rights reserved.</p>
+    </footer>
+
+</body>
+</html>
