@@ -344,13 +344,14 @@ body {
     animation: pulse 2s infinite ease-in-out;
 }
 .ai-scan-line {
-    width: 100%;
+    width: 48px;
     height: 2px;
     background: var(--brand-accent);
     box-shadow: 0 0 8px 1px var(--brand-accent);
     position: absolute;
     top: 50%;
-    left: 0;
+    left: 50%;
+    margin-left: -24px;
     animation: scan 1.5s infinite alternate ease-in-out;
 }
 .ai-text {
