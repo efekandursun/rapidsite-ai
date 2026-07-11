@@ -122,222 +122,221 @@ class Database:
     def _execute_schema_queries(self, cursor, is_postgres: bool):
         """Helper to run the schema creation queries."""
         if is_postgres:
-                # PostgreSQL schema
-                cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS companies (
-                        id SERIAL PRIMARY KEY,
-                        name TEXT NOT NULL,
-                        slug TEXT UNIQUE NOT NULL,
-                        whatsapp_numbers TEXT,
-                        procore_access_token TEXT,
-                        procore_refresh_token TEXT,
-                        procore_expires_at TIMESTAMP,
-                        procore_company_id TEXT,
-                        procore_default_project_id TEXT,
-                        procore_vendors TEXT,
-                        procore_cost_codes TEXT,
-                        procore_locations TEXT,
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                    )
-                """)
-                
-                cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS company_authorized_numbers (
-                        id SERIAL PRIMARY KEY,
-                        company_id INTEGER NOT NULL REFERENCES companies(id),
-                        phone_number TEXT NOT NULL,
-                        employee_name TEXT,
-                        job_title TEXT,
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        UNIQUE(company_id, phone_number)
-                    )
-                """)
-                
-                cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS users (
-                        id SERIAL PRIMARY KEY,
-                        email TEXT UNIQUE NOT NULL,
-                        password_hash TEXT NOT NULL,
-                        name TEXT NOT NULL,
-                        company_id INTEGER REFERENCES companies(id),
-                        role TEXT DEFAULT 'supervisor',
-                        job_title TEXT,
-                        is_active INTEGER DEFAULT 1,
-                        email_verified INTEGER DEFAULT 0,
-                        verification_code TEXT,
-                        verification_code_expires TEXT,
-                        whatsapp_number TEXT,
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                    )
-                """)
-                
-                cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS site_reports (
-                        id SERIAL PRIMARY KEY,
-                        company_id INTEGER REFERENCES companies(id),
-                        project_id TEXT,
-                        raw_transcript TEXT NOT NULL,
-                        parsed_data TEXT NOT NULL,
-                        log_type TEXT,
-                        cost_code TEXT,
-                        status TEXT DEFAULT 'pending',
-                        erp_synced INTEGER DEFAULT 0,
-                        erp_sync_id TEXT,
-                        media_paths TEXT,
-                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                        reported_by TEXT,
-                        approved_by TEXT,
-                        approved_at TIMESTAMP
-                    )
-                """)
-                
-                # Create indexes (PostgreSQL syntax)
-                cursor.execute("CREATE INDEX IF NOT EXISTS idx_reports_status ON site_reports(status)")
-                cursor.execute("CREATE INDEX IF NOT EXISTS idx_reports_company ON site_reports(company_id)")
-                cursor.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)")
-                
+            # PostgreSQL schema
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS companies (
+                    id SERIAL PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    slug TEXT UNIQUE NOT NULL,
+                    whatsapp_numbers TEXT,
+                    procore_access_token TEXT,
+                    procore_refresh_token TEXT,
+                    procore_expires_at TIMESTAMP,
+                    procore_company_id TEXT,
+                    procore_default_project_id TEXT,
+                    procore_vendors TEXT,
+                    procore_cost_codes TEXT,
+                    procore_locations TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS company_authorized_numbers (
+                    id SERIAL PRIMARY KEY,
+                    company_id INTEGER NOT NULL REFERENCES companies(id),
+                    phone_number TEXT NOT NULL,
+                    employee_name TEXT,
+                    job_title TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    UNIQUE(company_id, phone_number)
+                )
+            """)
+            
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS users (
+                    id SERIAL PRIMARY KEY,
+                    email TEXT UNIQUE NOT NULL,
+                    password_hash TEXT NOT NULL,
+                    name TEXT NOT NULL,
+                    company_id INTEGER REFERENCES companies(id),
+                    role TEXT DEFAULT 'supervisor',
+                    job_title TEXT,
+                    is_active INTEGER DEFAULT 1,
+                    email_verified INTEGER DEFAULT 0,
+                    verification_code TEXT,
+                    verification_code_expires TEXT,
+                    whatsapp_number TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS site_reports (
+                    id SERIAL PRIMARY KEY,
+                    company_id INTEGER REFERENCES companies(id),
+                    project_id TEXT,
+                    raw_transcript TEXT NOT NULL,
+                    parsed_data TEXT NOT NULL,
+                    log_type TEXT,
+                    cost_code TEXT,
+                    status TEXT DEFAULT 'pending',
+                    erp_synced INTEGER DEFAULT 0,
+                    erp_sync_id TEXT,
+                    media_paths TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    reported_by TEXT,
+                    approved_by TEXT,
+                    approved_at TIMESTAMP
+                )
+            """)
+            
+            # Create indexes (PostgreSQL syntax)
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_reports_status ON site_reports(status)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_reports_company ON site_reports(company_id)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)")
+            
         else:
-            # SQLite schema (original)
-                cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS companies (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        name TEXT NOT NULL,
-                        slug TEXT UNIQUE NOT NULL,
-                        whatsapp_numbers TEXT,
-                        procore_access_token TEXT,
-                        procore_refresh_token TEXT,
-                        procore_expires_at TEXT,
-                        procore_company_id TEXT,
-                        procore_default_project_id TEXT,
-                        created_at TEXT DEFAULT CURRENT_TIMESTAMP
-                    )
-                """)
-                
-                cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS users (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        email TEXT UNIQUE NOT NULL,
-                        password_hash TEXT NOT NULL,
-                        name TEXT NOT NULL,
-                        company_id INTEGER,
-                        role TEXT DEFAULT 'supervisor',
-                        job_title TEXT,
-                        is_active INTEGER DEFAULT 1,
-                        email_verified INTEGER DEFAULT 0,
-                        verification_code TEXT,
-                        verification_code_expires TEXT,
-                        whatsapp_number TEXT,
-                        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                        FOREIGN KEY (company_id) REFERENCES companies(id)
-                    )
-                """)
-                
-                cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS company_authorized_numbers (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        company_id INTEGER NOT NULL,
-                        phone_number TEXT NOT NULL,
-                        employee_name TEXT,
-                        job_title TEXT,
-                        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                        FOREIGN KEY (company_id) REFERENCES companies(id),
-                        UNIQUE(company_id, phone_number)
-                    )
-                """)
-                
-                cursor.execute("""
-                    CREATE TABLE IF NOT EXISTS site_reports (
-                        id INTEGER PRIMARY KEY AUTOINCREMENT,
-                        company_id INTEGER,
-                        project_id TEXT,
-                        raw_transcript TEXT NOT NULL,
-                        parsed_data TEXT NOT NULL,
-                        log_type TEXT,
-                        cost_code TEXT,
-                        status TEXT DEFAULT 'pending',
-                        erp_synced INTEGER DEFAULT 0,
-                        erp_sync_id TEXT,
-                        media_paths TEXT,
-                        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                        updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
-                        reported_by TEXT,
-                        approved_by TEXT,
-                        approved_at TEXT,
-                        FOREIGN KEY (company_id) REFERENCES companies(id)
-                    )
-                """)
-                
-                cursor.execute("CREATE INDEX IF NOT EXISTS idx_reports_status ON site_reports(status)")
-                cursor.execute("CREATE INDEX IF NOT EXISTS idx_reports_company ON site_reports(company_id)")
-                cursor.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)")
+        # SQLite schema (original)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS companies (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    name TEXT NOT NULL,
+                    slug TEXT UNIQUE NOT NULL,
+                    whatsapp_numbers TEXT,
+                    procore_access_token TEXT,
+                    procore_refresh_token TEXT,
+                    procore_expires_at TEXT,
+                    procore_company_id TEXT,
+                    procore_default_project_id TEXT,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+            
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS users (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    email TEXT UNIQUE NOT NULL,
+                    password_hash TEXT NOT NULL,
+                    name TEXT NOT NULL,
+                    company_id INTEGER,
+                    role TEXT DEFAULT 'supervisor',
+                    job_title TEXT,
+                    is_active INTEGER DEFAULT 1,
+                    email_verified INTEGER DEFAULT 0,
+                    verification_code TEXT,
+                    verification_code_expires TEXT,
+                    whatsapp_number TEXT,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (company_id) REFERENCES companies(id)
+                )
+            """)
+            
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS company_authorized_numbers (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    company_id INTEGER NOT NULL,
+                    phone_number TEXT NOT NULL,
+                    employee_name TEXT,
+                    job_title TEXT,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    FOREIGN KEY (company_id) REFERENCES companies(id),
+                    UNIQUE(company_id, phone_number)
+                )
+            """)
+            
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS site_reports (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    company_id INTEGER,
+                    project_id TEXT,
+                    raw_transcript TEXT NOT NULL,
+                    parsed_data TEXT NOT NULL,
+                    log_type TEXT,
+                    cost_code TEXT,
+                    status TEXT DEFAULT 'pending',
+                    erp_synced INTEGER DEFAULT 0,
+                    erp_sync_id TEXT,
+                    media_paths TEXT,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    reported_by TEXT,
+                    approved_by TEXT,
+                    approved_at TEXT,
+                    FOREIGN KEY (company_id) REFERENCES companies(id)
+                )
+            """)
+            
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_reports_status ON site_reports(status)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_reports_company ON site_reports(company_id)")
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)")
 
-            # ADD MIGRATIONS FOR PROCORE COLUMNS IF MISSING
-            try:
-                # SQLite check
-                if not self.use_postgres:
-                    cursor.execute("PRAGMA table_info(companies)")
-                    columns = [row['name'] for row in cursor.fetchall()]
-                    if 'procore_access_token' not in columns:
-                        print("🔄 Migrating database: Adding Procore columns...")
-                        cursor.execute("ALTER TABLE companies ADD COLUMN procore_access_token TEXT")
-                        cursor.execute("ALTER TABLE companies ADD COLUMN procore_refresh_token TEXT")
-                        cursor.execute("ALTER TABLE companies ADD COLUMN procore_expires_at TEXT")
-                        cursor.execute("ALTER TABLE companies ADD COLUMN procore_company_id TEXT")
-                        cursor.execute("ALTER TABLE companies ADD COLUMN procore_default_project_id TEXT")
-                else:
-                    # Postgres check
-                    cursor.execute("SELECT column_name FROM information_schema.columns WHERE table_name='companies' and column_name='procore_access_token'")
-                    if not cursor.fetchone():
-                         print("🔄 Migrating database: Adding Procore columns (Postgres)...")
-                         cursor.execute("ALTER TABLE companies ADD COLUMN procore_access_token TEXT")
-                         cursor.execute("ALTER TABLE companies ADD COLUMN procore_refresh_token TEXT")
-                         cursor.execute("ALTER TABLE companies ADD COLUMN procore_expires_at TIMESTAMP")
-                         cursor.execute("ALTER TABLE companies ADD COLUMN procore_company_id TEXT")
-                         cursor.execute("ALTER TABLE companies ADD COLUMN procore_default_project_id TEXT")
-                         
-            except Exception as e:
-                print(f"⚠️ Error checking/migrating schema: {e}")
-                
-            # ADD MIGRATION FOR media_paths IF MISSING
-            try:
-                if not self.use_postgres:
-                    cursor.execute("PRAGMA table_info(site_reports)")
-                    columns = [row['name'] for row in cursor.fetchall()]
-                    if 'media_paths' not in columns:
-                        cursor.execute("ALTER TABLE site_reports ADD COLUMN media_paths TEXT")
-                else:
-                    cursor.execute("SELECT column_name FROM information_schema.columns WHERE table_name='site_reports' and column_name='media_paths'")
-                    if not cursor.fetchone():
-                        cursor.execute("ALTER TABLE site_reports ADD COLUMN media_paths TEXT")
-            except Exception as e:
-                pass
-                
-            # ADD MIGRATION FOR job_title IF MISSING
-            try:
-                if not self.use_postgres:
-                    cursor.execute("PRAGMA table_info(company_authorized_numbers)")
-                    columns = [row['name'] for row in cursor.fetchall()]
-                    if 'job_title' not in columns:
-                        cursor.execute("ALTER TABLE company_authorized_numbers ADD COLUMN job_title TEXT")
-                        
-                    cursor.execute("PRAGMA table_info(users)")
-                    columns = [row['name'] for row in cursor.fetchall()]
-                    if 'job_title' not in columns:
-                        cursor.execute("ALTER TABLE users ADD COLUMN job_title TEXT")
-                else:
-                    cursor.execute("SELECT column_name FROM information_schema.columns WHERE table_name='company_authorized_numbers' and column_name='job_title'")
-                    if not cursor.fetchone():
-                        cursor.execute("ALTER TABLE company_authorized_numbers ADD COLUMN job_title TEXT")
-                        
-                    cursor.execute("SELECT column_name FROM information_schema.columns WHERE table_name='users' and column_name='job_title'")
-                    if not cursor.fetchone():
-                        cursor.execute("ALTER TABLE users ADD COLUMN job_title TEXT")
-            except Exception as e:
-                pass
+        # ADD MIGRATIONS FOR PROCORE COLUMNS IF MISSING
+        try:
+            # SQLite check
+            if not self.use_postgres:
+                cursor.execute("PRAGMA table_info(companies)")
+                columns = [row['name'] for row in cursor.fetchall()]
+                if 'procore_access_token' not in columns:
+                    print("🔄 Migrating database: Adding Procore columns...")
+                    cursor.execute("ALTER TABLE companies ADD COLUMN procore_access_token TEXT")
+                    cursor.execute("ALTER TABLE companies ADD COLUMN procore_refresh_token TEXT")
+                    cursor.execute("ALTER TABLE companies ADD COLUMN procore_expires_at TEXT")
+                    cursor.execute("ALTER TABLE companies ADD COLUMN procore_company_id TEXT")
+                    cursor.execute("ALTER TABLE companies ADD COLUMN procore_default_project_id TEXT")
+            else:
+                # Postgres check
+                cursor.execute("SELECT column_name FROM information_schema.columns WHERE table_name='companies' and column_name='procore_access_token'")
+                if not cursor.fetchone():
+                     print("🔄 Migrating database: Adding Procore columns (Postgres)...")
+                     cursor.execute("ALTER TABLE companies ADD COLUMN procore_access_token TEXT")
+                     cursor.execute("ALTER TABLE companies ADD COLUMN procore_refresh_token TEXT")
+                     cursor.execute("ALTER TABLE companies ADD COLUMN procore_expires_at TIMESTAMP")
+                     cursor.execute("ALTER TABLE companies ADD COLUMN procore_company_id TEXT")
+                     cursor.execute("ALTER TABLE companies ADD COLUMN procore_default_project_id TEXT")
+                     
+        except Exception as e:
+            print(f"⚠️ Error checking/migrating schema: {e}")
+            
+        # ADD MIGRATION FOR media_paths IF MISSING
+        try:
+            if not self.use_postgres:
+                cursor.execute("PRAGMA table_info(site_reports)")
+                columns = [row['name'] for row in cursor.fetchall()]
+                if 'media_paths' not in columns:
+                    cursor.execute("ALTER TABLE site_reports ADD COLUMN media_paths TEXT")
+            else:
+                cursor.execute("SELECT column_name FROM information_schema.columns WHERE table_name='site_reports' and column_name='media_paths'")
+                if not cursor.fetchone():
+                    cursor.execute("ALTER TABLE site_reports ADD COLUMN media_paths TEXT")
+        except Exception as e:
+            pass
+            
+        # ADD MIGRATION FOR job_title IF MISSING
+        try:
+            if not self.use_postgres:
+                cursor.execute("PRAGMA table_info(company_authorized_numbers)")
+                columns = [row['name'] for row in cursor.fetchall()]
+                if 'job_title' not in columns:
+                    cursor.execute("ALTER TABLE company_authorized_numbers ADD COLUMN job_title TEXT")
+                    
+                cursor.execute("PRAGMA table_info(users)")
+                columns = [row['name'] for row in cursor.fetchall()]
+                if 'job_title' not in columns:
+                    cursor.execute("ALTER TABLE users ADD COLUMN job_title TEXT")
+            else:
+                cursor.execute("SELECT column_name FROM information_schema.columns WHERE table_name='company_authorized_numbers' and column_name='job_title'")
+                if not cursor.fetchone():
+                    cursor.execute("ALTER TABLE company_authorized_numbers ADD COLUMN job_title TEXT")
+                    
+                cursor.execute("SELECT column_name FROM information_schema.columns WHERE table_name='users' and column_name='job_title'")
+                if not cursor.fetchone():
+                    cursor.execute("ALTER TABLE users ADD COLUMN job_title TEXT")
+        except Exception as e:
+            pass
 
-            conn.commit()
-    
+
     def _execute(self, conn, query: str, params: tuple = None):
         """Execute query with proper placeholder replacement."""
         if self.use_postgres:
