@@ -11,7 +11,10 @@
 
     <!-- Navigation -->
     <nav class="landing-nav">
-        <a href="/" class="nav-brand">RapidSite AI</a>
+        <a href="/" class="nav-brand">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="RapidSite AI" class="nav-logo">
+            RapidSite AI
+        </a>
         <div class="nav-links">
             <a href="#how-it-works" class="nav-link">How it works</a>
             <a href="#features" class="nav-link">Features</a>
@@ -179,6 +182,49 @@
                 <div class="feature-content">
                     <h4>Enterprise Grade Security</h4>
                     <p>Your site data and ERP credentials are encrypted and securely processed.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section id="faq" class="section" style="background: var(--bg-light);">
+        <h2 class="section-title">Frequently Asked Questions</h2>
+        <div class="faq-container">
+            <div class="faq-item">
+                <button class="faq-question">
+                    <span>Do my field workers need to download a new app?</span>
+                    <span class="faq-icon">+</span>
+                </button>
+                <div class="faq-answer">
+                    <p>No! They can use the WhatsApp they already have installed. Just send a voice note, photo, or text message, and our AI will process it immediately.</p>
+                </div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-question">
+                    <span>Which languages does the AI understand?</span>
+                    <span class="faq-icon">+</span>
+                </button>
+                <div class="faq-answer">
+                    <p>Our AI understands over 50 languages, including Spanish, French, Arabic, and Hindi. It automatically translates the field reports into English before pushing the structured data to your ERP.</p>
+                </div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-question">
+                    <span>Does it integrate directly with Procore?</span>
+                    <span class="faq-icon">+</span>
+                </button>
+                <div class="faq-answer">
+                    <p>Yes, we have a direct integration with Procore. You can review the structured data in our RapidSite dashboard and push it directly to your Procore Daily Logs with a single click.</p>
+                </div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-question">
+                    <span>How long does the setup process take?</span>
+                    <span class="faq-icon">+</span>
+                </button>
+                <div class="faq-answer">
+                    <p>You can get started in less than 5 minutes. Sign up for a free trial, link your WhatsApp, and start logging field data immediately. No complex IT integration required.</p>
                 </div>
             </div>
         </div>
@@ -383,10 +429,13 @@
     <footer class="footer-section">
         <div class="footer-container">
             <div class="footer-brand">
-                <div class="nav-brand" style="color: white; margin-bottom: 1rem;">RapidSite AI</div>
+                <div class="nav-brand" style="color: white; margin-bottom: 1rem;">
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="RapidSite AI" class="nav-logo" style="filter: brightness(0) invert(1);">
+                    RapidSite AI
+                </div>
                 <p class="footer-text" style="text-align: left; margin-bottom: 1.5rem;">The AI-powered bridge between field workers and ERP systems. Voice in, structured data out.</p>
                 <div class="social-links">
-                    <a href="https://linkedin.com/in/efekandursun" target="_blank" title="LinkedIn">
+                    <a href="https://www.linkedin.com/in/efekan-dursun/" target="_blank" title="LinkedIn">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 8px;"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg> 
                         Efekan Dursun
                     </a>
@@ -416,5 +465,21 @@
         </div>
     </footer>
 
+    <script>
+        document.querySelectorAll('.faq-question').forEach(button => {
+            button.addEventListener('click', () => {
+                const faqItem = button.parentElement;
+                const isActive = faqItem.classList.contains('active');
+                
+                document.querySelectorAll('.faq-item').forEach(item => {
+                    item.classList.remove('active');
+                });
+
+                if (!isActive) {
+                    faqItem.classList.add('active');
+                }
+            });
+        });
+    </script>
 </body>
 </html>
