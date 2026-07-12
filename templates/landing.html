@@ -11,7 +11,10 @@
 
     <!-- Navigation -->
     <nav class="landing-nav">
-        <a href="/" class="nav-brand">RapidSite AI</a>
+        <a href="/" class="nav-brand">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="RapidSite AI" class="nav-logo">
+            <!-- RapidSite AI text removed since logo has text -->
+        </a>
         <div class="nav-links">
             <a href="#how-it-works" class="nav-link">How it works</a>
             <a href="#features" class="nav-link">Features</a>
@@ -426,7 +429,9 @@
     <footer class="footer-section">
         <div class="footer-container">
             <div class="footer-brand">
-                <div class="nav-brand" style="color: white; margin-bottom: 1rem;">RapidSite AI</div>
+                <div class="nav-brand" style="color: white; margin-bottom: 1rem;">
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="RapidSite AI" class="nav-logo" style="filter: brightness(0) invert(1); height: 40px;">
+                </div>
                 <p class="footer-text" style="text-align: left; margin-bottom: 1.5rem;">The AI-powered bridge between field workers and ERP systems. Voice in, structured data out.</p>
                 <div class="social-links">
                     <a href="https://www.linkedin.com/in/efekan-dursun/" target="_blank" title="LinkedIn">
