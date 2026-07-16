@@ -335,6 +335,12 @@ def landing():
         return redirect(url_for('dashboard'))
     return render_template('landing.html')
 
+@app.route('/pricing')
+def pricing():
+    """Pricing and plans page."""
+    return render_template('pricing.html')
+
+
 @app.route('/dashboard')
 @login_required
 def dashboard():

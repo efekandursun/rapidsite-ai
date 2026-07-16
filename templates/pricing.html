@@ -74,7 +74,7 @@
         top: 3px;
         left: 3px;
         transition: transform 0.3s;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
     }
 
     .toggle-switch.active::after {
@@ -341,11 +341,26 @@
 
     /* Responsive */
     @media (max-width: 768px) {
-        .pricing-title { font-size: 1.75rem; }
-        .pricing-cards { flex-direction: column; align-items: center; }
-        .pricing-card { max-width: 100%; }
-        .pricing-card.popular { transform: scale(1); }
-        .pricing-card.popular:hover { transform: translateY(-4px); }
+        .pricing-title {
+            font-size: 1.75rem;
+        }
+
+        .pricing-cards {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .pricing-card {
+            max-width: 100%;
+        }
+
+        .pricing-card.popular {
+            transform: scale(1);
+        }
+
+        .pricing-card.popular:hover {
+            transform: translateY(-4px);
+        }
     }
 </style>
 {% endblock %}
@@ -354,7 +369,8 @@
 <div class="pricing-page">
     <div class="pricing-header">
         <h1 class="pricing-title">Simple, transparent pricing</h1>
-        <p class="pricing-subtitle">Start turning field voice notes into structured Procore data. No hidden fees, cancel anytime.</p>
+        <p class="pricing-subtitle">Start turning field voice notes into structured Procore data. No hidden fees, cancel
+            anytime.</p>
     </div>
 
     <!-- Billing Toggle -->
@@ -374,18 +390,23 @@
                 <div class="plan-price" data-monthly="49" data-annual="39">$49</div>
                 <div class="plan-period">/ mo</div>
             </div>
-            <div class="plan-billing-note" data-monthly="Billed monthly" data-annual="Billed annually ($468/yr)">Billed monthly</div>
+            <div class="plan-billing-note" data-monthly="Billed monthly" data-annual="Billed annually ($468/yr)">Billed
+                monthly</div>
             <div class="plan-divider"></div>
             <div class="plan-features-title">What's included</div>
             <ul class="plan-features">
-                <li><span class="feature-icon">&#10003;</span> <span class="feature-highlight">Up to 3</span> field workers (WhatsApp)</li>
-                <li><span class="feature-icon">&#10003;</span> <span class="feature-highlight">200</span> AI-parsed reports / month</li>
+                <li><span class="feature-icon">&#10003;</span> <span class="feature-highlight">Up to 3</span> field
+                    workers (WhatsApp)</li>
+                <li><span class="feature-icon">&#10003;</span> <span class="feature-highlight">200</span> AI-parsed
+                    reports / month</li>
                 <li><span class="feature-icon">&#10003;</span> Voice, text & photo reports</li>
                 <li><span class="feature-icon">&#10003;</span> Multi-language input (AI translates to English)</li>
                 <li><span class="feature-icon">&#10003;</span> Dashboard & report management</li>
                 <li><span class="feature-icon">&#10003;</span> CSV export</li>
-                <li><span class="feature-icon missing">&#10007;</span> <span style="opacity:0.5">Procore sync</span></li>
-                <li><span class="feature-icon missing">&#10007;</span> <span style="opacity:0.5">Priority support</span></li>
+                <li><span class="feature-icon missing">&#10007;</span> <span style="opacity:0.5">Procore sync</span>
+                </li>
+                <li><span class="feature-icon missing">&#10007;</span> <span style="opacity:0.5">Priority support</span>
+                </li>
             </ul>
             <a href="{{ url_for('auth.register') }}" class="btn-plan btn-plan-secondary">Start 14-Day Free Trial</a>
         </div>
@@ -400,21 +421,26 @@
                 <div class="plan-price" data-monthly="149" data-annual="119">$149</div>
                 <div class="plan-period">/ mo</div>
             </div>
-            <div class="plan-billing-note" data-monthly="Billed monthly — launch price" data-annual="Billed annually ($1,428/yr)">Billed monthly — launch price</div>
+            <div class="plan-billing-note" data-monthly="Billed monthly — launch price"
+                data-annual="Billed annually ($1,428/yr)">Billed monthly — launch price</div>
             <div class="plan-divider"></div>
             <div class="plan-features-title">Everything in Starter, plus</div>
             <ul class="plan-features">
-                <li><span class="feature-icon">&#10003;</span> <span class="feature-highlight">Up to 15</span> field workers (WhatsApp)</li>
-                <li><span class="feature-icon">&#10003;</span> <span class="feature-highlight">Unlimited</span> AI-parsed reports</li>
+                <li><span class="feature-icon">&#10003;</span> <span class="feature-highlight">Up to 15</span> field
+                    workers (WhatsApp)</li>
+                <li><span class="feature-icon">&#10003;</span> <span class="feature-highlight">Unlimited</span>
+                    AI-parsed reports</li>
                 <li><span class="feature-icon">&#10003;</span> Voice, text, photo & video reports</li>
-                <li><span class="feature-icon">&#10003;</span> <span class="feature-highlight">Direct Procore sync</span> (Daily Logs)</li>
+                <li><span class="feature-icon">&#10003;</span> <span class="feature-highlight">Direct Procore
+                        sync</span> (Daily Logs)</li>
                 <li><span class="feature-icon">&#10003;</span> Smart cost code & vendor matching</li>
                 <li><span class="feature-icon">&#10003;</span> Incomplete report follow-ups</li>
                 <li><span class="feature-icon">&#10003;</span> Team management (multi-user dashboard)</li>
                 <li><span class="feature-icon">&#10003;</span> Priority email & WhatsApp support</li>
             </ul>
             {% if g.subscription_status == 'trialing' %}
-            <a href="mailto:efekan@rapidsite.app?subject=Upgrade%20to%20Pro" class="btn-plan btn-plan-primary">Upgrade to Pro</a>
+            <a href="mailto:efekan@rapidsite.app?subject=Upgrade%20to%20Pro" class="btn-plan btn-plan-primary">Upgrade
+                to Pro</a>
             {% else %}
             <a href="{{ url_for('auth.register') }}" class="btn-plan btn-plan-primary">Start 14-Day Free Trial</a>
             {% endif %}
@@ -431,8 +457,10 @@
             <div class="plan-divider"></div>
             <div class="plan-features-title">Everything in Pro, plus</div>
             <ul class="plan-features">
-                <li><span class="feature-icon">&#10003;</span> <span class="feature-highlight">Unlimited</span> field workers</li>
-                <li><span class="feature-icon">&#10003;</span> <span class="feature-highlight">Multiple projects</span> & job sites</li>
+                <li><span class="feature-icon">&#10003;</span> <span class="feature-highlight">Unlimited</span> field
+                    workers</li>
+                <li><span class="feature-icon">&#10003;</span> <span class="feature-highlight">Multiple projects</span>
+                    & job sites</li>
                 <li><span class="feature-icon">&#10003;</span> Custom ERP integrations (Viewpoint, Sage, etc.)</li>
                 <li><span class="feature-icon">&#10003;</span> Custom AI prompt tuning for your workflow</li>
                 <li><span class="feature-icon">&#10003;</span> SSO & advanced security</li>
@@ -440,14 +468,17 @@
                 <li><span class="feature-icon">&#10003;</span> SLA & uptime guarantee</li>
                 <li><span class="feature-icon">&#10003;</span> On-site onboarding & training</li>
             </ul>
-            <a href="mailto:efekan@rapidsite.app?subject=Enterprise%20Inquiry" class="btn-plan btn-plan-secondary">Contact Sales</a>
+            <a href="mailto:efekan@rapidsite.app?subject=Enterprise%20Inquiry"
+                class="btn-plan btn-plan-secondary">Contact Sales</a>
         </div>
     </div>
 
     <!-- Free Trial Banner -->
-    <div style="text-align: center; margin-top: 2.5rem; padding: 1.5rem; background: linear-gradient(135deg, rgba(59,130,246,0.05), rgba(124,58,237,0.05)); border-radius: 12px; border: 1px solid rgba(59,130,246,0.1);">
+    <div
+        style="text-align: center; margin-top: 2.5rem; padding: 1.5rem; background: linear-gradient(135deg, rgba(59,130,246,0.05), rgba(124,58,237,0.05)); border-radius: 12px; border: 1px solid rgba(59,130,246,0.1);">
         <p style="margin: 0; color: var(--text-secondary); font-size: 0.95rem;">
-            All plans include a <strong style="color: var(--text-primary);">14-day free trial</strong> with up to <strong style="color: var(--text-primary);">100 WhatsApp reports</strong>. No credit card required.
+            All plans include a <strong style="color: var(--text-primary);">14-day free trial</strong> with up to
+            <strong style="color: var(--text-primary);">100 WhatsApp reports</strong>. No credit card required.
         </p>
     </div>
 
@@ -461,7 +492,9 @@
                 <span class="faq-arrow">&#9660;</span>
             </div>
             <div class="faq-answer">
-                You get full access to the Pro plan features for 14 days, with a limit of 100 WhatsApp reports. No credit card is required to start. At the end of the trial, you can choose a plan or your account will be paused (no data is deleted).
+                You get full access to the Pro plan features for 14 days, with a limit of 100 WhatsApp reports. No
+                credit card is required to start. At the end of the trial, you can choose a plan or your account will be
+                paused (no data is deleted).
             </div>
         </div>
 
@@ -471,7 +504,9 @@
                 <span class="faq-arrow">&#9660;</span>
             </div>
             <div class="faq-answer">
-                Your field workers send voice notes, text messages, or photos to your dedicated WhatsApp number. Our AI instantly transcribes, translates (if needed), and structures the data into professional reports — no app download required.
+                Your field workers send voice notes, text messages, or photos to your dedicated WhatsApp number. Our AI
+                instantly transcribes, translates (if needed), and structures the data into professional reports — no
+                app download required.
             </div>
         </div>
 
@@ -481,7 +516,8 @@
                 <span class="faq-arrow">&#9660;</span>
             </div>
             <div class="faq-answer">
-                Field workers can send reports in any language — Spanish, Portuguese, Turkish, Arabic, and more. Our AI automatically translates everything into professional US construction English for your ERP system.
+                Field workers can send reports in any language — Spanish, Portuguese, Turkish, Arabic, and more. Our AI
+                automatically translates everything into professional US construction English for your ERP system.
             </div>
         </div>
 
@@ -491,7 +527,8 @@
                 <span class="faq-arrow">&#9660;</span>
             </div>
             <div class="faq-answer">
-                Yes, absolutely. There are no long-term contracts. You can cancel your subscription at any time, and you'll retain access until the end of your current billing period.
+                Yes, absolutely. There are no long-term contracts. You can cancel your subscription at any time, and
+                you'll retain access until the end of your current billing period.
             </div>
         </div>
 
@@ -501,7 +538,8 @@
                 <span class="faq-arrow">&#9660;</span>
             </div>
             <div class="faq-answer">
-                No! Procore integration is available on the Pro plan and above, but it's optional. The Starter plan works perfectly without any ERP — you can manage reports in the dashboard and export as CSV.
+                No! Procore integration is available on the Pro plan and above, but it's optional. The Starter plan
+                works perfectly without any ERP — you can manage reports in the dashboard and export as CSV.
             </div>
         </div>
     </div>
