@@ -1,11 +1,16 @@
-{% extends "base.html" %}
-
-{% block styles %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RapidSite AI | Pricing</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
     .pricing-page {
         max-width: 1200px;
         margin: 0 auto;
-        padding: 2rem 1.5rem 4rem;
+        padding: 6rem 1.5rem 4rem;
     }
 
     .pricing-header {
@@ -16,14 +21,14 @@
     .pricing-title {
         font-size: 2.5rem;
         font-weight: 800;
-        color: var(--text-primary);
+        color: var(--text-dark);
         margin-bottom: 0.75rem;
         letter-spacing: -1px;
     }
 
     .pricing-subtitle {
         font-size: 1.1rem;
-        color: var(--text-secondary);
+        color: var(--text-main);
         max-width: 600px;
         margin: 0 auto 2rem;
     }
@@ -40,13 +45,13 @@
     .billing-label {
         font-size: 0.95rem;
         font-weight: 500;
-        color: var(--text-secondary);
+        color: var(--text-main);
         cursor: pointer;
         transition: color 0.2s;
     }
 
     .billing-label.active {
-        color: var(--text-primary);
+        color: var(--text-dark);
         font-weight: 600;
     }
 
@@ -54,14 +59,14 @@
         position: relative;
         width: 52px;
         height: 28px;
-        background: var(--border-dark);
+        background: #cbd5e1;
         border-radius: 14px;
         cursor: pointer;
         transition: background 0.3s;
     }
 
     .toggle-switch.active {
-        background: var(--accent-primary);
+        background: var(--brand-primary);
     }
 
     .toggle-switch::after {
@@ -100,14 +105,14 @@
     }
 
     .pricing-card {
-        background: var(--bg-card);
-        border: 1px solid var(--border-light);
+        background: var(--white);
+        border: 1px solid #e2e8f0;
         border-radius: 16px;
         padding: 2.25rem 2rem;
         flex: 1;
         min-width: 280px;
         max-width: 380px;
-        box-shadow: var(--shadow-sm);
+        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
         display: flex;
         flex-direction: column;
         position: relative;
@@ -116,11 +121,11 @@
 
     .pricing-card:hover {
         transform: translateY(-4px);
-        box-shadow: var(--shadow-md);
+        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
     }
 
     .pricing-card.popular {
-        border: 2px solid var(--accent-primary);
+        border: 2px solid var(--brand-primary);
         box-shadow: 0 8px 30px rgba(59, 130, 246, 0.15);
         transform: scale(1.03);
     }
@@ -135,7 +140,7 @@
         top: -12px;
         left: 50%;
         transform: translateX(-50%);
-        background: linear-gradient(135deg, var(--accent-primary), #7c3aed);
+        background: linear-gradient(135deg, var(--brand-primary), #7c3aed);
         color: white;
         padding: 0.3rem 1.25rem;
         border-radius: 20px;
@@ -149,13 +154,13 @@
     .plan-name {
         font-size: 1.2rem;
         font-weight: 700;
-        color: var(--text-primary);
+        color: var(--text-dark);
         margin-bottom: 0.4rem;
     }
 
     .plan-desc {
         font-size: 0.85rem;
-        color: var(--text-secondary);
+        color: var(--text-main);
         margin-bottom: 1.25rem;
         line-height: 1.4;
     }
@@ -170,7 +175,7 @@
     .plan-price {
         font-size: 3rem;
         font-weight: 800;
-        color: var(--text-primary);
+        color: var(--text-dark);
         letter-spacing: -2px;
         line-height: 1;
     }
@@ -178,25 +183,25 @@
     .plan-price-strike {
         font-size: 1.3rem;
         font-weight: 600;
-        color: var(--text-muted);
+        color: #94a3b8;
         text-decoration: line-through;
     }
 
     .plan-period {
-        color: var(--text-secondary);
+        color: var(--text-light);
         font-weight: 500;
         font-size: 0.95rem;
     }
 
     .plan-billing-note {
         font-size: 0.8rem;
-        color: var(--text-muted);
+        color: var(--text-light);
         margin-bottom: 1.5rem;
     }
 
     .plan-divider {
         height: 1px;
-        background: var(--border-light);
+        background: #e2e8f0;
         margin: 0.5rem 0 1.25rem;
     }
 
@@ -205,7 +210,7 @@
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 1px;
-        color: var(--text-muted);
+        color: var(--text-light);
         margin-bottom: 1rem;
     }
 
@@ -221,7 +226,7 @@
         align-items: flex-start;
         gap: 0.6rem;
         margin-bottom: 0.75rem;
-        color: var(--text-secondary);
+        color: var(--text-main);
         font-size: 0.9rem;
         line-height: 1.4;
     }
@@ -234,19 +239,19 @@
     }
 
     .feature-icon.missing {
-        color: var(--text-muted);
+        color: var(--text-light);
         opacity: 0.4;
     }
 
     .feature-highlight {
         font-weight: 600;
-        color: var(--text-primary);
+        color: var(--text-dark);
     }
 
     .btn-plan {
         width: 100%;
         padding: 0.875rem;
-        border-radius: var(--radius-md);
+        border-radius: 8px;
         font-weight: 600;
         font-size: 1rem;
         text-align: center;
@@ -254,10 +259,11 @@
         transition: all 0.2s;
         cursor: pointer;
         display: inline-block;
+        box-sizing: border-box;
     }
 
     .btn-plan-primary {
-        background: linear-gradient(135deg, var(--accent-primary), #7c3aed);
+        background: linear-gradient(135deg, var(--brand-primary), #7c3aed);
         color: white;
         border: none;
         box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
@@ -271,14 +277,14 @@
 
     .btn-plan-secondary {
         background: white;
-        color: var(--text-primary);
-        border: 1px solid var(--border-dark);
+        color: var(--text-dark);
+        border: 1px solid #cbd5e1;
     }
 
     .btn-plan-secondary:hover {
-        background: var(--bg-card-hover);
-        border-color: var(--accent-primary);
-        color: var(--accent-primary);
+        background: #f8fafc;
+        border-color: var(--brand-primary);
+        color: var(--brand-primary);
     }
 
     /* FAQ Section */
@@ -291,22 +297,22 @@
         text-align: center;
         font-size: 1.5rem;
         font-weight: 700;
-        color: var(--text-primary);
+        color: var(--text-dark);
         margin-bottom: 2rem;
     }
 
     .faq-item {
-        border: 1px solid var(--border-light);
+        border: 1px solid #e2e8f0;
         border-radius: 12px;
         margin-bottom: 0.75rem;
         overflow: hidden;
-        background: var(--bg-card);
+        background: var(--white);
     }
 
     .faq-question {
         padding: 1rem 1.25rem;
         font-weight: 600;
-        color: var(--text-primary);
+        color: var(--text-dark);
         cursor: pointer;
         display: flex;
         justify-content: space-between;
@@ -315,12 +321,12 @@
     }
 
     .faq-question:hover {
-        background: var(--bg-card-hover);
+        background: #f8fafc;
     }
 
     .faq-arrow {
         transition: transform 0.2s;
-        color: var(--text-muted);
+        color: var(--text-light);
     }
 
     .faq-item.open .faq-arrow {
@@ -329,7 +335,7 @@
 
     .faq-answer {
         padding: 0 1.25rem 1rem;
-        color: var(--text-secondary);
+        color: var(--text-main);
         font-size: 0.9rem;
         line-height: 1.6;
         display: none;
@@ -363,9 +369,21 @@
         }
     }
 </style>
-{% endblock %}
+</head>
+<body>
 
-{% block content %}
+    <!-- Navigation -->
+    <nav class="landing-nav">
+        <a href="/" class="nav-brand">
+            <img src="{{ url_for('static', filename='images/logo.png') }}" alt="RapidSite AI" class="nav-logo">
+        </a>
+        <div class="nav-links">
+            <a href="/" class="nav-link">Home</a>
+            <a href="{{ url_for('auth.login') }}" class="nav-link btn-login">Sign In</a>
+            <a href="{{ url_for('auth.register') }}" class="btn-signup">Start 14-Day Free Trial</a>
+        </div>
+    </nav>
+
 <div class="pricing-page">
     <div class="pricing-header">
         <h1 class="pricing-title">Simple, transparent pricing</h1>
@@ -579,4 +597,5 @@
         item.classList.toggle('open');
     }
 </script>
-{% endblock %}
+</body>
+</html>
