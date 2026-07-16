@@ -397,6 +397,7 @@ def latest_report_id():
     return jsonify({"latest_id": latest_id})
 
 @app.route('/api/v1/reports', methods=['GET'])
+@login_required
 def api_list_reports():
     """List reports with optional filtering."""
     status = request.args.get('status')
@@ -419,6 +420,7 @@ def api_list_reports():
 
 
 @app.route('/api/v1/reports', methods=['POST'])
+@login_required
 def api_create_report():
     """Create a new report (for direct API access)."""
     from core.brain import ConstructionBrain
@@ -454,6 +456,7 @@ def api_create_report():
 
 
 @app.route('/api/v1/reports/<int:report_id>', methods=['GET'])
+@login_required
 def api_get_report(report_id):
     """Get a single report."""
     report = db.get_report(report_id)
@@ -464,6 +467,7 @@ def api_get_report(report_id):
 
 
 @app.route('/api/v1/reports/<int:report_id>/approve', methods=['POST'])
+@login_required
 def api_approve_report(report_id):
     """Approve a pending report."""
     data = request.get_json() or {}
@@ -478,6 +482,7 @@ def api_approve_report(report_id):
 
 
 @app.route('/api/v1/reports/<int:report_id>/reject', methods=['POST'])
+@login_required
 def api_reject_report(report_id):
     """Reject a pending report."""
     data = request.get_json() or {}
@@ -492,6 +497,7 @@ def api_reject_report(report_id):
 
 
 @app.route('/api/v1/reports/<int:report_id>/sync', methods=['POST'])
+@login_required
 def api_sync_report(report_id):
     """Sync report to ERP (placeholder for Procore integration)."""
     report = db.get_report(report_id)
@@ -513,6 +519,7 @@ def api_sync_report(report_id):
 
 
 @app.route('/api/v1/stats', methods=['GET'])
+@login_required
 def api_stats():
     """Get report statistics."""
     stats = db.get_stats()
@@ -594,6 +601,7 @@ def send_whatsapp_notification(phone_number: str, message: str):
 # =============================================================================
 
 @app.route('/dashboard/approve/<int:report_id>', methods=['POST'])
+@login_required
 def dashboard_approve(report_id):
     """Approve report from dashboard and notify foreman."""
     report = db.get_report(report_id)
@@ -660,6 +668,7 @@ def dashboard_edit(report_id):
 
 
 @app.route('/dashboard/reject/<int:report_id>', methods=['POST'])
+@login_required
 def dashboard_reject(report_id):
     """Reject report from dashboard and notify foreman."""
     report = db.get_report(report_id)

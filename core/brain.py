@@ -112,7 +112,6 @@ You MUST return a JSON ARRAY containing one or more event objects. If the messag
     "procore_ready": true
   }
 ]
-]
 
 ## RULES:
 1. EXHAUSTIVE EXTRACTION (CRITICAL): You MUST extract EVERY SINGLE distinct event, material, equipment, delay, and weather condition mentioned in the input. Do not omit anything. If two different materials are delivered (e.g., cement and sand), create TWO separate 'delivery' objects.

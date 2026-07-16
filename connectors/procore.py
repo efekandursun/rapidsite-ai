@@ -237,9 +237,6 @@ class ProcoreConnector(ERPConnector):
             response.raise_for_status()
             return response.json()
             
-            response.raise_for_status()
-            return response.json()
-            
         except requests.RequestException as e:
             print(f"Failed to get projects: {e}")
             return []
