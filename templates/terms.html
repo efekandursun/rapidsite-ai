@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RapidSite AI | Terms of Service</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .legal-page {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 6rem 1.5rem 4rem;
+            color: #1e293b;
+        }
+        .legal-page h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 2rem;
+        }
+        .legal-page h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+        }
+        .legal-page p {
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+        .legal-page ul {
+            margin-bottom: 1.5rem;
+            padding-left: 1.5rem;
+        }
+        .legal-page li {
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="landing-nav">
+        <a href="/" class="nav-brand">
+            <img src="{{ url_for('static', filename='images/logo_web.png') }}" alt="RapidSite AI" class="nav-logo">
+        </a>
+        <div class="nav-links">
+            <a href="/" class="nav-link">Home</a>
+            <a href="/pricing" class="nav-link">Pricing</a>
+            <a href="{{ url_for('auth.login') }}" class="nav-link btn-login">Sign In</a>
+        </div>
+    </nav>
+
+    <div class="legal-page">
+        <h1>Terms of Service</h1>
+        <p><strong>Last Updated:</strong> July 2026</p>
+
+        <p>Welcome to RapidSite AI! These Terms of Service outline the rules and regulations for the use of our application and website.</p>
+
+        <h2>1. Acceptance of Terms</h2>
+        <p>By accessing this website and using our services, we assume you accept these terms and conditions. Do not continue to use RapidSite AI if you do not agree to take all of the terms and conditions stated on this page.</p>
+
+        <h2>2. Service Description</h2>
+        <p>RapidSite AI provides an AI-powered voice-to-text and field data structuring service using WhatsApp and integrates with ERP software such as Procore. The service is provided on a subscription basis as outlined on our pricing page.</p>
+
+        <h2>3. User Accounts</h2>
+        <p>When you create an account with us, you must provide us information that is accurate, complete, and current at all times. Failure to do so constitutes a breach of the Terms, which may result in immediate termination of your account on our Service.</p>
+
+        <h2>4. Acceptable Use</h2>
+        <p>You agree not to use the Service:</p>
+        <ul>
+            <li>In any way that violates any applicable national or international law or regulation.</li>
+            <li>For the purpose of exploiting, harming, or attempting to exploit or harm minors in any way.</li>
+            <li>To transmit, or procure the sending of, any advertising or promotional material, including any "junk mail", "chain letter," "spam," or any other similar solicitation.</li>
+        </ul>
+
+        <h2>5. Limitation of Liability</h2>
+        <p>In no event shall RapidSite AI, nor its directors, employees, partners, agents, suppliers, or affiliates, be liable for any indirect, incidental, special, consequential or punitive damages, including without limitation, loss of profits, data, use, goodwill, or other intangible losses, resulting from your access to or use of or inability to access or use the Service.</p>
+
+        <h2>6. Contact Us</h2>
+        <p>If you have any questions about these Terms, please contact us at:</p>
+        <p><strong>Email:</strong> info@rapidsite.app</p>
+    </div>
+</body>
+</html>

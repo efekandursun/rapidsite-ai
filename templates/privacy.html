@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RapidSite AI | Privacy Policy</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .legal-page {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 6rem 1.5rem 4rem;
+            color: #1e293b;
+        }
+        .legal-page h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 2rem;
+        }
+        .legal-page h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+        }
+        .legal-page p {
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+        .legal-page ul {
+            margin-bottom: 1.5rem;
+            padding-left: 1.5rem;
+        }
+        .legal-page li {
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="landing-nav">
+        <a href="/" class="nav-brand">
+            <img src="{{ url_for('static', filename='images/logo_web.png') }}" alt="RapidSite AI" class="nav-logo">
+        </a>
+        <div class="nav-links">
+            <a href="/" class="nav-link">Home</a>
+            <a href="/pricing" class="nav-link">Pricing</a>
+            <a href="{{ url_for('auth.login') }}" class="nav-link btn-login">Sign In</a>
+        </div>
+    </nav>
+
+    <div class="legal-page">
+        <h1>Privacy Policy</h1>
+        <p><strong>Last Updated:</strong> July 2026</p>
+
+        <p>At RapidSite AI, we take your privacy seriously. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website or use our application.</p>
+
+        <h2>1. Information We Collect</h2>
+        <p>We may collect information about you in a variety of ways. The information we may collect includes:</p>
+        <ul>
+            <li><strong>Personal Data:</strong> Personally identifiable information, such as your name, shipping address, email address, and telephone number that you voluntarily give to us when you register.</li>
+            <li><strong>Derivative Data:</strong> Information our servers automatically collect when you access the application, such as your IP address, your browser type, your operating system, your access times, and the pages you have viewed directly before and after accessing the Site.</li>
+            <li><strong>WhatsApp Data:</strong> Audio recordings, texts, and images sent to our designated WhatsApp numbers for the purpose of field reporting.</li>
+            <li><strong>Third-Party Data:</strong> Information from third parties, such as Procore or other ERPs, if you link your account.</li>
+        </ul>
+
+        <h2>2. Use of Your Information</h2>
+        <p>Having accurate information about you permits us to provide you with a smooth, efficient, and customized experience. Specifically, we may use information collected about you to:</p>
+        <ul>
+            <li>Create and manage your account.</li>
+            <li>Transcribe and process field reports submitted via WhatsApp.</li>
+            <li>Sync your structured data to your chosen ERP systems (e.g., Procore).</li>
+            <li>Email you regarding your account or order.</li>
+            <li>Fulfill and manage purchases, orders, payments, and other transactions related to the Site.</li>
+        </ul>
+
+        <h2>3. Data Security</h2>
+        <p>We use administrative, technical, and physical security measures to help protect your personal information. While we have taken reasonable steps to secure the personal information you provide to us, please be aware that despite our efforts, no security measures are perfect or impenetrable, and no method of data transmission can be guaranteed against any interception or other type of misuse.</p>
+
+        <h2>4. Contact Us</h2>
+        <p>If you have questions or comments about this Privacy Policy, please contact us at:</p>
+        <p><strong>Email:</strong> info@rapidsite.app</p>
+    </div>
+</body>
+</html>
