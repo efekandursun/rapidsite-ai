@@ -18,7 +18,7 @@
         <div class="nav-links">
             <a href="#how-it-works" class="nav-link">How it works</a>
             <a href="#features" class="nav-link">Features</a>
-            <a href="#pricing" class="nav-link">Pricing</a>
+            <a href="/pricing" class="nav-link">Pricing</a>
             <a href="{{ url_for('auth.login') }}" class="nav-link btn-login">Sign In</a>
             <a href="{{ url_for('auth.register') }}" class="btn-signup">Start 14-Day Free Trial</a>
         </div>
@@ -231,7 +231,7 @@
     </section>
 
     <!-- Pricing CTA -->
-    <section id="pricing" class="section" style="background: linear-gradient(135deg, rgba(59,130,246,0.05), rgba(124,58,237,0.05)); text-align: center; padding: 6rem 2rem; border-top: 1px solid rgba(59,130,246,0.1); border-bottom: 1px solid rgba(59,130,246,0.1);">
+    <section id="pricing" class="section" style="background: #f8fafc; text-align: center; padding: 6rem 2rem; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0;">
         <h2 class="section-title" style="margin-bottom: 1rem; font-size: 2.5rem;">Simple, Transparent Pricing</h2>
         <p style="font-size: 1.1rem; color: var(--text-secondary); max-width: 600px; margin: 0 auto 3rem;">Whether you have a crew of 3 or an enterprise with 500 field workers, we have a plan tailored for your needs.</p>
         <a href="/pricing" class="btn-primary-large" style="display: inline-block; box-shadow: 0 10px 25px -5px rgba(59, 130, 246, 0.4); transform: translateY(-2px);">View Pricing & Plans</a>
@@ -241,14 +241,18 @@
     <footer class="footer-section">
         <div class="footer-container">
             <div class="footer-brand">
-                <div class="nav-brand" style="color: white; margin-bottom: 1rem;">
-                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="RapidSite AI" class="nav-logo" style="filter: brightness(0) invert(1); height: 40px;">
+                <div class="nav-brand" style="margin-bottom: 1rem;">
+                    <img src="{{ url_for('static', filename='images/logo.png') }}" alt="RapidSite AI" class="nav-logo" style="height: 48px;">
                 </div>
                 <p class="footer-text" style="text-align: left; margin-bottom: 1.5rem;">The AI-powered bridge between field workers and ERP systems. Voice in, structured data out.</p>
-                <div class="social-links">
+                <div class="social-links" style="display: flex; flex-direction: column; gap: 0.5rem;">
                     <a href="https://www.linkedin.com/in/efekan-dursun/" target="_blank" title="LinkedIn">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 8px;"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg> 
                         Efekan Dursun
+                    </a>
+                    <a href="https://www.linkedin.com/in/emrekrmn/" target="_blank" title="LinkedIn">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 8px;"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect x="2" y="9" width="4" height="12"></rect><circle cx="4" cy="4" r="2"></circle></svg> 
+                        Emre Karaman
                     </a>
                 </div>
             </div>
@@ -256,7 +260,9 @@
             <div class="footer-links">
                 <h4>Contact Us</h4>
                 <ul>
+                    <li><a href="mailto:info@rapidsite.app">info@rapidsite.app</a></li>
                     <li><a href="mailto:efekan@rapidsite.app">efekan@rapidsite.app</a></li>
+                    <li><a href="mailto:emre@rapidsite.app">emre@rapidsite.app</a></li>
                 </ul>
             </div>
 

@@ -7,6 +7,10 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
+    :root {
+        --text-dark: #0f172a;
+    }
+
     .pricing-page {
         max-width: 1200px;
         margin: 0 auto;
@@ -329,20 +333,23 @@
         color: var(--text-light);
     }
 
-    .faq-item.open .faq-arrow {
+    .faq-item.active .faq-arrow {
         transform: rotate(180deg);
     }
 
     .faq-answer {
-        padding: 0 1.25rem 1rem;
+        padding: 0 1.25rem 0;
         color: var(--text-main);
         font-size: 0.9rem;
         line-height: 1.6;
-        display: none;
+        max-height: 0;
+        overflow: hidden;
+        transition: all 0.3s ease-out;
     }
 
-    .faq-item.open .faq-answer {
-        display: block;
+    .faq-item.active .faq-answer {
+        max-height: 500px;
+        padding-bottom: 1rem;
     }
 
     /* Responsive */
@@ -592,9 +599,9 @@
         const item = element.parentElement;
         // Close all others
         document.querySelectorAll('.faq-item').forEach(i => {
-            if (i !== item) i.classList.remove('open');
+            if (i !== item) i.classList.remove('active');
         });
-        item.classList.toggle('open');
+        item.classList.toggle('active');
     }
 </script>
 </body>
