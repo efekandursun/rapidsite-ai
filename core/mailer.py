@@ -29,7 +29,7 @@ def init_mail(app):
     app.config['MAIL_DEFAULT_SENDER'] = os.getenv('SMTP_FROM_EMAIL', os.getenv('SMTP_USERNAME'))
     
     # Render free tier has slower network, need generous timeout
-    app.config['MAIL_TIMEOUT'] = 30  # 30 seconds timeout
+    app.config['MAIL_TIMEOUT'] = 60  # 60 seconds timeout
     
     mail.init_app(app)
     return mail
@@ -44,7 +44,7 @@ def send_verification_email(email: str, code: str, company_name: str):
     import traceback
     old_timeout = socket.getdefaulttimeout()
     try:
-        socket.setdefaulttimeout(30.0)
+        socket.setdefaulttimeout(60.0)
         msg = Message(
             subject='Verify Your RapidSite AI Account',
             recipients=[email]
