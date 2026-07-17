@@ -2,7 +2,7 @@ import requests
 import time
 from bs4 import BeautifulSoup
 
-url = "https://rapidsite.app/register"
+url = "http://127.0.0.1:5006/register"
 session = requests.Session()
 
 # Get the page and cookies
@@ -13,18 +13,18 @@ csrf_token = csrf_input['value'] if csrf_input else ''
 
 data = {
     "csrf_token": csrf_token,
-    "company_name": "Test Prod Four",
+    "company_name": "Test Local",
     "name": "Test User",
-    "email": "testprod4@rapidsite.app",
+    "email": "testlocal@rapidsite.app",
     "password": "password123",
     "confirm_password": "password123"
 }
 
 headers = {
-    "Referer": "https://rapidsite.app/register"
+    "Referer": "http://127.0.0.1:5006/register"
 }
 
-print("Submitting to prod...")
+print("Submitting to local...")
 start = time.time()
 try:
     post_response = session.post(url, data=data, headers=headers)

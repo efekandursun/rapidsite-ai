@@ -44,7 +44,9 @@ def generate_verification_code():
 
 def send_verification_email(email: str, code: str, company_name: str):
     """Send verification code email to user synchronously"""
+    old_timeout = socket.getdefaulttimeout()
     try:
+        socket.setdefaulttimeout(5.0)
         msg = Message(
             subject='Verify Your RapidSite AI Account',
             recipients=[email]
@@ -62,10 +64,14 @@ def send_verification_email(email: str, code: str, company_name: str):
         current_app.logger.error(f"Failed to send verification email: {e}")
         traceback.print_exc()
         return False
+    finally:
+        socket.setdefaulttimeout(old_timeout)
 
 def send_password_reset_email(email: str, reset_link: str):
     """Send password reset email synchronously"""
+    old_timeout = socket.getdefaulttimeout()
     try:
+        socket.setdefaulttimeout(5.0)
         msg = Message(
             subject='Reset Your RapidSite AI Password',
             recipients=[email]
@@ -82,3 +88,5 @@ def send_password_reset_email(email: str, reset_link: str):
         current_app.logger.error(f"Failed to send password reset email: {e}")
         traceback.print_exc()
         return False
+    finally:
+        socket.setdefaulttimeout(old_timeout)
