@@ -28,8 +28,8 @@ def init_mail(app):
     app.config['MAIL_PASSWORD'] = os.getenv('SMTP_PASSWORD')
     app.config['MAIL_DEFAULT_SENDER'] = os.getenv('SMTP_FROM_EMAIL', os.getenv('SMTP_USERNAME'))
     
-    # Prevent Gunicorn worker timeouts if SMTP server hangs
-    app.config['MAIL_TIMEOUT'] = 5  # 5 seconds timeout
+    # Render free tier has slower network, need generous timeout
+    app.config['MAIL_TIMEOUT'] = 30  # 30 seconds timeout
     
     mail.init_app(app)
     return mail
@@ -41,9 +41,10 @@ def generate_verification_code():
 def send_verification_email(email: str, code: str, company_name: str):
     """Send verification code email to user"""
     import socket
+    import traceback
     old_timeout = socket.getdefaulttimeout()
     try:
-        socket.setdefaulttimeout(20.0)
+        socket.setdefaulttimeout(30.0)
         msg = Message(
             subject='Verify Your RapidSite AI Account',
             recipients=[email]
@@ -142,6 +143,7 @@ def send_verification_email(email: str, code: str, company_name: str):
         return True
     except Exception as e:
         print(f"❌ Failed to send email: {e}")
+        traceback.print_exc()
         return False
     finally:
         socket.setdefaulttimeout(old_timeout)
