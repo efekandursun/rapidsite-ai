@@ -314,6 +314,7 @@ def update_procore_project():
 # =============================================================================
 
 @app.route('/health')
+@limiter.exempt
 def health_check():
     """Health check endpoint."""
     return jsonify({
@@ -395,6 +396,44 @@ def dashboard():
                            company=company,
                            page=page,
                            total_pages=total_pages)
+
+
+# =============================================================================
+# ADMIN ROUTES
+# =============================================================================
+
+def is_super_admin():
+    user = get_current_user()
+    if not user:
+        return False
+    # Use environment variable or default to efekan@rapidsite.app
+    admin_email = os.getenv('ADMIN_EMAIL', 'efekan@rapidsite.app')
+    return user.get('email') == admin_email
+
+@app.route('/admin')
+@login_required
+def super_admin_dashboard():
+    if not is_super_admin():
+        flash("You do not have permission to access this page.", "error")
+        return redirect(url_for('dashboard'))
+        
+    companies = db.get_all_companies()
+    return render_template('admin.html', companies=companies, user=get_current_user())
+
+@app.route('/admin/company/<int:company_id>/extend', methods=['POST'])
+@login_required
+def extend_subscription(company_id):
+    if not is_super_admin():
+        return jsonify({"success": False, "error": "Unauthorized"}), 403
+        
+    data = request.get_json() or {}
+    days = data.get('days', 14)
+    status = data.get('status', 'active')
+    
+    success = db.extend_company_subscription(company_id, days=days, status=status)
+    if success:
+        return jsonify({"success": True, "message": f"Extended by {days} days."})
+    return jsonify({"success": False, "error": "Company not found"}), 404
 
 
 # =============================================================================

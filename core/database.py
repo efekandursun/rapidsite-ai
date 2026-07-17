@@ -948,6 +948,51 @@ class Database:
             stats['total'] = sum(stats.values())
             return stats
     
+    def get_all_companies(self) -> List[Dict[str, Any]]:
+        """Get all companies with their basic stats for super admin dashboard."""
+        with self.get_connection() as conn:
+            # We fetch companies and count of users
+            cursor = self._execute(conn, """
+                SELECT c.*, 
+                       (SELECT COUNT(*) FROM users u WHERE u.company_id = c.id) as user_count,
+                       (SELECT COUNT(*) FROM site_reports r WHERE r.company_id = c.id) as report_count
+                FROM companies c
+                ORDER BY c.created_at DESC
+            """)
+            rows = self._fetchall(cursor)
+            return [dict(r) for r in rows]
+
+    def extend_company_subscription(self, company_id: int, days: int, status: str = 'active') -> bool:
+        """Extend a company's subscription/trial by X days."""
+        with self.get_connection() as conn:
+            # First, get current trial_ends_at
+            cursor = self._execute(conn, "SELECT trial_ends_at FROM companies WHERE id = ?", (company_id,))
+            row = self._fetchone(cursor)
+            if not row:
+                return False
+                
+            current_end = row['trial_ends_at']
+            if isinstance(current_end, str):
+                # Try parsing if it's a string (SQLite often returns strings)
+                try:
+                    current_end = datetime.fromisoformat(current_end.replace('Z', '+00:00'))
+                except ValueError:
+                    # Fallback if format is different
+                    current_end = None
+            
+            # If trial is already ended, start from today
+            now = datetime.now()
+            if not current_end or (isinstance(current_end, datetime) and current_end.replace(tzinfo=None) < now):
+                new_end = now + timedelta(days=days)
+            else:
+                new_end = current_end.replace(tzinfo=None) + timedelta(days=days)
+                
+            self._execute(conn, 
+                "UPDATE companies SET trial_ends_at = ?, subscription_status = ? WHERE id = ?",
+                (new_end, status, company_id)
+            )
+            return True
+
     def _row_to_dict(self, row: Dict[str, Any]) -> Dict[str, Any]:
         """Convert database row to dictionary with parsed JSON."""
         d = dict(row)

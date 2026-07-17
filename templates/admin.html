@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block title %}Super Admin Dashboard - RapidSite AI{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div class="mb-8 flex justify-between items-center">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Super Admin Dashboard</h1>
+            <p class="text-gray-600">Manage companies, subscriptions, and trials.</p>
+        </div>
+        <div>
+            <a href="{{ url_for('dashboard') }}" class="text-blue-600 hover:text-blue-800">Back to App</a>
+        </div>
+    </div>
+
+    <div class="bg-white shadow rounded-lg overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Users / Reports</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trial / Sub Ends</th>
+                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                {% for c in companies %}
+                <tr>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm font-medium text-gray-900">{{ c.name }}</div>
+                        <div class="text-sm text-gray-500">ID: {{ c.id }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="text-sm text-gray-900"><i class="fas fa-users text-gray-400 mr-1"></i> {{ c.user_count }}</div>
+                        <div class="text-sm text-gray-500"><i class="fas fa-file-alt text-gray-400 mr-1"></i> {{ c.report_count }}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                            {% if c.subscription_status == 'active' %}bg-green-100 text-green-800
+                            {% elif c.subscription_status == 'trialing' %}bg-blue-100 text-blue-800
+                            {% else %}bg-red-100 text-red-800{% endif %}">
+                            {{ c.subscription_status | title }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {{ c.trial_ends_at|string|truncate(10, True, '') if c.trial_ends_at else 'N/A' }}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button onclick="extendSubscription({{ c.id }}, 14, 'trialing')" class="text-blue-600 hover:text-blue-900 mr-3">
+                            <i class="fas fa-plus-circle"></i> 14D Trial
+                        </button>
+                        <button onclick="extendSubscription({{ c.id }}, 30, 'active')" class="text-green-600 hover:text-green-900">
+                            <i class="fas fa-star"></i> 30D Pro
+                        </button>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">No companies found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+async function extendSubscription(companyId, days, status) {
+    if (!confirm(`Are you sure you want to extend this company's subscription by ${days} days and set status to ${status}?`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/admin/company/${companyId}/extend`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ days: days, status: status })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            alert('Successfully updated subscription!');
+            window.location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    } catch (e) {
+        alert('Failed to send request');
+        console.error(e);
+    }
+}
+</script>
+{% endblock %}
