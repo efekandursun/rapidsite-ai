@@ -31,8 +31,9 @@ def init_mail(app):
     app.config['MAIL_PASSWORD'] = os.getenv('SMTP_PASSWORD')
     app.config['MAIL_DEFAULT_SENDER'] = os.getenv('SMTP_FROM_EMAIL', os.getenv('SMTP_USERNAME'))
     
-    # Render free tier has slower network, need generous timeout
-    app.config['MAIL_TIMEOUT'] = 60  # 60 seconds timeout
+    # Set timeout low enough so that if SMTP is blocked (Render free tier),
+    # it fails fast instead of hanging and causing a Gunicorn/Vercel 502 timeout.
+    app.config['MAIL_TIMEOUT'] = 5  # 5 seconds timeout
     
     mail.init_app(app)
     return mail
@@ -43,12 +44,7 @@ def generate_verification_code():
 
 def send_verification_email(email: str, code: str, company_name: str):
     """Send verification code email to user synchronously"""
-    old_timeout = socket.getdefaulttimeout()
     try:
-        # Lowered to 15 seconds. If this is 60.0, it races with Gunicorn's 60s timeout,
-        # causing Gunicorn to kill the worker (502 Bad Gateway) if Render blocks the SMTP port.
-        socket.setdefaulttimeout(15.0)
-        
         msg = Message(
             subject='Verify Your RapidSite AI Account',
             recipients=[email]
@@ -66,14 +62,10 @@ def send_verification_email(email: str, code: str, company_name: str):
         current_app.logger.error(f"Failed to send verification email: {e}")
         traceback.print_exc()
         return False
-    finally:
-        socket.setdefaulttimeout(old_timeout)
 
 def send_password_reset_email(email: str, reset_link: str):
     """Send password reset email synchronously"""
-    old_timeout = socket.getdefaulttimeout()
     try:
-        socket.setdefaulttimeout(15.0)
         msg = Message(
             subject='Reset Your RapidSite AI Password',
             recipients=[email]
@@ -90,5 +82,3 @@ def send_password_reset_email(email: str, reset_link: str):
         current_app.logger.error(f"Failed to send password reset email: {e}")
         traceback.print_exc()
         return False
-    finally:
-        socket.setdefaulttimeout(old_timeout)

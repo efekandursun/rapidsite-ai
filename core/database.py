@@ -72,7 +72,11 @@ class Database:
                 conninfo=self.db_url,
                 min_size=1,
                 max_size=20,
-                kwargs={"row_factory": self.dict_row}
+                timeout=5.0,  # 5 seconds max waiting for a connection from pool
+                kwargs={
+                    "row_factory": self.dict_row,
+                    "connect_timeout": 5  # 5 seconds max waiting for TCP connection to DB
+                }
             )
         return Database._pool
     
