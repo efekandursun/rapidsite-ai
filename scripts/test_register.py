@@ -2,7 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 
 session = requests.Session()
-url = "http://127.0.0.1:5000/register"
+url = "http://127.0.0.1:5001/register"
 
 # Get CSRF token
 response = session.get(url)

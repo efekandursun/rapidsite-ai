@@ -1,36 +1,26 @@
-import os
 import sys
+import os
 
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.insert(0, PROJECT_ROOT)
+# Add parent dir to path so we can import core
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from core.database import Database
 
-def reset():
+def reset_db():
+    print("Resetting database...")
     db = Database()
-    print("Dropping tables...")
-    try:
+    with db.get_connection() as conn:
+        cursor = conn.cursor()
         if db.use_postgres:
-            with db.psycopg.connect(db.db_url) as conn:
-                cursor = conn.cursor()
-                cursor.execute("DROP TABLE IF EXISTS site_reports CASCADE;")
-                cursor.execute("DROP TABLE IF EXISTS users CASCADE;")
-                cursor.execute("DROP TABLE IF EXISTS company_authorized_numbers CASCADE;")
-                cursor.execute("DROP TABLE IF EXISTS companies CASCADE;")
-                conn.commit()
+            print("Truncating PostgreSQL tables...")
+            cursor.execute("TRUNCATE TABLE site_reports, users, company_authorized_numbers, companies RESTART IDENTITY CASCADE;")
         else:
-            with db.get_connection() as conn:
-                cursor = conn.cursor()
-                cursor.execute("DROP TABLE IF EXISTS site_reports;")
-                cursor.execute("DROP TABLE IF EXISTS users;")
-                cursor.execute("DROP TABLE IF EXISTS company_authorized_numbers;")
-                cursor.execute("DROP TABLE IF EXISTS companies;")
-                
-        print("Reinitializing schema...")
-        db._init_schema()
-        print("Database reset successfully!")
-    except Exception as e:
-        print(f"Error resetting database: {e}")
+            print("Deleting SQLite tables...")
+            cursor.execute("DELETE FROM site_reports")
+            cursor.execute("DELETE FROM users")
+            cursor.execute("DELETE FROM company_authorized_numbers")
+            cursor.execute("DELETE FROM companies")
+    print("Database reset successfully.")
 
 if __name__ == "__main__":
-    reset()
+    reset_db()
