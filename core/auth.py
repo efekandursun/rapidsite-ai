@@ -193,15 +193,20 @@ def register():
             
             db.set_verification_code(email, code, expires_at)
             
-            if send_verification_email(email, code, company_name):
-                # Store email in session for verification page
-                session['pending_verification_email'] = email
-                flash('Registration successful! Please check your email for verification code.', 'success')
-                return redirect(url_for('auth.verify_email'))
-            else:
-                flash('Registration successful, but failed to send verification email. Please contact support.', 'warning')
-                return redirect(url_for('auth.login'))
+            import threading
+            from flask import current_app
+            app_obj = current_app._get_current_object()
             
+            def async_send(app, e, c, cn):
+                with app.app_context():
+                    send_verification_email(e, c, cn)
+                    
+            threading.Thread(target=async_send, args=(app_obj, email, code, company_name)).start()
+            
+            # Store email in session for verification page
+            session['pending_verification_email'] = email
+            flash('Registration successful! Please check your email for verification code.', 'success')
+            return redirect(url_for('auth.verify_email'))
         except Exception as e:
             flash(f'Registration failed: {str(e)}', 'error')
     
@@ -286,12 +291,19 @@ def resend_verification():
         
         db.set_verification_code(email, code, expires_at)
         
-        if send_verification_email(email, code, company_name):
-            # Update rate limit timestamp
-            session['last_resend_time'] = datetime.now().isoformat()
-            flash('Verification code resent! Please check your email.', 'success')
-        else:
-            flash('Failed to resend verification code.', 'error')
+        import threading
+        from flask import current_app
+        app_obj = current_app._get_current_object()
+        
+        def async_send(app, e, c, cn):
+            with app.app_context():
+                send_verification_email(e, c, cn)
+                
+        threading.Thread(target=async_send, args=(app_obj, email, code, company_name)).start()
+        
+        # Update rate limit timestamp
+        session['last_resend_time'] = datetime.now().isoformat()
+        flash('Verification code resent! Please check your email.', 'success')
     except Exception as e:
         flash(f'Error: {str(e)}', 'error')
     
