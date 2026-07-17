@@ -45,9 +45,9 @@ def send_verification_email(email: str, code: str, company_name: str):
     """Send verification code email to user synchronously"""
     old_timeout = socket.getdefaulttimeout()
     try:
-        # Restore the socket timeout hack that ensures Render doesn't hang forever
-        # or timeout prematurely during slow SMTP connections.
-        socket.setdefaulttimeout(60.0)
+        # Lowered to 15 seconds. If this is 60.0, it races with Gunicorn's 60s timeout,
+        # causing Gunicorn to kill the worker (502 Bad Gateway) if Render blocks the SMTP port.
+        socket.setdefaulttimeout(15.0)
         
         msg = Message(
             subject='Verify Your RapidSite AI Account',
@@ -73,7 +73,7 @@ def send_password_reset_email(email: str, reset_link: str):
     """Send password reset email synchronously"""
     old_timeout = socket.getdefaulttimeout()
     try:
-        socket.setdefaulttimeout(60.0)
+        socket.setdefaulttimeout(15.0)
         msg = Message(
             subject='Reset Your RapidSite AI Password',
             recipients=[email]
