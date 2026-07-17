@@ -3,62 +3,220 @@
 {% block title %}Super Admin Dashboard - RapidSite AI{% endblock %}
 
 {% block content %}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-    <div class="mb-8 flex justify-between items-center">
+<style>
+    .admin-container {
+        padding: 2rem;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    .admin-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+    .admin-header h1 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0;
+    }
+    .admin-header p {
+        color: var(--text-secondary);
+        margin: 0.25rem 0 0 0;
+        font-size: 0.9rem;
+    }
+    .admin-back-link {
+        color: var(--accent-primary);
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 0.9rem;
+    }
+    .admin-back-link:hover {
+        text-decoration: underline;
+    }
+    .admin-table-wrapper {
+        background: var(--card-bg, #fff);
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        border: 1px solid var(--border-color, #e2e8f0);
+    }
+    .admin-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .admin-table thead {
+        background: var(--bg-secondary, #f8fafc);
+    }
+    .admin-table th {
+        padding: 0.75rem 1.25rem;
+        text-align: left;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-bottom: 1px solid var(--border-color, #e2e8f0);
+    }
+    .admin-table th:last-child {
+        text-align: right;
+    }
+    .admin-table td {
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid var(--border-color, #e2e8f0);
+        font-size: 0.9rem;
+        color: var(--text-primary);
+        vertical-align: middle;
+    }
+    .admin-table tr:last-child td {
+        border-bottom: none;
+    }
+    .company-name {
+        font-weight: 600;
+        color: var(--text-primary);
+    }
+    .company-id {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        margin-top: 0.15rem;
+    }
+    .stat-line {
+        font-size: 0.85rem;
+    }
+    .stat-line + .stat-line {
+        margin-top: 0.15rem;
+        color: var(--text-secondary);
+    }
+    .badge {
+        display: inline-block;
+        padding: 0.2rem 0.65rem;
+        border-radius: 9999px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: capitalize;
+    }
+    .badge-active {
+        background: rgba(34, 197, 94, 0.15);
+        color: #16a34a;
+    }
+    .badge-trialing {
+        background: rgba(59, 130, 246, 0.15);
+        color: #2563eb;
+    }
+    .badge-expired {
+        background: rgba(239, 68, 68, 0.15);
+        color: #dc2626;
+    }
+    .date-cell {
+        font-size: 0.85rem;
+        color: var(--text-secondary);
+    }
+    .actions-cell {
+        text-align: right;
+        white-space: nowrap;
+    }
+    .btn-trial, .btn-pro {
+        display: inline-block;
+        padding: 0.4rem 0.8rem;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .btn-trial {
+        background: rgba(59, 130, 246, 0.1);
+        color: #2563eb;
+        margin-right: 0.5rem;
+    }
+    .btn-trial:hover {
+        background: rgba(59, 130, 246, 0.25);
+    }
+    .btn-pro {
+        background: rgba(34, 197, 94, 0.1);
+        color: #16a34a;
+    }
+    .btn-pro:hover {
+        background: rgba(34, 197, 94, 0.25);
+    }
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
+        color: var(--text-secondary);
+    }
+    
+    /* Responsive */
+    @media (max-width: 768px) {
+        .admin-container { padding: 1rem; }
+        .admin-table th, .admin-table td { padding: 0.6rem 0.75rem; font-size: 0.8rem; }
+        .actions-cell { display: flex; flex-direction: column; gap: 0.4rem; }
+        .btn-trial { margin-right: 0; }
+    }
+</style>
+
+<div class="admin-container">
+    <div class="admin-header">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">Super Admin Dashboard</h1>
-            <p class="text-gray-600">Manage companies, subscriptions, and trials.</p>
+            <h1>🛡️ Super Admin Dashboard</h1>
+            <p>Manage companies, subscriptions, and trials.</p>
         </div>
         <div>
-            <a href="{{ url_for('dashboard') }}" class="text-blue-600 hover:text-blue-800">Back to App</a>
+            <a href="{{ url_for('dashboard') }}" class="admin-back-link">← Back to App</a>
         </div>
     </div>
 
-    <div class="bg-white shadow rounded-lg overflow-hidden">
-        <table class="min-w-full divide-y divide-gray-200">
-            <thead class="bg-gray-50">
+    <div class="admin-table-wrapper">
+        <table class="admin-table">
+            <thead>
                 <tr>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Users / Reports</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trial / Sub Ends</th>
-                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    <th>Company</th>
+                    <th>Users / Reports</th>
+                    <th>Status</th>
+                    <th>Trial / Sub Ends</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
+            <tbody>
                 {% for c in companies %}
                 <tr>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm font-medium text-gray-900">{{ c.name }}</div>
-                        <div class="text-sm text-gray-500">ID: {{ c.id }}</div>
+                    <td>
+                        <div class="company-name">{{ c.name }}</div>
+                        <div class="company-id">ID: {{ c.id }} &middot; {{ c.slug }}</div>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="text-sm text-gray-900"><i class="fas fa-users text-gray-400 mr-1"></i> {{ c.user_count }}</div>
-                        <div class="text-sm text-gray-500"><i class="fas fa-file-alt text-gray-400 mr-1"></i> {{ c.report_count }}</div>
+                    <td>
+                        <div class="stat-line">👤 {{ c.user_count }} users</div>
+                        <div class="stat-line">📄 {{ c.report_count }} reports</div>
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                            {% if c.subscription_status == 'active' %}bg-green-100 text-green-800
-                            {% elif c.subscription_status == 'trialing' %}bg-blue-100 text-blue-800
-                            {% else %}bg-red-100 text-red-800{% endif %}">
-                            {{ c.subscription_status | title }}
-                        </span>
+                    <td>
+                        {% if c.subscription_status == 'active' %}
+                            <span class="badge badge-active">Active</span>
+                        {% elif c.subscription_status == 'trialing' %}
+                            <span class="badge badge-trialing">Trial</span>
+                        {% else %}
+                            <span class="badge badge-expired">{{ c.subscription_status or 'Unknown' }}</span>
+                        {% endif %}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {{ c.trial_ends_at|string|truncate(10, True, '') if c.trial_ends_at else 'N/A' }}
+                    <td class="date-cell">
+                        {% if c.trial_ends_at %}
+                            {{ c.trial_ends_at|string|truncate(19, True, '') }}
+                        {% else %}
+                            N/A
+                        {% endif %}
                     </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button onclick="extendSubscription({{ c.id }}, 14, 'trialing')" class="text-blue-600 hover:text-blue-900 mr-3">
-                            <i class="fas fa-plus-circle"></i> 14D Trial
+                    <td class="actions-cell">
+                        <button class="btn-trial" onclick="extendSubscription({{ c.id }}, 14, 'trialing')">
+                            +14D Trial
                         </button>
-                        <button onclick="extendSubscription({{ c.id }}, 30, 'active')" class="text-green-600 hover:text-green-900">
-                            <i class="fas fa-star"></i> 30D Pro
+                        <button class="btn-pro" onclick="extendSubscription({{ c.id }}, 30, 'active')">
+                            +30D Pro
                         </button>
                     </td>
                 </tr>
                 {% else %}
                 <tr>
-                    <td colspan="5" class="px-6 py-4 text-center text-sm text-gray-500">No companies found.</td>
+                    <td colspan="5" class="empty-state">No companies registered yet.</td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -68,7 +226,7 @@
 
 <script>
 async function extendSubscription(companyId, days, status) {
-    if (!confirm(`Are you sure you want to extend this company's subscription by ${days} days and set status to ${status}?`)) {
+    if (!confirm(`Extend company #${companyId} by ${days} days (status → ${status})?`)) {
         return;
     }
     
@@ -84,13 +242,13 @@ async function extendSubscription(companyId, days, status) {
         const data = await response.json();
         
         if (data.success) {
-            alert('Successfully updated subscription!');
-            window.location.reload();
+            showToast('✅ ' + data.message, 'success');
+            setTimeout(() => window.location.reload(), 1500);
         } else {
-            alert('Error: ' + data.error);
+            showToast('❌ ' + (data.error || 'Unknown error'), 'error');
         }
     } catch (e) {
-        alert('Failed to send request');
+        showToast('❌ Network error', 'error');
         console.error(e);
     }
 }

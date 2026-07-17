@@ -897,10 +897,28 @@ class Database:
             stored_code = row.get('verification_code')
             expires_at = row.get('verification_code_expires')
             
-            if stored_code != code:
+            if not stored_code or stored_code != code:
                 return False
             
-            if datetime.fromisoformat(expires_at) < datetime.now():
+            if not expires_at:
+                return False
+            
+            # Parse expiry - handle string, datetime, or timezone-aware values
+            if isinstance(expires_at, str):
+                try:
+                    expires_dt = datetime.fromisoformat(expires_at.replace('Z', '+00:00'))
+                except ValueError:
+                    return False
+            elif isinstance(expires_at, datetime):
+                expires_dt = expires_at
+            else:
+                return False
+            
+            # Strip timezone for safe comparison
+            if expires_dt.tzinfo is not None:
+                expires_dt = expires_dt.replace(tzinfo=None)
+            
+            if expires_dt < datetime.now():
                 return False
             
             self._execute(conn, """
