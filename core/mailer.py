@@ -26,7 +26,7 @@ def init_mail(app):
         
     app.config['MAIL_USERNAME'] = os.getenv('SMTP_USERNAME')
     app.config['MAIL_PASSWORD'] = os.getenv('SMTP_PASSWORD')
-    app.config['MAIL_DEFAULT_SENDER'] = os.getenv('SMTP_USERNAME')
+    app.config['MAIL_DEFAULT_SENDER'] = os.getenv('SMTP_FROM_EMAIL', os.getenv('SMTP_USERNAME'))
     
     # Prevent Gunicorn worker timeouts if SMTP server hangs
     app.config['MAIL_TIMEOUT'] = 5  # 5 seconds timeout
