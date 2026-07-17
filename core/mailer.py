@@ -43,7 +43,7 @@ def send_verification_email(email: str, code: str, company_name: str):
     import socket
     old_timeout = socket.getdefaulttimeout()
     try:
-        socket.setdefaulttimeout(5.0)
+        socket.setdefaulttimeout(20.0)
         msg = Message(
             subject='Verify Your RapidSite AI Account',
             recipients=[email]
