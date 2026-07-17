@@ -4,6 +4,8 @@ Supports SMTP providers like Gmail, SendGrid, etc.
 """
 import os
 import random
+from threading import Thread
+from flask import current_app, render_template
 from flask_mail import Mail, Message
 from datetime import datetime, timedelta
 
@@ -38,116 +40,51 @@ def generate_verification_code():
     """Generate a 6-digit verification code"""
     return str(random.randint(100000, 999999))
 
+def send_async_email(app, msg):
+    """Send email asynchronously in a background thread"""
+    with app.app_context():
+        try:
+            mail.send(msg)
+        except Exception as e:
+            app.logger.error(f"Failed to send email: {e}")
+
 def send_verification_email(email: str, code: str, company_name: str):
-    """Send verification code email to user"""
-    import socket
-    import traceback
-    old_timeout = socket.getdefaulttimeout()
+    """Send verification code email to user asynchronously"""
     try:
-        socket.setdefaulttimeout(60.0)
+        app = current_app._get_current_object()
         msg = Message(
             subject='Verify Your RapidSite AI Account',
             recipients=[email]
         )
         
-        msg.html = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <style>
-                body {{
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                    background: #f3f4f6;
-                    margin: 0;
-                    padding: 20px;
-                }}
-                .container {{
-                    max-width: 600px;
-                    margin: 0 auto;
-                    background: white;
-                    border-radius: 12px;
-                    overflow: hidden;
-                    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-                }}
-                .header {{
-                    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-                    padding: 30px;
-                    text-align: center;
-                }}
-                .logo {{
-                    font-size: 24px;
-                    font-weight: 700;
-                    background: linear-gradient(90deg, #00d4ff, #7c3aed);
-                    -webkit-background-clip: text;
-                    -webkit-text-fill-color: transparent;
-                }}
-                .content {{
-                    padding: 40px 30px;
-                }}
-                .code-box {{
-                    background: #f3f4f6;
-                    border: 2px dashed #3b82f6;
-                    border-radius: 8px;
-                    padding: 20px;
-                    text-align: center;
-                    margin: 30px 0;
-                }}
-                .code {{
-                    font-size: 36px;
-                    font-weight: 700;
-                    color: #1a1a2e;
-                    letter-spacing: 8px;
-                    font-family: 'Monaco', 'Consolas', monospace;
-                }}
-                .footer {{
-                    padding: 20px 30px;
-                    background: #f9fafb;
-                    text-align: center;
-                    color: #6b7280;
-                    font-size: 14px;
-                }}
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <div class="header">
-                    <div class="logo">🏗️ RapidSite AI</div>
-                </div>
-                <div class="content">
-                    <h2>Welcome to RapidSite AI!</h2>
-                    <p>Hi there,</p>
-                    <p>Thank you for registering <strong>{company_name}</strong> on RapidSite AI.</p>
-                    <p>Please use the verification code below to complete your registration:</p>
-                    
-                    <div class="code-box">
-                        <div class="code">{code}</div>
-                    </div>
-                    
-                    <p style="color: #6b7280; font-size: 14px;">
-                        This code will expire in 15 minutes.
-                    </p>
-                    <p style="color: #6b7280; font-size: 14px;">
-                        If you didn't request this code, please ignore this email.
-                    </p>
-                </div>
-                <div class="footer">
-                    <p>RapidSite AI - Construction Report System</p>
-                    <p>This is an automated message, please do not reply.</p>
-                </div>
-            </div>
-        </body>
-        </html>
-        """
+        msg.html = render_template(
+            'emails/verification.html',
+            company_name=company_name,
+            code=code
+        )
         
-        mail.send(msg)
+        Thread(target=send_async_email, args=(app, msg)).start()
         return True
     except Exception as e:
-        print(f"❌ Failed to send email: {e}")
-        traceback.print_exc()
+        current_app.logger.error(f"Failed to initiate verification email: {e}")
         return False
-    finally:
-        socket.setdefaulttimeout(old_timeout)
 
 def send_password_reset_email(email: str, reset_link: str):
-    """Send password reset email (future feature)"""
-    pass
+    """Send password reset email asynchronously"""
+    try:
+        app = current_app._get_current_object()
+        msg = Message(
+            subject='Reset Your RapidSite AI Password',
+            recipients=[email]
+        )
+        
+        msg.html = render_template(
+            'emails/password_reset.html',
+            reset_link=reset_link
+        )
+        
+        Thread(target=send_async_email, args=(app, msg)).start()
+        return True
+    except Exception as e:
+        current_app.logger.error(f"Failed to initiate password reset email: {e}")
+        return False
