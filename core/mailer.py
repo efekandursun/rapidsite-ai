@@ -40,7 +40,10 @@ def generate_verification_code():
 
 def send_verification_email(email: str, code: str, company_name: str):
     """Send verification code email to user"""
+    import socket
+    old_timeout = socket.getdefaulttimeout()
     try:
+        socket.setdefaulttimeout(5.0)
         msg = Message(
             subject='Verify Your RapidSite AI Account',
             recipients=[email]
@@ -140,6 +143,8 @@ def send_verification_email(email: str, code: str, company_name: str):
     except Exception as e:
         print(f"❌ Failed to send email: {e}")
         return False
+    finally:
+        socket.setdefaulttimeout(old_timeout)
 
 def send_password_reset_email(email: str, reset_link: str):
     """Send password reset email (future feature)"""
