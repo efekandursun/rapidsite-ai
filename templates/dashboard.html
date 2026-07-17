@@ -384,6 +384,17 @@
 <!-- Filters -->
 <div class="filter-bar">
     <span style="color: var(--text-muted); font-size: 1.1rem;">🔍</span>
+    
+    {% if projects_list %}
+    <select class="filter-select" id="projectFilter" onchange="window.location.href='?project_id='+this.value" style="font-weight: 600; background: var(--bg-card); border-color: var(--accent-primary);">
+        <option value="">All Projects</option>
+        {% for proj in projects_list %}
+        <option value="{{ proj.id }}" {% if project_filter == proj.id|string %}selected{% endif %}>🏢 {{ proj.name }}</option>
+        {% endfor %}
+    </select>
+    <div class="filter-divider"></div>
+    {% endif %}
+
     <input type="text" id="searchInput" placeholder="Search by item, location, description..." oninput="filterReports()">
     <div class="filter-divider"></div>
     <select class="filter-select" id="statusFilter" onchange="filterReports()">
@@ -404,6 +415,10 @@
         <option value="safety">Safety</option>
         <option value="delivery">Delivery</option>
     </select>
+    
+    <a href="{{ url_for('export_excel', project_id=project_filter) }}" class="btn-primary" style="margin-left: auto; text-decoration: none; display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1rem; background: var(--accent-success);">
+        <span style="font-size: 1.2rem;">📥</span> Export Excel
+    </a>
 </div>
 
 <!-- Reports -->
@@ -510,6 +525,12 @@
                                 <span class="dest-log-badge">{{ report.parsed_data.log_type | default('NOTES', true) | upper }} LOG</span>
                             </div>
                             <div class="dest-grid">
+                                <div>
+                                    <div class="dest-field-label">Project</div>
+                                    <div class="dest-field-value" style="font-weight: 600; color: var(--accent-primary);">
+                                        🏢 {{ report.parsed_data.project_name | default('Default Project', true) }}
+                                    </div>
+                                </div>
                                 {% if report.parsed_data.item | default(none, true) %}
                                 <div>
                                     <div class="dest-field-label">Item / Vendor</div>

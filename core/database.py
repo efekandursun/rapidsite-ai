@@ -138,6 +138,7 @@ class Database:
                     procore_vendors TEXT,
                     procore_cost_codes TEXT,
                     procore_locations TEXT,
+                    procore_projects TEXT,
                     subscription_plan TEXT DEFAULT 'pro',
                     subscription_status TEXT DEFAULT 'trialing',
                     trial_ends_at TIMESTAMP,
@@ -214,6 +215,7 @@ class Database:
                     procore_expires_at TEXT,
                     procore_company_id TEXT,
                     procore_default_project_id TEXT,
+                    procore_projects TEXT,
                     subscription_plan TEXT DEFAULT 'pro',
                     subscription_status TEXT DEFAULT 'trialing',
                     trial_ends_at TEXT,
@@ -636,7 +638,7 @@ class Database:
 
     def _run_migrations(self, conn, cursor):
         """Run lightweight schema migrations (e.g. adding columns)."""
-        new_cols = ['procore_vendors', 'procore_cost_codes', 'procore_locations']
+        new_cols = ['procore_vendors', 'procore_cost_codes', 'procore_locations', 'procore_projects']
         for col in new_cols:
             try:
                 if self.use_postgres:
@@ -806,6 +808,16 @@ class Database:
                 WHERE id = ?
             """, (vendors, cost_codes, locations, company_id))
             return cursor.rowcount > 0
+
+    def update_company_procore_projects(self, company_id: int, projects_json: str) -> bool:
+        """Update cached Procore projects for a company."""
+        with self.get_connection() as conn:
+            cursor = self._execute(conn, """
+                UPDATE companies 
+                SET procore_projects = ?
+                WHERE id = ?
+            """, (projects_json, company_id))
+            return cursor.rowcount > 0
     
     # =========================================================================
     # USER MANAGEMENT
@@ -934,6 +946,7 @@ class Database:
     # =========================================================================
     
     def get_reports_by_company(self, company_id: int, status: str = None,
+                                project_id: str = None,
                                 limit: int = 50, offset: int = 0) -> List[Dict[str, Any]]:
         """Get reports filtered by company."""
         query = "SELECT * FROM site_reports WHERE company_id = ?"
@@ -942,6 +955,10 @@ class Database:
         if status:
             query += " AND status = ?"
             params.append(status)
+            
+        if project_id:
+            query += " AND project_id = ?"
+            params.append(project_id)
         
         query += " ORDER BY created_at DESC LIMIT ? OFFSET ?"
         params.extend([limit, offset])

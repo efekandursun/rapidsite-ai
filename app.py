@@ -380,12 +380,22 @@ def dashboard():
     user = get_current_user()
     
     page = request.args.get('page', 1, type=int)
+    project_filter = request.args.get('project_id', None)
     per_page = 20
     offset = (page - 1) * per_page
     
+    projects_list = []
+    
     if company:
-        raw_reports = db.get_reports_by_company(company['id'], limit=per_page, offset=offset)
+        raw_reports = db.get_reports_by_company(company['id'], project_id=project_filter, limit=per_page, offset=offset)
         stats = db.get_stats_by_company(company['id'])
+        
+        import json
+        if company.get('procore_projects'):
+            try:
+                projects_list = json.loads(company['procore_projects'])
+            except json.JSONDecodeError:
+                pass
     else:
         # Fallback for users without company (shouldn't happen)
         raw_reports = db.get_reports(limit=per_page, offset=offset)
@@ -415,7 +425,77 @@ def dashboard():
                            user=user, 
                            company=company,
                            page=page,
-                           total_pages=total_pages)
+                           total_pages=total_pages,
+                           projects_list=projects_list,
+                           project_filter=project_filter)
+
+
+@app.route('/dashboard/export')
+@login_required
+def export_excel():
+    company = get_current_company()
+    if not company:
+        return redirect(url_for('landing'))
+        
+    project_filter = request.args.get('project_id', None)
+    
+    # We want all reports for the export, maybe up to 10000
+    raw_reports = db.get_reports_by_company(company['id'], project_id=project_filter, limit=10000, offset=0)
+    
+    import openpyxl
+    from io import BytesIO
+    
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Saha Raporlari"
+    
+    # Headers matching the user's requested format
+    headers = ['Tarih', 'Proje', 'Rapor Tipi', 'Malzeme / Ekip / Konu', 'Adet / Saat', 'Durum', 'Maliyet Kodu (Cost Code)', 'Raporlayan', 'Orijinal Ses Kaydi']
+    ws.append(headers)
+    
+    for r in raw_reports:
+        parsed = r.get('parsed_data', {})
+        if isinstance(parsed, str):
+            try:
+                import json
+                parsed = json.loads(parsed)
+            except:
+                parsed = {}
+                
+        date_str = str(r['created_at'])[:16]
+        project_name = parsed.get('project_name') or 'N/A'
+        log_type = (parsed.get('log_type') or 'N/A').title()
+        item = parsed.get('item') or parsed.get('description') or 'N/A'
+        
+        quantity = ""
+        if parsed.get('quantity'):
+            quantity = f"{parsed.get('quantity')} {parsed.get('unit') or ''}"
+        elif parsed.get('crew') and parsed.get('crew').get('hours'):
+            quantity = f"{parsed.get('crew').get('hours')} hours"
+        elif parsed.get('equipment_details') and parsed.get('equipment_details').get('hours_operating'):
+            quantity = f"{parsed.get('equipment_details').get('hours_operating')} hours"
+            
+        status = r['status'].upper()
+        cost_code = r.get('cost_code') or parsed.get('cost_code') or 'N/A'
+        reported_by = r.get('reported_by') or 'N/A'
+        raw_transcript = r.get('raw_transcript') or ''
+        
+        ws.append([date_str, project_name, log_type, item, quantity, status, cost_code, reported_by, raw_transcript])
+        
+    # Formatting widths
+    for col in ws.columns:
+        column_letter = col[0].column_letter
+        ws.column_dimensions[column_letter].width = 20
+    ws.column_dimensions['I'].width = 60 # Make the raw transcript column wider
+        
+    excel_file = BytesIO()
+    wb.save(excel_file)
+    excel_file.seek(0)
+    
+    filename = f"Saha_Raporlari_{datetime.now().strftime('%Y%m%d')}.xlsx"
+    from flask import send_file
+    return send_file(excel_file, download_name=filename, as_attachment=True, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+
 
 
 # =============================================================================
@@ -837,11 +917,13 @@ def sync_master_data():
         vendors = connector.get_vendors(project_id)
         cost_codes = connector.get_cost_codes(project_id)
         locations = connector.get_locations(project_id)
+        projects = connector.get_projects() # Defaults to current company_id in connector
         
         # We only need minimal info to feed the LLM
         v_list = [{"id": v.get("id"), "name": v.get("name")} for v in vendors if v.get("name")]
         cc_list = [{"id": c.get("id"), "full_code": c.get("full_code"), "name": c.get("name")} for c in cost_codes if c.get("full_code")]
         loc_list = [{"id": l.get("id"), "name": l.get("name")} for l in locations if l.get("name")]
+        proj_list = [{"id": p.get("id"), "name": p.get("name")} for p in projects if p.get("name")]
         
         import json
         db.update_company_procore_lists(
@@ -850,7 +932,8 @@ def sync_master_data():
             json.dumps(cc_list, ensure_ascii=False),
             json.dumps(loc_list, ensure_ascii=False)
         )
-        flash(f"✅ Successfully synced {len(v_list)} vendors, {len(cc_list)} cost codes, and {len(loc_list)} locations.", "success")
+        db.update_company_procore_projects(company['id'], json.dumps(proj_list, ensure_ascii=False))
+        flash(f"✅ Successfully synced {len(proj_list)} projects, {len(v_list)} vendors, {len(cc_list)} cost codes, and {len(loc_list)} locations.", "success")
     except Exception as e:
         flash(f"❌ Failed to sync master data: {e}", "error")
         

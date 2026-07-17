@@ -100,8 +100,11 @@ def whatsapp_webhook():
     ack = MessagingResponse()
     ack.message("✅ Received. Processing now...")
 
+    # Detach data from Flask request context before backgrounding
+    form_data = dict(request.values)
+    
     # Kick background processing
-    executor.submit(handle_message_async, message_sid, from_number, message_body, num_media, request.values)
+    executor.submit(handle_message_async, message_sid, from_number, message_body, num_media, form_data)
 
     return Response(str(ack), mimetype='application/xml')
 
@@ -310,10 +313,13 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
                 if s == 'complete': s = 'pending'
                 
                 media_json = json.dumps(media_paths) if media_paths else None
+                
+                detected_project_id = item.get('project_id') or project_id
+                
                 rid = db.create_report(
                     raw_transcript=text,
                     parsed_data=item,
-                    project_id=project_id,
+                    project_id=detected_project_id,
                     reported_by=reporter_str,
                     company_id=company_id,
                     media_paths=media_json
@@ -337,11 +343,14 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
             s = item.get('status', 'pending')
             if s == 'complete': s = 'pending'
             
+            # Use AI-detected project_id or fallback to the provided default project_id
+            detected_project_id = item.get('project_id') or project_id
+            
             media_json = json.dumps(media_paths) if media_paths else None
             rid = db.create_report(
                 raw_transcript=text,
                 parsed_data=item,
-                project_id=project_id,
+                project_id=detected_project_id,
                 reported_by=reporter_str,
                 company_id=company_id,
                 media_paths=media_json

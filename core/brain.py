@@ -64,6 +64,8 @@ You MUST return a JSON ARRAY containing one or more event objects. If the messag
   {
     "status": "complete|incomplete",
     "follow_up_question": "string (English, ONLY if status is incomplete) or null",
+    "project_id": "string ID of the matched Procore project or null if unknown",
+    "project_name": "string name of the matched Procore project or null if unknown",
     "translated_transcript": "Direct English translation of the source message (return null if the source message is already in English)",
     "log_type": "production|materials|delivery|manpower|equipment|safety|notes",
     "description": "Brief professional summary for comments/notes fields",
@@ -133,13 +135,16 @@ You MUST return a JSON ARRAY containing one or more event objects. If the messag
         
         # Inject Procore Master Data (Fuzzy Matching constraint) if available
         if company:
+            projects = company.get('procore_projects')
             vendors = company.get('procore_vendors')
             cost_codes = company.get('procore_cost_codes')
             locations = company.get('procore_locations')
             
             master_data_prompt = "\n\n## MASTER DATA (CRITICAL STRICT MATCHING):\n"
-            master_data_prompt += "You MUST map the identified company, cost code, and location to ONE of the exact names/codes provided below. Use your best fuzzy matching judgment. If there is absolutely no reasonable match, you MUST use null. NEVER invent or hallucinate a new vendor or location that is not in this list. It is better to use null than to make up a value.\n"
+            master_data_prompt += "If the input mentions a project, vendor, cost code, or location, you MUST fuzzy match it against the following lists and output the EXACT ID/Name. If no match is found, output null for the ID.\n"
             
+            if projects:
+                master_data_prompt += f"\n- PROJECTS: {projects}\n"
             if vendors and vendors != "[]":
                 master_data_prompt += f"\n- VALID VENDORS: {vendors}"
             if cost_codes and cost_codes != "[]":
