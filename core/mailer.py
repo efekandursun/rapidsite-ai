@@ -3,8 +3,9 @@ Email sending module for RapidSite AI
 Supports SMTP providers like Gmail, SendGrid, etc.
 """
 import os
+import socket
 import random
-from threading import Thread
+import traceback
 from flask import current_app, render_template
 from flask_mail import Mail, Message
 from datetime import datetime, timedelta
@@ -40,18 +41,14 @@ def generate_verification_code():
     """Generate a 6-digit verification code"""
     return str(random.randint(100000, 999999))
 
-def send_async_email(app, msg):
-    """Send email asynchronously in a background thread"""
-    with app.app_context():
-        try:
-            mail.send(msg)
-        except Exception as e:
-            app.logger.error(f"Failed to send email: {e}")
-
 def send_verification_email(email: str, code: str, company_name: str):
-    """Send verification code email to user asynchronously"""
+    """Send verification code email to user synchronously"""
+    old_timeout = socket.getdefaulttimeout()
     try:
-        app = current_app._get_current_object()
+        # Restore the socket timeout hack that ensures Render doesn't hang forever
+        # or timeout prematurely during slow SMTP connections.
+        socket.setdefaulttimeout(60.0)
+        
         msg = Message(
             subject='Verify Your RapidSite AI Account',
             recipients=[email]
@@ -63,16 +60,20 @@ def send_verification_email(email: str, code: str, company_name: str):
             code=code
         )
         
-        Thread(target=send_async_email, args=(app, msg)).start()
+        mail.send(msg)
         return True
     except Exception as e:
-        current_app.logger.error(f"Failed to initiate verification email: {e}")
+        current_app.logger.error(f"Failed to send verification email: {e}")
+        traceback.print_exc()
         return False
+    finally:
+        socket.setdefaulttimeout(old_timeout)
 
 def send_password_reset_email(email: str, reset_link: str):
-    """Send password reset email asynchronously"""
+    """Send password reset email synchronously"""
+    old_timeout = socket.getdefaulttimeout()
     try:
-        app = current_app._get_current_object()
+        socket.setdefaulttimeout(60.0)
         msg = Message(
             subject='Reset Your RapidSite AI Password',
             recipients=[email]
@@ -83,8 +84,11 @@ def send_password_reset_email(email: str, reset_link: str):
             reset_link=reset_link
         )
         
-        Thread(target=send_async_email, args=(app, msg)).start()
+        mail.send(msg)
         return True
     except Exception as e:
-        current_app.logger.error(f"Failed to initiate password reset email: {e}")
+        current_app.logger.error(f"Failed to send password reset email: {e}")
+        traceback.print_exc()
         return False
+    finally:
+        socket.setdefaulttimeout(old_timeout)
