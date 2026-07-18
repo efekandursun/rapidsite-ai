@@ -244,6 +244,31 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
     # Check if there is an incomplete report for this user
     incomplete_report = db.get_incomplete_report_for_user(reporter_str) or db.get_incomplete_report_for_user(from_number)
     
+    # --- NEW APPROVAL LOGIC ---
+    cleaned_text = text.strip().lower()
+    is_approve = cleaned_text in ['1', '1.', '1)', 'onayla', 'onayliyorum', 'evet']
+    is_reject = cleaned_text in ['2', '2.', '2)', 'reddet', 'hayır', 'hayir', 'düzenle', 'duzenle']
+    
+    if is_approve or is_reject:
+        pending_report = db.get_latest_pending_report_for_user(reporter_str) or db.get_latest_pending_report_for_user(from_number)
+        if pending_report:
+            if is_approve:
+                from app import sync_report_to_procore
+                db.approve_report(pending_report['id'], approved_by=reporter_str)
+                success, erp_id = sync_report_to_procore({**pending_report, 'status': 'approved'})
+                
+                if success:
+                    return {'company_name': company['name'], 'direct_reply': f"✅ Raporunuz onaylandı ve başarıyla Procore'a aktarıldı! (Procore ID: {erp_id})"}
+                else:
+                    return {'company_name': company['name'], 'direct_reply': f"⚠️ Rapor onaylandı ancak Procore'a aktarılırken bir hata oluştu: {erp_id}"}
+            
+            elif is_reject:
+                with db.get_connection() as conn:
+                    db._execute(conn, "UPDATE site_reports SET status='incomplete' WHERE id=?", (pending_report['id'],))
+                return {'company_name': company['name'], 'direct_reply': "✏️ Rapor durumunu 'Düzenlenecek' olarak güncelledim. Lütfen raporda neyi değiştirmek istediğinizi yazın (veya sesli söyleyin)."}
+    # --------------------------
+
+    
     parsed_data_list = []
     report_ids = []
     final_transcript = text
@@ -378,6 +403,9 @@ def format_confirmation(result: dict) -> str:
     """
     Format confirmation message for user.
     """
+    if 'direct_reply' in result:
+        return result['direct_reply']
+
     parsed_list = result.get('parsed_data_list', [])
     report_ids = result.get('report_ids', [])
     
@@ -403,16 +431,13 @@ def format_confirmation(result: dict) -> str:
                 msg += f"💰 *Cost Code:* {parsed.get('cost_code')}\n"
             completed_msgs.append(msg)
             
-    final_response = ""
+    final_msg = ""
     if completed_msgs:
-        final_response += f"✅ *{len(completed_msgs)} Report(s) Received!*\n" + "\n".join(completed_msgs) + "\n"
+        final_msg += "📋 *Raporunuz Hazır:*\n\n" + "\n".join(completed_msgs)
+        final_msg += "\n\n🤔 *Ne yapmak istersiniz?*\n1️⃣ Onayla ve Procore'a Gönder\n2️⃣ Reddet ve Düzenle"
         
     if incomplete_msgs:
-        if final_response:
-            final_response += "\n---\n\n"
-        final_response += "\n\n".join(incomplete_msgs)
+        if final_msg: final_msg += "\n\n"
+        final_msg += "\n".join(incomplete_msgs)
         
-    if not incomplete_msgs and completed_msgs:
-        final_response += "\n⏳ _Pending approval_"
-        
-    return final_response
+    return final_msg

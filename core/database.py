@@ -576,6 +576,18 @@ class Database:
     def get_pending_reports(self) -> List[Dict[str, Any]]:
         """Get all pending reports for approval."""
         return self.get_reports(status="pending")
+        
+    def get_latest_pending_report_for_user(self, reported_by: str) -> Optional[Dict[str, Any]]:
+        """Get the most recent pending report for a specific user."""
+        with self.get_connection() as conn:
+            cursor = self._execute(conn, """
+                SELECT * FROM site_reports 
+                WHERE reported_by = ? AND status = 'pending' 
+                ORDER BY created_at DESC 
+                LIMIT 1
+            """, (reported_by,))
+            row = self._fetchone(cursor)
+            return self._row_to_dict(row) if row else None
     
     def update_report_parsed_data(self, report_id: int, parsed_data: Dict[str, Any]) -> bool:
         """Update the parsed JSON data of a report, and sync top-level columns."""

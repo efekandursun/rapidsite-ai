@@ -1,26 +1,40 @@
-import sys
 import os
+from dotenv import load_dotenv
 
-# Add parent dir to path so we can import core
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Load env before importing database
+load_dotenv()
 
 from core.database import Database
+import psycopg
 
-def reset_db():
-    print("Resetting database...")
-    db = Database()
-    with db.get_connection() as conn:
+def reset():
+    print("⚠️  WARNING: Resetting PostgreSQL Database...")
+    db_url = os.getenv("DATABASE_URL")
+    if not db_url:
+        print("❌ DATABASE_URL not found!")
+        return
+        
+    print(f"🔗 Connecting to: {db_url.split('@')[1]}")
+    
+    # Connect directly to run DROP statements
+    with psycopg.connect(db_url) as conn:
         cursor = conn.cursor()
-        if db.use_postgres:
-            print("Truncating PostgreSQL tables...")
-            cursor.execute("TRUNCATE TABLE site_reports, users, company_authorized_numbers, companies RESTART IDENTITY CASCADE;")
-        else:
-            print("Deleting SQLite tables...")
-            cursor.execute("DELETE FROM site_reports")
-            cursor.execute("DELETE FROM users")
-            cursor.execute("DELETE FROM company_authorized_numbers")
-            cursor.execute("DELETE FROM companies")
-    print("Database reset successfully.")
+        print("🗑️  Dropping tables...")
+        cursor.execute("""
+            DROP TABLE IF EXISTS webhook_jobs CASCADE;
+            DROP TABLE IF EXISTS site_reports CASCADE;
+            DROP TABLE IF EXISTS company_authorized_numbers CASCADE;
+            DROP TABLE IF EXISTS users CASCADE;
+            DROP TABLE IF EXISTS companies CASCADE;
+        """)
+        conn.commit()
+        print("✅ Tables dropped.")
+        
+    # Re-initialize schema
+    print("🏗️  Recreating schema...")
+    db = Database()
+    db._init_schema()
+    print("✅ Database successfully reset and schema recreated!")
 
 if __name__ == "__main__":
-    reset_db()
+    reset()
