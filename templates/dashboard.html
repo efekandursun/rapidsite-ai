@@ -448,14 +448,9 @@
                                     {% set parts = reporter.split('(') %}
                                     {% set name = parts[0]|trim %}
                                     {% set number = parts[1]|replace(')', '')|trim %}
-                                    <strong>{{ name }}</strong> 
-                                    <a href="https://wa.me/{{ number|replace('+', '') }}" target="_blank" style="color: var(--accent-success); text-decoration: none; margin-left: 0.3rem;" title="Send WhatsApp Message">
-                                        <i class="fab fa-whatsapp"></i> {{ number }}
-                                    </a>
+                                    <strong>{{ name }}</strong> <span style="margin-left: 0.3rem;">({{ number }})</span>
                                 {% else %}
-                                    <a href="https://wa.me/{{ reporter|replace('+', '') }}" target="_blank" style="color: var(--accent-success); text-decoration: none;" title="Send WhatsApp Message">
-                                        <i class="fab fa-whatsapp"></i> {{ reporter }}
-                                    </a>
+                                    <span>{{ reporter }}</span>
                                 {% endif %}
                             {% else %}
                                 Unknown Sender
