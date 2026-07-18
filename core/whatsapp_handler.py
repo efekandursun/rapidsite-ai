@@ -14,9 +14,6 @@ import json
 import tempfile
 import requests
 import logging
-import threading
-import time
-from concurrent.futures import ThreadPoolExecutor
 from flask import Blueprint, request, abort, Response
 from twilio.twiml.messaging_response import MessagingResponse
 from twilio.rest import Client as TwilioClient
@@ -24,6 +21,7 @@ from twilio.request_validator import RequestValidator
 
 from core.brain import ConstructionBrain, TranscriptionError, ParsingError
 from core.database import Database
+from core.storage import upload_media_to_storage
 
 # Create Blueprint
 whatsapp_bp = Blueprint('whatsapp', __name__)
@@ -31,10 +29,6 @@ whatsapp_bp = Blueprint('whatsapp', __name__)
 # Initialize components
 brain = ConstructionBrain()
 db = Database()
-
-# Lightweight worker pool for async processing. For production, replace with a
-# proper queue (RQ/Celery) but this keeps webhook latency low immediately.
-executor = ThreadPoolExecutor(max_workers=4)
 
 # Twilio client (optional, for sending proactive messages)
 TWILIO_ACCOUNT_SID = os.getenv("TWILIO_ACCOUNT_SID")
@@ -48,23 +42,10 @@ else:
 # Twilio signature validator (fail closed when token present)
 request_validator = RequestValidator(TWILIO_AUTH_TOKEN) if TWILIO_AUTH_TOKEN else None
 
-# In-memory idempotency cache for Twilio MessageSid (best-effort; replace with
-# persistent store for multi-instance setups).
-processed_sids = {}
-sid_lock = threading.Lock()
-
-
-def _purge_old_sids(ttl_seconds: int = 3600):
-    """Drop idempotency entries older than ttl to bound memory."""
-    cutoff = time.time() - ttl_seconds
-    to_delete = [sid for sid, ts in processed_sids.items() if ts < cutoff]
-    for sid in to_delete:
-        processed_sids.pop(sid, None)
-
 
 @whatsapp_bp.route('/webhook/whatsapp', methods=['POST'])
 def whatsapp_webhook():
-    """Twilio WhatsApp webhook handler (fast return + background work)."""
+    """Twilio WhatsApp webhook handler (fast return + DB Queue)."""
 
     # Validate signature if token is configured
     if request_validator:
@@ -82,30 +63,21 @@ def whatsapp_webhook():
     if not message_sid:
         abort(400)
 
-    # Idempotency check (best-effort in-memory)
-    with sid_lock:
-        _purge_old_sids()
-        if message_sid in processed_sids:
-            # Already handled; acknowledge to Twilio
-            resp = MessagingResponse()
-            resp.message("✅ Already received. Processing underway.")
-            return Response(str(resp), mimetype='application/xml')
-        processed_sids[message_sid] = time.time()
+    # Detach data from Flask request context
+    form_data = dict(request.values)
 
-    from_number = request.values.get('From', '')
-    message_body = request.values.get('Body', '')
-    num_media = int(request.values.get('NumMedia', 0))
+    # Push to Database Queue
+    created = db.create_webhook_job(message_sid, form_data)
 
-    # Quick ACK to Twilio; heavy lifting offloaded
+    if not created:
+        # Duplicate message
+        resp = MessagingResponse()
+        resp.message("✅ Already received. Processing underway.")
+        return Response(str(resp), mimetype='application/xml')
+
+    # Quick ACK to Twilio; heavy lifting offloaded to background worker
     ack = MessagingResponse()
     ack.message("✅ Received. Processing now...")
-
-    # Detach data from Flask request context before backgrounding
-    form_data = dict(request.values)
-    
-    # Kick background processing
-    executor.submit(handle_message_async, message_sid, from_number, message_body, num_media, form_data)
-
     return Response(str(ack), mimetype='application/xml')
 
 
@@ -371,9 +343,12 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
 def download_media(url: str, suffix: str = ".ogg", permanent: bool = False) -> str:
     """
     Download media file from Twilio to temp file or permanent storage.
-    Returns relative path if permanent, absolute temp path otherwise.
+    Returns URL path if permanent, absolute temp path otherwise.
     """
-    # Get Twilio auth for media download
+    if permanent:
+        return upload_media_to_storage(url, suffix)
+        
+    # Get Twilio auth for temporary media download
     auth = None
     if os.getenv("TWILIO_ACCOUNT_SID"):
         auth = (os.getenv("TWILIO_ACCOUNT_SID"), os.getenv("TWILIO_AUTH_TOKEN"))
@@ -381,21 +356,10 @@ def download_media(url: str, suffix: str = ".ogg", permanent: bool = False) -> s
     response = requests.get(url, auth=auth)
     response.raise_for_status()
     
-    if permanent:
-        import uuid
-        filename = f"{uuid.uuid4().hex}{suffix}"
-        media_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "data", "media")
-        os.makedirs(media_dir, exist_ok=True)
-        filepath = os.path.join(media_dir, filename)
-        with open(filepath, "wb") as f:
-            f.write(response.content)
-        # return relative path from static
-        return f"media/{filename}"
-    else:
-        # Save to temp file
-        with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as f:
-            f.write(response.content)
-            return f.name
+    # Save to temp file
+    with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as f:
+        f.write(response.content)
+        return f.name
 
 
 def extract_project_id(text: str) -> str:

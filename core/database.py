@@ -206,6 +206,19 @@ class Database:
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_reports_company ON site_reports(company_id)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)")
             
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS webhook_jobs (
+                    id SERIAL PRIMARY KEY,
+                    message_sid TEXT UNIQUE NOT NULL,
+                    payload TEXT NOT NULL,
+                    status TEXT DEFAULT 'pending',
+                    error TEXT,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    processed_at TIMESTAMP
+                )
+            """)
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_webhook_jobs_status ON webhook_jobs(status)")
+            
         else:
         # SQLite schema (original)
             cursor.execute("""
@@ -284,6 +297,19 @@ class Database:
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_reports_status ON site_reports(status)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_reports_company ON site_reports(company_id)")
             cursor.execute("CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)")
+            
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS webhook_jobs (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    message_sid TEXT UNIQUE NOT NULL,
+                    payload TEXT NOT NULL,
+                    status TEXT DEFAULT 'pending',
+                    error TEXT,
+                    created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+                    processed_at TEXT
+                )
+            """)
+            cursor.execute("CREATE INDEX IF NOT EXISTS idx_webhook_jobs_status ON webhook_jobs(status)")
 
         # ADD MIGRATIONS FOR PROCORE COLUMNS IF MISSING
         try:
@@ -1047,6 +1073,80 @@ class Database:
             except (json.JSONDecodeError, TypeError):
                 d['media_paths'] = []
         return d
+
+    # =========================================================================
+    # QUEUE MANAGEMENT (WEBHOOK JOBS)
+    # =========================================================================
+
+    def create_webhook_job(self, message_sid: str, payload: dict) -> bool:
+        """Create a new job in the queue. Returns True if created, False if duplicate."""
+        with self.get_connection() as conn:
+            try:
+                self._execute(conn, """
+                    INSERT INTO webhook_jobs (message_sid, payload)
+                    VALUES (?, ?)
+                """, (message_sid, json.dumps(payload)))
+                return True
+            except Exception as e:
+                # E.g. Duplicate message_sid (UNIQUE constraint violation)
+                return False
+
+    def get_next_webhook_job(self) -> Optional[Dict[str, Any]]:
+        """Atomically fetch and lock the next pending job."""
+        with self.get_connection() as conn:
+            if self.use_postgres:
+                # Postgres supports FOR UPDATE SKIP LOCKED
+                cursor = self._execute(conn, """
+                    UPDATE webhook_jobs
+                    SET status = 'processing'
+                    WHERE id = (
+                        SELECT id FROM webhook_jobs
+                        WHERE status = 'pending'
+                        ORDER BY created_at ASC
+                        LIMIT 1
+                        FOR UPDATE SKIP LOCKED
+                    )
+                    RETURNING *
+                """)
+                row = self._fetchone(cursor)
+                if row:
+                    row['payload'] = json.loads(row['payload'])
+                    return row
+            else:
+                # SQLite workaround (not strictly thread-safe across processes without locking)
+                cursor = self._execute(conn, """
+                    SELECT * FROM webhook_jobs 
+                    WHERE status = 'pending' 
+                    ORDER BY created_at ASC 
+                    LIMIT 1
+                """)
+                row = self._fetchone(cursor)
+                if row:
+                    self._execute(conn, "UPDATE webhook_jobs SET status = 'processing' WHERE id = ?", (row['id'],))
+                    row = dict(row)
+                    row['payload'] = json.loads(row['payload'])
+                    return row
+            return None
+
+    def complete_webhook_job(self, job_id: int):
+        """Mark job as completed."""
+        with self.get_connection() as conn:
+            now = datetime.utcnow().isoformat()
+            self._execute(conn, """
+                UPDATE webhook_jobs 
+                SET status = 'completed', processed_at = ?
+                WHERE id = ?
+            """, (now, job_id))
+
+    def fail_webhook_job(self, job_id: int, error_msg: str):
+        """Mark job as failed with error."""
+        with self.get_connection() as conn:
+            now = datetime.utcnow().isoformat()
+            self._execute(conn, """
+                UPDATE webhook_jobs 
+                SET status = 'failed', error = ?, processed_at = ?
+                WHERE id = ?
+            """, (error_msg, now, job_id))
 
 
 # --- TEST SECTION ---
