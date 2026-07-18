@@ -253,14 +253,9 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
         pending_report = db.get_latest_pending_report_for_user(reporter_str) or db.get_latest_pending_report_for_user(from_number)
         if pending_report:
             if is_approve:
-                from app import sync_report_to_procore
                 db.approve_report(pending_report['id'], approved_by=reporter_str)
-                success, erp_id = sync_report_to_procore({**pending_report, 'status': 'approved'})
-                
-                if success:
-                    return {'company_name': company['name'], 'direct_reply': f"✅ Your report has been approved and successfully synced to Procore! (Procore ID: {erp_id})"}
-                else:
-                    return {'company_name': company['name'], 'direct_reply': f"⚠️ Report approved but an error occurred while syncing to Procore: {erp_id}"}
+                return {'company_name': company['name'], 'direct_reply': "✅ Your report has been approved and saved to the Dashboard! You can sync it to Procore from there later."}
+
             
             elif is_reject:
                 with db.get_connection() as conn:
@@ -442,7 +437,7 @@ def format_confirmation(result: dict) -> str:
     final_msg = ""
     if completed_msgs:
         final_msg += "📋 *Your Report is Ready:*\n\n" + "\n".join(completed_msgs)
-        final_msg += "\n\n🤔 *What would you like to do?*\n1️⃣ Approve & Send to Procore\n2️⃣ Reject & Edit"
+        final_msg += "\n\n🤔 *What would you like to do?*\n1️⃣ Approve (Save to Dashboard)\n2️⃣ Reject & Edit"
         
     if incomplete_msgs:
         if final_msg: final_msg += "\n\n"

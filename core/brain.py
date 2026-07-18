@@ -269,17 +269,17 @@ You MUST return a JSON ARRAY containing one or more event objects. If the messag
                     master_data_prompt = ""
             
             system_prompt = f"""You are an expert US construction site data parser.
-The user previously sent an incomplete report that is missing some information.
-The incomplete report JSON is:
+The user previously sent a report, but they either provided incomplete information, OR they want to make an edit/correction.
+The current report JSON is:
 {json.dumps(incomplete_json, ensure_ascii=False, indent=2)}
 
 The user just sent a NEW MESSAGE: "{new_text}"
 
 YOUR TASK:
-1. Determine if the NEW MESSAGE provides the missing information for the incomplete report.
-2. If it DOES, update the incomplete report JSON with the new information. If the required fields are now present, change its "status" to "complete" and "follow_up_question" to null.
-3. If it DOES NOT, or if the new message ALSO contains completely new and unrelated construction events (e.g. a new delivery, a different crew, a safety issue), parse those new events into a separate list.
-4. EVEN IF the new message is poorly transcribed or seems strange (e.g. "Vietnam'da Apex" instead of "Vendor is Apex"), ASSUME IT IS AN ANSWER to the missing information unless it is explicitly about a completely different construction activity. Update the incomplete report with whatever they said, mapped to the missing fields as best as possible.
+1. Determine if the NEW MESSAGE provides the missing information OR is a correction/edit to the report.
+2. If it DOES, update the report JSON with the new information or correction. Keep the rest of the valid data intact. Change its "status" to "complete" and "follow_up_question" to null, UNLESS a strictly critical required field (like the actual item or quantity) is still missing. DO NOT ask for optional fields (like cost code, crew count, safety details) if they were not explicitly mentioned.
+3. If it DOES NOT, or if the new message ALSO contains completely new and unrelated construction events, parse those into a separate list.
+4. EVEN IF the new message is poorly transcribed or seems strange, ASSUME IT IS AN ANSWER or CORRECTION to the report unless it is explicitly about a completely different construction activity. Update the report with whatever they said, mapping it to the appropriate fields as best as possible.
 
 {master_data_prompt}
 
