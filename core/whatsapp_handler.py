@@ -254,13 +254,13 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
         if pending_report:
             if is_approve:
                 db.approve_report(pending_report['id'], approved_by=reporter_str)
-                return {'company_name': company['name'], 'direct_reply': "✅ Your report has been approved and saved to the Dashboard! You can sync it to Procore from there later."}
+                return {'company_name': company['name'], 'direct_reply': "✅ Your data has been approved and saved! It is now locked for editing."}
 
             
             elif is_reject:
                 with db.get_connection() as conn:
                     db._execute(conn, "UPDATE site_reports SET status='incomplete' WHERE id=?", (pending_report['id'],))
-                return {'company_name': company['name'], 'direct_reply': "✏️ Report status updated to 'To be edited'. Please write (or say) what you would like to change in the report."}
+                return {'company_name': company['name'], 'direct_reply': "✏️ Report status updated to 'To be edited'. Please write (or say) what you would like to edit or add."}
     # --------------------------
 
     
@@ -425,19 +425,43 @@ def format_confirmation(result: dict) -> str:
             incomplete_msgs.append(f"❓ *MISSING INFO:* {parsed.get('follow_up_question')}")
         else:
             msg = f"📋 *ID:* #{r_id} | *Type:* {parsed.get('log_type', 'N/A').title()}\n"
-            if parsed.get('item'):
-                msg += f"🔧 *Item:* {parsed.get('item')}\n"
-            if parsed.get('quantity'):
-                unit = parsed.get('unit', '')
-                msg += f"📊 *Quantity:* {parsed.get('quantity')} {unit}\n"
-            if parsed.get('cost_code'):
-                msg += f"💰 *Cost Code:* {parsed.get('cost_code')}\n"
+            msg += f"🔧 *Item/Trade:* {parsed.get('item', 'N/A')}\n"
+            
+            # Quantity
+            quantity = parsed.get('quantity')
+            unit = parsed.get('unit', '')
+            msg += f"📊 *Quantity:* {f'{quantity} {unit}' if quantity else 'N/A'}\n"
+            
+            # Location
+            location = parsed.get('location', {})
+            loc_name = location.get('name') if isinstance(location, dict) else location
+            msg += f"📍 *Location:* {loc_name if loc_name else 'N/A'}\n"
+            
+            # Vendor / Subcontractor
+            delivery_vendor = parsed.get('delivery_details', {}).get('delivery_from') if isinstance(parsed.get('delivery_details'), dict) else None
+            crew_vendor = parsed.get('crew', {}).get('company_name') if isinstance(parsed.get('crew'), dict) else None
+            vendor = delivery_vendor or crew_vendor
+            msg += f"🚚 *Vendor/Sub:* {vendor if vendor else 'N/A'}\n"
+            
+            # Cost Code
+            cost_code = parsed.get('cost_code')
+            msg += f"💰 *Cost Code:* {cost_code if cost_code else 'N/A'}\n"
+            
+            # Crew / Equipment Specifics
+            crew_count = parsed.get('crew', {}).get('count') if isinstance(parsed.get('crew'), dict) else None
+            if crew_count:
+                msg += f"👷 *Crew Count:* {crew_count}\n"
+                
+            eq_hours = parsed.get('equipment_details', {}).get('hours_operating') if isinstance(parsed.get('equipment_details'), dict) else None
+            if eq_hours:
+                msg += f"⏱️ *Operating Hours:* {eq_hours}\n"
+
             completed_msgs.append(msg)
             
     final_msg = ""
     if completed_msgs:
         final_msg += "📋 *Your Report is Ready:*\n\n" + "\n".join(completed_msgs)
-        final_msg += "\n\n🤔 *What would you like to do?*\n1️⃣ Approve (Save to Dashboard)\n2️⃣ Reject & Edit"
+        final_msg += "\n\n🤔 *What would you like to do?*\n1️⃣ Approve your data\n2️⃣ Edit / Add extra info"
         
     if incomplete_msgs:
         if final_msg: final_msg += "\n\n"
