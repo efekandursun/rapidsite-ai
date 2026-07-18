@@ -46,7 +46,7 @@ def send_verification_email(email: str, code: str, company_name: str):
     """Send verification code email to user synchronously"""
     old_timeout = socket.getdefaulttimeout()
     try:
-        socket.setdefaulttimeout(30.0)
+        socket.setdefaulttimeout(5.0)
         msg = Message(
             subject='Verify Your RapidSite AI Account',
             recipients=[email]
@@ -71,7 +71,7 @@ def send_password_reset_email(email: str, reset_link: str):
     """Send password reset email synchronously"""
     old_timeout = socket.getdefaulttimeout()
     try:
-        socket.setdefaulttimeout(30.0)
+        socket.setdefaulttimeout(5.0)
         msg = Message(
             subject='Reset Your RapidSite AI Password',
             recipients=[email]
