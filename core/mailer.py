@@ -12,11 +12,24 @@ from datetime import datetime, timedelta
 
 mail = Mail()
 
+def _missing_smtp_settings():
+    """Return required SMTP settings that are not configured."""
+    required = {
+        'SMTP_USERNAME': os.getenv('SMTP_USERNAME'),
+        'SMTP_PASSWORD': os.getenv('SMTP_PASSWORD'),
+    }
+    return [key for key, value in required.items() if not value]
+
 def init_mail(app):
     """Initialize Flask-Mail with app configuration"""
-    port = int(os.getenv('SMTP_PORT', 587))
+    port_value = os.getenv('SMTP_PORT') or '587'
+    try:
+        port = int(port_value)
+    except ValueError:
+        app.logger.warning("Invalid SMTP_PORT %r; falling back to 587", port_value)
+        port = 587
     
-    app.config['MAIL_SERVER'] = os.getenv('SMTP_SERVER', 'smtp.gmail.com')
+    app.config['MAIL_SERVER'] = os.getenv('SMTP_SERVER') or 'smtp.gmail.com'
     app.config['MAIL_PORT'] = port
     
     # Port 465 requires SSL, Port 587 requires TLS
@@ -27,9 +40,9 @@ def init_mail(app):
         app.config['MAIL_USE_SSL'] = False
         app.config['MAIL_USE_TLS'] = True
         
-    app.config['MAIL_USERNAME'] = os.getenv('SMTP_USERNAME')
-    app.config['MAIL_PASSWORD'] = os.getenv('SMTP_PASSWORD')
-    app.config['MAIL_DEFAULT_SENDER'] = os.getenv('SMTP_FROM_EMAIL', os.getenv('SMTP_USERNAME'))
+    app.config['MAIL_USERNAME'] = os.getenv('SMTP_USERNAME') or None
+    app.config['MAIL_PASSWORD'] = os.getenv('SMTP_PASSWORD') or None
+    app.config['MAIL_DEFAULT_SENDER'] = os.getenv('SMTP_FROM_EMAIL') or os.getenv('SMTP_USERNAME')
     
     # Set timeout low enough so that if SMTP is blocked (Render free tier),
     # it fails fast instead of hanging and causing a Gunicorn/Vercel 502 timeout.
@@ -44,6 +57,14 @@ def generate_verification_code():
 
 def send_verification_email(email: str, code: str, company_name: str):
     """Send verification code email to user synchronously"""
+    missing_settings = _missing_smtp_settings()
+    if missing_settings:
+        current_app.logger.error(
+            "Cannot send verification email. Missing SMTP settings: %s",
+            ', '.join(missing_settings)
+        )
+        return False
+
     old_timeout = socket.getdefaulttimeout()
     try:
         socket.setdefaulttimeout(5.0)
@@ -69,6 +90,14 @@ def send_verification_email(email: str, code: str, company_name: str):
 
 def send_password_reset_email(email: str, reset_link: str):
     """Send password reset email synchronously"""
+    missing_settings = _missing_smtp_settings()
+    if missing_settings:
+        current_app.logger.error(
+            "Cannot send password reset email. Missing SMTP settings: %s",
+            ', '.join(missing_settings)
+        )
+        return False
+
     old_timeout = socket.getdefaulttimeout()
     try:
         socket.setdefaulttimeout(5.0)
