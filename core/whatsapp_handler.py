@@ -252,9 +252,19 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
     if is_approve or is_reject:
         pending_report = db.get_latest_pending_report_for_user(reporter_str) or db.get_latest_pending_report_for_user(from_number)
         if pending_report:
+            try:
+                import json
+                parsed = json.loads(pending_report['parsed_data'])
+            except:
+                parsed = {}
+                
+            if parsed.get('locked'):
+                return {'company_name': company['name'], 'direct_reply': "🔒 This report has already been sent to the Dashboard and cannot be edited. Please send a new message for a new report."}
+
             if is_approve:
-                db.approve_report(pending_report['id'], approved_by=reporter_str)
-                return {'company_name': company['name'], 'direct_reply': "✅ Your data has been approved and saved! It is now locked for editing."}
+                parsed['locked'] = True
+                db.update_report_parsed_data(pending_report['id'], parsed)
+                return {'company_name': company['name'], 'direct_reply': "✅ Done! Your data has been sent to the Dashboard and is locked for editing."}
 
             
             elif is_reject:
@@ -461,7 +471,7 @@ def format_confirmation(result: dict) -> str:
     final_msg = ""
     if completed_msgs:
         final_msg += "📋 *Your Report is Ready:*\n\n" + "\n".join(completed_msgs)
-        final_msg += "\n\n🤔 *What would you like to do?*\n1️⃣ Approve your data\n2️⃣ Edit / Add extra info"
+        final_msg += "\n\n🤔 *What would you like to do?*\n1️⃣ Send to Dashboard\n2️⃣ Edit / Add extra info"
         
     if incomplete_msgs:
         if final_msg: final_msg += "\n\n"
