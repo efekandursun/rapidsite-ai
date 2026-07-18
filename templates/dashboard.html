@@ -437,9 +437,31 @@
 
             <!-- Body -->
             <div class="report-body">
-                <!-- Source: WhatsApp Message -->
                 <div class="source-panel">
-                    <div class="source-label">📱 Source Message</div>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
+                        <div class="source-label">📱 Source Message</div>
+                        <div style="font-size: 0.85rem; color: var(--text-muted); background: var(--bg-surface); padding: 0.2rem 0.6rem; border-radius: 4px; border: 1px solid var(--border-color);">
+                            👤 
+                            {% if group.reported_by %}
+                                {% set reporter = group.reported_by %}
+                                {% if '(' in reporter %}
+                                    {% set parts = reporter.split('(') %}
+                                    {% set name = parts[0]|trim %}
+                                    {% set number = parts[1]|replace(')', '')|trim %}
+                                    <strong>{{ name }}</strong> 
+                                    <a href="https://wa.me/{{ number|replace('+', '') }}" target="_blank" style="color: var(--accent-success); text-decoration: none; margin-left: 0.3rem;" title="Send WhatsApp Message">
+                                        <i class="fab fa-whatsapp"></i> {{ number }}
+                                    </a>
+                                {% else %}
+                                    <a href="https://wa.me/{{ reporter|replace('+', '') }}" target="_blank" style="color: var(--accent-success); text-decoration: none;" title="Send WhatsApp Message">
+                                        <i class="fab fa-whatsapp"></i> {{ reporter }}
+                                    </a>
+                                {% endif %}
+                            {% else %}
+                                Unknown Sender
+                            {% endif %}
+                        </div>
+                    </div>
                     <div class="source-transcript">{{ group.raw_transcript }}</div>
                     
                     {% if group.parsed_data.translated_transcript and group.parsed_data.translated_transcript|lower != group.raw_transcript|lower %}
