@@ -66,6 +66,52 @@ db = Database()
 # Initialize mailer
 mail = init_mail(app)
 
+import threading
+import time
+import logging
+
+def _worker_loop():
+    # Use a new db connection inside the thread
+    thread_db = Database()
+    logging.info("🚀 Embedded background worker started. Polling for jobs...")
+    while True:
+        try:
+            job = thread_db.get_next_webhook_job()
+            if job:
+                job_id = job['id']
+                message_sid = job['message_sid']
+                payload = job['payload']
+                
+                logging.info(f"⏳ Processing job #{job_id} for MessageSid: {message_sid}")
+                
+                from_number = payload.get('From', '')
+                message_body = payload.get('Body', '')
+                num_media = int(payload.get('NumMedia', 0))
+                
+                try:
+                    from core.whatsapp_handler import handle_message_async
+                    handle_message_async(message_sid, from_number, message_body, num_media, payload)
+                    thread_db.complete_webhook_job(job_id)
+                    logging.info(f"✅ Job #{job_id} completed successfully.")
+                except Exception as e:
+                    logging.exception(f"❌ Error processing job #{job_id}")
+                    if SENTRY_DSN and SENTRY_DSN != "your_sentry_dsn_here":
+                        import sentry_sdk
+                        sentry_sdk.capture_exception(e)
+                    thread_db.fail_webhook_job(job_id, str(e))
+            else:
+                time.sleep(2)
+        except Exception as e:
+            logging.error(f"❌ Embedded Worker loop error: {e}")
+            if SENTRY_DSN and SENTRY_DSN != "your_sentry_dsn_here":
+                import sentry_sdk
+                sentry_sdk.capture_exception(e)
+            time.sleep(5)
+
+# Start background worker thread
+worker_thread = threading.Thread(target=_worker_loop, daemon=True)
+worker_thread.start()
+
 from flask import g
 
 @app.before_request
