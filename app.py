@@ -5,6 +5,18 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+import sentry_sdk
+from sentry_sdk.integrations.flask import FlaskIntegration
+
+SENTRY_DSN = os.getenv("SENTRY_DSN")
+if SENTRY_DSN and SENTRY_DSN != "your_sentry_dsn_here":
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[FlaskIntegration()],
+        traces_sample_rate=1.0,
+        profiles_sample_rate=1.0,
+    )
+
 # Create Flask app
 app = Flask(__name__, template_folder='templates', static_folder='static')
 secret_key = os.getenv('FLASK_SECRET_KEY')

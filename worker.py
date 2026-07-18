@@ -8,9 +8,19 @@ import time
 import logging
 from core.database import Database
 from core.whatsapp_handler import handle_message_async
+import os
+import sentry_sdk
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+SENTRY_DSN = os.getenv("SENTRY_DSN")
+if SENTRY_DSN and SENTRY_DSN != "your_sentry_dsn_here":
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        traces_sample_rate=1.0,
+        profiles_sample_rate=1.0,
+    )
 
 def process_jobs():
     db = Database()
@@ -42,6 +52,8 @@ def process_jobs():
                     
                 except Exception as e:
                     logging.exception(f"❌ Error processing job #{job_id}")
+                    if SENTRY_DSN and SENTRY_DSN != "your_sentry_dsn_here":
+                        sentry_sdk.capture_exception(e)
                     db.fail_webhook_job(job_id, str(e))
             else:
                 # No jobs found, sleep before polling again
@@ -49,6 +61,8 @@ def process_jobs():
                 
         except Exception as e:
             logging.error(f"❌ Worker loop error: {e}")
+            if SENTRY_DSN and SENTRY_DSN != "your_sentry_dsn_here":
+                sentry_sdk.capture_exception(e)
             time.sleep(5) # Prevent tight loop on DB failure
 
 if __name__ == "__main__":

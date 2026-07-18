@@ -49,9 +49,10 @@ services:
         sync: false
       - key: SUPABASE_KEY
         sync: false
+      - key: SENTRY_DSN
+        sync: false
       - key: FLASK_ENV
         value: production
-
   - type: worker
     name: rapidsite-ai-worker
     env: python
@@ -64,3 +65,8 @@ services:
           type: web
           name: rapidsite-ai
           envVarKey: DATABASE_URL
+      - key: SENTRY_DSN
+        fromService:
+          type: web
+          name: rapidsite-ai
+          envVarKey: SENTRY_DSN

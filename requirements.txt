@@ -36,3 +36,6 @@ openpyxl==3.1.5
 
 # Storage
 supabase>=2.4.0
+
+# Error Tracking
+sentry-sdk[flask]==2.1.1
