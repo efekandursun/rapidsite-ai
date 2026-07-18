@@ -7,7 +7,5 @@ db = Database()
 with db.get_connection() as conn:
     with conn.cursor() as cur:
         cur.execute("DELETE FROM site_reports;")
-        deleted = cur.rowcount
-    conn.commit()
-
-print(f"Deleted {deleted} reports from site_reports.")
+        conn.commit()
+print("✅ Database (site_reports) successfully cleared.")

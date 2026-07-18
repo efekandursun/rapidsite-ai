@@ -262,7 +262,7 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
         report_id = int(edit_match.group(1))
         correction_text = edit_match.group(2).strip()
         if not correction_text:
-            return {'company_name': company['name'], 'direct_reply': "✏️ Please provide the correction along with the Edit command. (e.g. 'Edit 9: change the quantity to 5')"}
+            return {'company_name': company['name'], 'direct_reply': "Please provide the correction along with the Edit command. (e.g. 'Edit 9: change the quantity to 5')"}
         
         # We need to fetch the specific report by ID
         # Let's bypass the usual `is_approve/is_reject` logic and just set it up for `resolve_incomplete`
@@ -278,7 +278,7 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
                     parsed = {}
                 
                 if parsed.get('locked'):
-                    return {'company_name': company['name'], 'direct_reply': f"🔒 Report #{report_id} has already been sent to the Dashboard and cannot be edited."}
+                    return {'company_name': company['name'], 'direct_reply': f"[LOCKED] Report #{report_id} has already been sent to the Dashboard and cannot be edited."}
                 
                 # Treat this as an incomplete report to trigger `resolve_incomplete`
                 incomplete_report = specific_report
@@ -288,9 +288,9 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
                 is_reject = False
                 cleaned_text = text.strip().lower()
             else:
-                return {'company_name': company['name'], 'direct_reply': f"❌ Report #{report_id} not found or you don't have permission to edit it."}
+                return {'company_name': company['name'], 'direct_reply': f"[ERROR] Report #{report_id} not found or you don't have permission to edit it."}
         else:
-            return {'company_name': company['name'], 'direct_reply': f"❌ Report #{report_id} not found."}
+            return {'company_name': company['name'], 'direct_reply': f"[ERROR] Report #{report_id} not found."}
     else:
         # Also include voice transcription equivalents like "bir", "one", "iki", "two"
         is_approve = cleaned_text in ['1', '1.', '1)', 'onayla', 'onaylıyorum', 'onayliyorum', 'evet', 'approve', 'yes', 'y', 'bir', 'one']
@@ -312,7 +312,7 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
                     unlocked_reports.append((r, p))
                     
             if not unlocked_reports:
-                return {'company_name': company['name'], 'direct_reply': "🔒 Your recent reports have already been sent to the Dashboard and cannot be edited. Please send a new message for a new report."}
+                return {'company_name': company['name'], 'direct_reply': "[LOCKED] Your recent reports have already been sent to the Dashboard and cannot be edited. Please send a new message for a new report."}
 
             if is_approve:
                 for rep, parsed in unlocked_reports:
@@ -320,7 +320,7 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
                     db.update_report_parsed_data(rep['id'], parsed)
                 
                 count = len(unlocked_reports)
-                return {'company_name': company['name'], 'direct_reply': f"✅ Done! {count} report(s) sent to the Dashboard and locked for editing."}
+                return {'company_name': company['name'], 'direct_reply': f"[SUCCESS] {count} report(s) sent to the Dashboard and locked for editing."}
 
             
             elif is_reject:
@@ -328,9 +328,9 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
                     rep, parsed = unlocked_reports[0]
                     with db.get_connection() as conn:
                         db._execute(conn, "UPDATE site_reports SET status='incomplete' WHERE id=?", (rep['id'],))
-                    return {'company_name': company['name'], 'direct_reply': "✏️ Report status updated to 'To be edited'. Please write (or say) what you would like to edit or add."}
+                    return {'company_name': company['name'], 'direct_reply': "[EDIT MODE] Report status updated to 'To be edited'. Please write (or say) what you would like to edit or add."}
                 else:
-                    return {'company_name': company['name'], 'direct_reply': "✏️ You have multiple ready reports. To edit a specific one, please reply with 'Edit [ID]: [your correction]'. (e.g. 'Edit 9: change quantity to 5')"}
+                    return {'company_name': company['name'], 'direct_reply': "[EDIT] You have multiple ready reports. To edit a specific one, please reply with 'Edit [ID]: [your correction]'. (e.g. 'Edit 9: change quantity to 5')"}
         # end of all_pending logic
 
     
@@ -483,7 +483,7 @@ def format_confirmation(result: dict) -> str:
     report_ids = result.get('report_ids', [])
     
     if not parsed_list:
-        return "⚠️ Message received but could not be processed."
+        return "[WARNING] Message received but could not be processed."
         
     completed_msgs = []
     incomplete_msgs = []
@@ -492,49 +492,49 @@ def format_confirmation(result: dict) -> str:
         r_id = report_ids[i] if i < len(report_ids) else 'N/A'
         
         if parsed.get('status') == 'incomplete' and parsed.get('follow_up_question'):
-            incomplete_msgs.append(f"❓ *MISSING INFO:* {parsed.get('follow_up_question')}")
+            incomplete_msgs.append(f"[MISSING INFO] {parsed.get('follow_up_question')}")
         else:
-            msg = f"📋 *ID:* #{r_id} | *Type:* {parsed.get('log_type', 'N/A').title()}\n"
-            msg += f"🔧 *Item/Trade:* {parsed.get('item', 'N/A')}\n"
+            msg = f"[ID: #{r_id} | TYPE: {parsed.get('log_type', 'N/A').upper()}]\n"
+            msg += f"- Item/Trade: {parsed.get('item', 'N/A')}\n"
             
             # Quantity
             quantity = parsed.get('quantity')
             unit = parsed.get('unit', '')
-            msg += f"📊 *Quantity:* {f'{quantity} {unit}' if quantity else 'N/A'}\n"
+            msg += f"- Quantity: {f'{quantity} {unit}' if quantity else 'N/A'}\n"
             
             # Location
             location = parsed.get('location', {})
             loc_name = location.get('name') if isinstance(location, dict) else location
-            msg += f"📍 *Location:* {loc_name if loc_name else 'N/A'}\n"
+            msg += f"- Location: {loc_name if loc_name else 'N/A'}\n"
             
             # Vendor / Subcontractor
             delivery_vendor = parsed.get('delivery_details', {}).get('delivery_from') if isinstance(parsed.get('delivery_details'), dict) else None
             crew_vendor = parsed.get('crew', {}).get('company_name') if isinstance(parsed.get('crew'), dict) else None
             vendor = delivery_vendor or crew_vendor
-            msg += f"🚚 *Vendor/Sub:* {vendor if vendor else 'N/A'}\n"
+            msg += f"- Vendor/Sub: {vendor if vendor else 'N/A'}\n"
             
             # Cost Code
             cost_code = parsed.get('cost_code')
-            msg += f"💰 *Cost Code:* {cost_code if cost_code else 'N/A'}\n"
+            msg += f"- Cost Code: {cost_code if cost_code else 'N/A'}\n"
             
             # Crew / Equipment Specifics
             crew_count = parsed.get('crew', {}).get('count') if isinstance(parsed.get('crew'), dict) else None
             if crew_count:
-                msg += f"👷 *Crew Count:* {crew_count}\n"
+                msg += f"- Crew Count: {crew_count}\n"
                 
             eq_hours = parsed.get('equipment_details', {}).get('hours_operating') if isinstance(parsed.get('equipment_details'), dict) else None
             if eq_hours:
-                msg += f"⏱️ *Operating Hours:* {eq_hours}\n"
+                msg += f"- Operating Hours: {eq_hours}\n"
 
             completed_msgs.append(msg)
             
     final_msg = ""
     if completed_msgs:
-        final_msg += "📋 *Your Report is Ready:*\n\n" + "\n".join(completed_msgs)
+        final_msg += "*REPORT READY*\n\n" + "\n".join(completed_msgs)
         if len(completed_msgs) == 1:
-            final_msg += "\n\n🤔 *What would you like to do?*\n1️⃣ Send to Dashboard\n2️⃣ Edit / Add extra info"
+            final_msg += "\n\n*ACTIONS:*\n[1] Send to Dashboard\n[2] Edit / Add info"
         else:
-            final_msg += "\n\n🤔 *What would you like to do?*\n1️⃣ Send ALL to Dashboard\n✏️ To edit a specific report, reply with 'Edit [ID]: [correction]' (e.g. 'Edit 9: change vendor to Apex')"
+            final_msg += "\n\n*ACTIONS:*\n[1] Send ALL to Dashboard\n[Edit ID: correction] Edit a specific report (e.g. 'Edit 9: change vendor')"
         
     if incomplete_msgs:
         if final_msg: final_msg += "\n\n"
