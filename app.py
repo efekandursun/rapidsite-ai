@@ -70,45 +70,7 @@ import threading
 import time
 import logging
 
-def _worker_loop():
-    logging.info("🚀 Embedded background worker started. Polling for jobs...")
-    while True:
-        try:
-            job = db.get_next_webhook_job()
-            if job:
-                job_id = job['id']
-                message_sid = job['message_sid']
-                payload = job['payload']
-                
-                logging.info(f"⏳ Processing job #{job_id} for MessageSid: {message_sid}")
-                
-                from_number = payload.get('From', '')
-                message_body = payload.get('Body', '')
-                num_media = int(payload.get('NumMedia', 0))
-                
-                try:
-                    from core.whatsapp_handler import handle_message_async
-                    handle_message_async(message_sid, from_number, message_body, num_media, payload)
-                    db.complete_webhook_job(job_id)
-                    logging.info(f"✅ Job #{job_id} completed successfully.")
-                except Exception as e:
-                    logging.exception(f"❌ Error processing job #{job_id}")
-                    if SENTRY_DSN and SENTRY_DSN != "your_sentry_dsn_here":
-                        import sentry_sdk
-                        sentry_sdk.capture_exception(e)
-                    db.fail_webhook_job(job_id, str(e))
-            else:
-                time.sleep(2)
-        except Exception as e:
-            logging.error(f"❌ Embedded Worker loop error: {e}")
-            if SENTRY_DSN and SENTRY_DSN != "your_sentry_dsn_here":
-                import sentry_sdk
-                sentry_sdk.capture_exception(e)
-            time.sleep(5)
 
-# Start background worker thread
-worker_thread = threading.Thread(target=_worker_loop, daemon=True)
-worker_thread.start()
 
 from flask import g
 
@@ -871,9 +833,28 @@ def dashboard_edit(report_id):
         success = db.update_report_parsed_data(report_id, new_data)
         if success:
             return jsonify({"success": True})
-        else:
-            return jsonify({"success": False, "error": "Report not found or update failed"}), 404
-            
+        
+        # 3) Process in background thread to avoid Twilio 15s timeout
+        from core.whatsapp_handler import handle_message_async
+        import threading
+        import logging
+        
+        def background_task():
+            try:
+                # We don't use webhook_jobs table anymore, just process directly
+                handle_message_async(message_sid, from_number, message_body, num_media, payload)
+                logging.info(f"✅ Direct async processing completed for {message_sid}")
+            except Exception as e:
+                logging.exception(f"❌ Error in direct async processing for {message_sid}")
+                import sentry_sdk
+                sentry_sdk.capture_exception(e)
+                
+        thread = threading.Thread(target=background_task, daemon=True)
+        thread.start()
+        
+        # 4) Return immediately so Twilio doesn't timeout
+        return jsonify({"status": "processing in background"}), 200
+        
     except Exception as e:
         print(f"Error updating report {report_id}: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
