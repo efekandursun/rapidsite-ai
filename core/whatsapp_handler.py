@@ -248,9 +248,14 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
     cleaned_text = text.strip().lower()
     
     # --- NEW: Specific Report Edit Command ---
-    # Matches: "edit 9: change quantity to 5" or "edit #9 change quantity"
+    # Matches: "edit 9: change quantity to 5" or "edit #9 change quantity" or "9 numarayi duzenle..."
     import re
-    edit_match = re.match(r'^edit\s*#?(\d+)[:\s]+(.*)', cleaned_text)
+    # Look for "edit 9" or "düzenle 9" or "9 düzenle"
+    edit_match = re.match(r'^(?:edit|düzenle|duzenle|değiştir|degistir)\s*(?:rapor|report|numara|#)?\s*(\d+)[:\s,\-]+(.*)', cleaned_text)
+    if not edit_match:
+        # Try reverse: "9 numarayı düzenle..."
+        edit_match = re.match(r'^(\d+)\s*(?:numarayı|numarali|numaralı|raporu|report|\'ü|\'u|i|ı)?\s*(?:edit|düzenle|duzenle|değiştir|degistir)[:\s,\-]+(.*)', cleaned_text)
+        
     if edit_match:
         report_id = int(edit_match.group(1))
         correction_text = edit_match.group(2).strip()
@@ -285,8 +290,9 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
         else:
             return {'company_name': company['name'], 'direct_reply': f"❌ Report #{report_id} not found."}
     else:
-        is_approve = cleaned_text in ['1', '1.', '1)', 'onayla', 'onayliyorum', 'evet', 'approve', 'yes', 'y']
-        is_reject = cleaned_text in ['2', '2.', '2)', 'reddet', 'hayır', 'hayir', 'düzenle', 'duzenle', 'reject', 'no', 'n', 'edit']
+        # Also include voice transcription equivalents like "bir", "one", "iki", "two"
+        is_approve = cleaned_text in ['1', '1.', '1)', 'onayla', 'onaylıyorum', 'onayliyorum', 'evet', 'approve', 'yes', 'y', 'bir', 'one']
+        is_reject = cleaned_text in ['2', '2.', '2)', 'reddet', 'hayır', 'hayir', 'düzenle', 'duzenle', 'reject', 'no', 'n', 'edit', 'iki', 'two']
 
     if is_approve or is_reject:
         all_pending = db.get_all_pending_reports_for_user(reporter_str) or db.get_all_pending_reports_for_user(from_number)
