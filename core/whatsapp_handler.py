@@ -246,6 +246,8 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
     
     # --- NEW APPROVAL LOGIC ---
     cleaned_text = text.strip().lower()
+    # Remove any accidental quotation marks if the user copy-pasted the example
+    cleaned_text = cleaned_text.replace('"', '').replace("'", "").replace("“", "").replace("”", "").replace("‘", "").replace("’", "").strip()
     
     # --- NEW: Specific Report Edit Command ---
     # Matches: "edit 9: change quantity to 5" or "edit #9 change quantity" or "9 numarayi duzenle..."
