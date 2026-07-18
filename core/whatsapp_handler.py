@@ -235,9 +235,9 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
     emp_name = company.get('employee_name')
     job_title = company.get('job_title')
     if emp_name and job_title:
-        reporter_str = f"{emp_name} - {job_title}"
+        reporter_str = f"{emp_name} - {job_title} ({from_number})"
     elif emp_name:
-        reporter_str = emp_name
+        reporter_str = f"{emp_name} ({from_number})"
     else:
         reporter_str = from_number
     
