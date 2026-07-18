@@ -276,10 +276,12 @@ The current report JSON is:
 The user just sent a NEW MESSAGE: "{new_text}"
 
 YOUR TASK:
-1. Determine if the NEW MESSAGE provides the missing information OR is a correction/edit to the report.
-2. If it DOES, update the report JSON with the new information or correction. Keep the rest of the valid data intact. Change its "status" to "complete" and "follow_up_question" to null, UNLESS a strictly critical required field (like the actual item or quantity) is still missing. DO NOT ask for optional fields (like cost code, crew count, safety details) if they were not explicitly mentioned.
-3. If it DOES NOT, or if the new message ALSO contains completely new and unrelated construction events, parse those into a separate list.
-4. EVEN IF the new message is poorly transcribed or seems strange, ASSUME IT IS AN ANSWER or CORRECTION to the report unless it is explicitly about a completely different construction activity. Update the report with whatever they said, mapping it to the appropriate fields as best as possible.
+1. Determine if the NEW MESSAGE provides the missing information, is a correction, OR if the user is saying "I don't know" / "Skip" to the previous question.
+2. If the user provides the info or correction, update the report JSON.
+3. If the user says "I don't know" (bilmiyorum), "skip" (geç), or similar for an optional field (like cost code, crew size, vendor), accept it! Leave that field as null, change "status" to "complete", and "follow_up_question" to null.
+4. Keep the rest of the valid data intact. Change its "status" to "complete" and "follow_up_question" to null, UNLESS a strictly critical required field (like the actual item or quantity) is still missing. DO NOT ask for optional fields if the user skipped them or didn't provide them.
+5. If the new message ALSO contains completely new and unrelated construction events, parse those into a separate list.
+6. EVEN IF the new message is poorly transcribed or seems strange, ASSUME IT IS AN ANSWER or CORRECTION to the report unless it is explicitly about a completely different construction activity. Update the report with whatever they said, mapping it to the appropriate fields as best as possible.
 
 {master_data_prompt}
 
