@@ -466,10 +466,10 @@ def export_excel():
     
     wb = openpyxl.Workbook()
     ws = wb.active
-    ws.title = "Saha Raporlari"
+    ws.title = "Site Reports"
     
     # Headers matching the user's requested format
-    headers = ['Tarih', 'Proje', 'Rapor Tipi', 'Malzeme / Ekip / Konu', 'Adet / Saat', 'Durum', 'Maliyet Kodu (Cost Code)', 'Raporlayan', 'Orijinal Ses Kaydi']
+    headers = ['Date', 'Project', 'Log Type', 'Item / Crew / Subject', 'Qty / Hours', 'Status', 'Cost Code', 'Reported By', 'Original Source']
     ws.append(headers)
     
     for r in raw_reports:
@@ -511,7 +511,7 @@ def export_excel():
     wb.save(excel_file)
     excel_file.seek(0)
     
-    filename = f"Saha_Raporlari_{datetime.now().strftime('%Y%m%d')}.xlsx"
+    filename = f"Site_Reports_{datetime.now().strftime('%Y%m%d')}.xlsx"
     from flask import send_file
     return send_file(excel_file, download_name=filename, as_attachment=True, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 

@@ -246,8 +246,8 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
     
     # --- NEW APPROVAL LOGIC ---
     cleaned_text = text.strip().lower()
-    is_approve = cleaned_text in ['1', '1.', '1)', 'onayla', 'onayliyorum', 'evet']
-    is_reject = cleaned_text in ['2', '2.', '2)', 'reddet', 'hayır', 'hayir', 'düzenle', 'duzenle']
+    is_approve = cleaned_text in ['1', '1.', '1)', 'onayla', 'onayliyorum', 'evet', 'approve', 'yes', 'y']
+    is_reject = cleaned_text in ['2', '2.', '2)', 'reddet', 'hayır', 'hayir', 'düzenle', 'duzenle', 'reject', 'no', 'n', 'edit']
     
     if is_approve or is_reject:
         pending_report = db.get_latest_pending_report_for_user(reporter_str) or db.get_latest_pending_report_for_user(from_number)
@@ -258,14 +258,14 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
                 success, erp_id = sync_report_to_procore({**pending_report, 'status': 'approved'})
                 
                 if success:
-                    return {'company_name': company['name'], 'direct_reply': f"✅ Raporunuz onaylandı ve başarıyla Procore'a aktarıldı! (Procore ID: {erp_id})"}
+                    return {'company_name': company['name'], 'direct_reply': f"✅ Your report has been approved and successfully synced to Procore! (Procore ID: {erp_id})"}
                 else:
-                    return {'company_name': company['name'], 'direct_reply': f"⚠️ Rapor onaylandı ancak Procore'a aktarılırken bir hata oluştu: {erp_id}"}
+                    return {'company_name': company['name'], 'direct_reply': f"⚠️ Report approved but an error occurred while syncing to Procore: {erp_id}"}
             
             elif is_reject:
                 with db.get_connection() as conn:
                     db._execute(conn, "UPDATE site_reports SET status='incomplete' WHERE id=?", (pending_report['id'],))
-                return {'company_name': company['name'], 'direct_reply': "✏️ Rapor durumunu 'Düzenlenecek' olarak güncelledim. Lütfen raporda neyi değiştirmek istediğinizi yazın (veya sesli söyleyin)."}
+                return {'company_name': company['name'], 'direct_reply': "✏️ Report status updated to 'To be edited'. Please write (or say) what you would like to change in the report."}
     # --------------------------
 
     
@@ -284,9 +284,17 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
             
             if updated_event or new_events:
                 use_normal_parsing = False
+            else:
+                use_normal_parsing = False
+                # The AI couldn't link it and didn't find new events. Do not fall back to normal parsing to prevent garbage.
+                q = incomplete_report['parsed_data'].get('follow_up_question', 'Please provide the missing information.')
+                return {
+                    'company_name': company['name'],
+                    'direct_reply': f"❓ *I didn't quite get that.*\nI couldn't fully understand your message or audio. Could you please answer this question again:\n\n{q}"
+                }
                 
             if updated_event:
-                combined_transcript = incomplete_report['raw_transcript'] + f"\n[EK BİLGİ]: {text}"
+                combined_transcript = incomplete_report['raw_transcript'] + f"\n[ADDITIONAL INFO]: {text}"
                 final_transcript = combined_transcript
                 
                 new_status = updated_event.get('status', 'pending')
@@ -433,8 +441,8 @@ def format_confirmation(result: dict) -> str:
             
     final_msg = ""
     if completed_msgs:
-        final_msg += "📋 *Raporunuz Hazır:*\n\n" + "\n".join(completed_msgs)
-        final_msg += "\n\n🤔 *Ne yapmak istersiniz?*\n1️⃣ Onayla ve Procore'a Gönder\n2️⃣ Reddet ve Düzenle"
+        final_msg += "📋 *Your Report is Ready:*\n\n" + "\n".join(completed_msgs)
+        final_msg += "\n\n🤔 *What would you like to do?*\n1️⃣ Approve & Send to Procore\n2️⃣ Reject & Edit"
         
     if incomplete_msgs:
         if final_msg: final_msg += "\n\n"

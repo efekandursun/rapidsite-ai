@@ -279,7 +279,7 @@ YOUR TASK:
 1. Determine if the NEW MESSAGE provides the missing information for the incomplete report.
 2. If it DOES, update the incomplete report JSON with the new information. If the required fields are now present, change its "status" to "complete" and "follow_up_question" to null.
 3. If it DOES NOT, or if the new message ALSO contains completely new and unrelated construction events (e.g. a new delivery, a different crew, a safety issue), parse those new events into a separate list.
-4. If the new message is COMPLETELY UNRELATED to the incomplete report, leave "updated_incomplete_event" as null.
+4. EVEN IF the new message is poorly transcribed or seems strange (e.g. "Vietnam'da Apex" instead of "Vendor is Apex"), ASSUME IT IS AN ANSWER to the missing information unless it is explicitly about a completely different construction activity. Update the incomplete report with whatever they said, mapped to the missing fields as best as possible.
 
 {master_data_prompt}
 
