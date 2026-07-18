@@ -80,11 +80,11 @@ class Database:
             Database._pool = self.ConnectionPool(
                 conninfo=self.db_url,
                 min_size=1,
-                max_size=3,
-                timeout=5.0,  # 5 seconds max waiting for a connection from pool
+                max_size=20,
+                timeout=30.0,  # 30 seconds max waiting for a connection from pool
                 kwargs={
                     "row_factory": self.dict_row,
-                    "connect_timeout": 5,  # 5 seconds max waiting for TCP connection to DB
+                    "connect_timeout": 10,  # 10 seconds max waiting for TCP connection to DB
                     "prepare_threshold": None  # CRITICAL: Required for PgBouncer Transaction Mode (port 6543)
                 }
             )
