@@ -364,7 +364,49 @@ def health_check():
 
 
 # =============================================================================
-# DASHBOARD ROUTES
+# SEO ROUTES
+# =============================================================================
+
+from flask import make_response
+
+@app.route('/robots.txt')
+def robots():
+    content = "User-agent: *\nAllow: /\nDisallow: /dashboard\nDisallow: /settings\nSitemap: https://rapidsite.app/sitemap.xml\n"
+    response = make_response(content)
+    response.headers['Content-Type'] = 'text/plain'
+    return response
+
+@app.route('/sitemap.xml')
+def sitemap():
+    content = '''<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+        <loc>https://rapidsite.app/</loc>
+        <changefreq>weekly</changefreq>
+        <priority>1.0</priority>
+    </url>
+    <url>
+        <loc>https://rapidsite.app/pricing</loc>
+        <changefreq>monthly</changefreq>
+        <priority>0.8</priority>
+    </url>
+    <url>
+        <loc>https://rapidsite.app/auth/login</loc>
+        <changefreq>yearly</changefreq>
+        <priority>0.5</priority>
+    </url>
+    <url>
+        <loc>https://rapidsite.app/auth/register</loc>
+        <changefreq>yearly</changefreq>
+        <priority>0.5</priority>
+    </url>
+</urlset>'''
+    response = make_response(content)
+    response.headers['Content-Type'] = 'application/xml'
+    return response
+
+# =============================================================================
+# DASHBOARD & MAIN ROUTES
 # =============================================================================
 
 @app.route('/')
