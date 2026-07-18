@@ -71,12 +71,10 @@ import time
 import logging
 
 def _worker_loop():
-    # Use a new db connection inside the thread
-    thread_db = Database()
     logging.info("🚀 Embedded background worker started. Polling for jobs...")
     while True:
         try:
-            job = thread_db.get_next_webhook_job()
+            job = db.get_next_webhook_job()
             if job:
                 job_id = job['id']
                 message_sid = job['message_sid']
@@ -91,14 +89,14 @@ def _worker_loop():
                 try:
                     from core.whatsapp_handler import handle_message_async
                     handle_message_async(message_sid, from_number, message_body, num_media, payload)
-                    thread_db.complete_webhook_job(job_id)
+                    db.complete_webhook_job(job_id)
                     logging.info(f"✅ Job #{job_id} completed successfully.")
                 except Exception as e:
                     logging.exception(f"❌ Error processing job #{job_id}")
                     if SENTRY_DSN and SENTRY_DSN != "your_sentry_dsn_here":
                         import sentry_sdk
                         sentry_sdk.capture_exception(e)
-                    thread_db.fail_webhook_job(job_id, str(e))
+                    db.fail_webhook_job(job_id, str(e))
             else:
                 time.sleep(2)
         except Exception as e:
