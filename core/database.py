@@ -39,7 +39,8 @@ class Database:
                 from psycopg.rows import dict_row
                 self.psycopg = psycopg
                 self.dict_row = dict_row
-                self.db_url = DATABASE_URL
+                # Automatically rewrite to transaction pooler port (6543) for Supabase to prevent connection exhaustion
+                self.db_url = DATABASE_URL.replace(":5432/", ":6543/")
                 self.ConnectionPool = ConnectionPool
                 print(f"🐘 Using PostgreSQL (Supabase) with psycopg3 (Lazy Pool)")
             else:
@@ -75,7 +76,8 @@ class Database:
                 timeout=5.0,  # 5 seconds max waiting for a connection from pool
                 kwargs={
                     "row_factory": self.dict_row,
-                    "connect_timeout": 5  # 5 seconds max waiting for TCP connection to DB
+                    "connect_timeout": 5,  # 5 seconds max waiting for TCP connection to DB
+                    "prepare_threshold": None  # CRITICAL: Required for PgBouncer Transaction Mode (port 6543)
                 }
             )
         return Database._pool
