@@ -833,28 +833,9 @@ def dashboard_edit(report_id):
         success = db.update_report_parsed_data(report_id, new_data)
         if success:
             return jsonify({"success": True})
-        
-        # 3) Process in background thread to avoid Twilio 15s timeout
-        from core.whatsapp_handler import handle_message_async
-        import threading
-        import logging
-        
-        def background_task():
-            try:
-                # We don't use webhook_jobs table anymore, just process directly
-                handle_message_async(message_sid, from_number, message_body, num_media, payload)
-                logging.info(f"✅ Direct async processing completed for {message_sid}")
-            except Exception as e:
-                logging.exception(f"❌ Error in direct async processing for {message_sid}")
-                import sentry_sdk
-                sentry_sdk.capture_exception(e)
-                
-        thread = threading.Thread(target=background_task, daemon=True)
-        thread.start()
-        
-        # 4) Return immediately so Twilio doesn't timeout
-        return jsonify({"status": "processing in background"}), 200
-        
+        else:
+            return jsonify({"success": False, "error": "Report not found or update failed"}), 404
+            
     except Exception as e:
         print(f"Error updating report {report_id}: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
