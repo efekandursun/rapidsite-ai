@@ -422,21 +422,28 @@ class Database:
             cursor.execute(query)
         return cursor
     
+    def _decrypt_row(self, row: dict) -> dict:
+        """Helper to decrypt sensitive columns if present."""
+        if not row: return row
+        from core.crypto import decrypt_token
+        
+        if 'procore_access_token' in row and row['procore_access_token']:
+            row['procore_access_token'] = decrypt_token(row['procore_access_token'])
+        if 'procore_refresh_token' in row and row['procore_refresh_token']:
+            row['procore_refresh_token'] = decrypt_token(row['procore_refresh_token'])
+        return row
+        
     def _fetchone(self, cursor) -> Optional[Dict[str, Any]]:
         """Fetch one row as dictionary."""
         row = cursor.fetchone()
         if row is None:
             return None
-        if self.use_postgres:
-            return dict(row)
-        return dict(row)
+        return self._decrypt_row(dict(row))
     
     def _fetchall(self, cursor) -> List[Dict[str, Any]]:
         """Fetch all rows as list of dictionaries."""
         rows = cursor.fetchall()
-        if self.use_postgres:
-            return [dict(row) for row in rows]
-        return [dict(row) for row in rows]
+        return [self._decrypt_row(dict(row)) for row in rows]
     
     # =========================================================================
     # REPORT MANAGEMENT
@@ -795,6 +802,12 @@ class Database:
 
     def update_company_procore_tokens(self, company_id: int, access_token: str, refresh_token: str, expires_at: int, procore_company_id: str = None) -> bool:
         """Update Procore tokens for a company."""
+        from core.crypto import encrypt_token
+        
+        # Encrypt the tokens
+        enc_access = encrypt_token(access_token)
+        enc_refresh = encrypt_token(refresh_token)
+        
         # Convert timestamp to ISO format
         expires_iso = datetime.fromtimestamp(expires_at).isoformat() if expires_at else None
         
@@ -805,7 +818,7 @@ class Database:
                     procore_refresh_token = ?,
                     procore_expires_at = ?
             """
-            params = [access_token, refresh_token, expires_iso]
+            params = [enc_access, enc_refresh, expires_iso]
             
             if procore_company_id:
                 query += ", procore_company_id = ?"

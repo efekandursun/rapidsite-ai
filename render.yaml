@@ -4,7 +4,7 @@ services:
     name: rapidsite-ai
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app --worker-class gthread --threads 4 --workers 2 --timeout 60 --bind 0.0.0.0:$PORT
+    startCommand: python worker.py & gunicorn app:app --worker-class gthread --threads 4 --workers 2 --timeout 60 --bind 0.0.0.0:$PORT
     plan: starter
     envVars:
       - key: FLASK_SECRET_KEY

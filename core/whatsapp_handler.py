@@ -75,29 +75,6 @@ def whatsapp_webhook():
         resp.message("✅ Already received. Processing underway.")
         return Response(str(resp), mimetype='application/xml')
 
-    # Spawn a background thread to process immediately
-    import threading
-    num_media = int(form_data.get('NumMedia', 0))
-    from_number = form_data.get('From', '')
-    message_body = form_data.get('Body', '')
-
-    def background_task():
-        try:
-            handle_message_async(message_sid, from_number, message_body, num_media, form_data)
-            # Update job status manually if needed, or rely on handle_message_async logging
-            with db.get_connection() as conn:
-                db._execute(conn, "UPDATE webhook_jobs SET status = 'completed' WHERE message_sid = ?", (message_sid,))
-        except Exception as e:
-            logging.error(f"❌ Async task error: {e}")
-            if SENTRY_DSN and SENTRY_DSN != "your_sentry_dsn_here":
-                import sentry_sdk
-                sentry_sdk.capture_exception(e)
-            with db.get_connection() as conn:
-                db._execute(conn, "UPDATE webhook_jobs SET status = 'failed', error = ? WHERE message_sid = ?", (str(e), message_sid))
-
-    thread = threading.Thread(target=background_task, daemon=True)
-    thread.start()
-
     # Quick ACK to Twilio; heavy lifting offloaded to background worker
     ack = MessagingResponse()
     ack.message("✅ Received. Processing now...")

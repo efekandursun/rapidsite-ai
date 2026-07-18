@@ -135,6 +135,7 @@ def check_trial_status():
 
 # Serve media files
 @app.route('/media/<path:filename>')
+@login_required
 def serve_media(filename):
     from flask import send_from_directory
     media_dir = os.path.join(os.path.dirname(__file__), 'data', 'media')
