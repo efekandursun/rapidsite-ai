@@ -40,7 +40,15 @@ class Database:
                 self.psycopg = psycopg
                 self.dict_row = dict_row
                 # Automatically rewrite to transaction pooler port (6543) for Supabase to prevent connection exhaustion
-                self.db_url = DATABASE_URL.replace(":5432/", ":6543/")
+                import urllib.parse
+                parsed = urllib.parse.urlparse(DATABASE_URL)
+                netloc_parts = parsed.netloc.rsplit(':', 1)
+                if len(netloc_parts) > 1 and netloc_parts[1].isdigit():
+                    netloc = netloc_parts[0] + ':6543'
+                else:
+                    netloc = parsed.netloc + ':6543'
+                self.db_url = parsed._replace(netloc=netloc).geturl()
+                
                 self.ConnectionPool = ConnectionPool
                 print(f"🐘 Using PostgreSQL (Supabase) with psycopg3 (Lazy Pool)")
             else:
