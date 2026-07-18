@@ -577,6 +577,17 @@ class Database:
         """Get all pending reports for approval."""
         return self.get_reports(status="pending")
         
+    def get_all_pending_reports_for_user(self, reported_by: str) -> List[Dict[str, Any]]:
+        """Get all pending reports for a specific user."""
+        with self.get_connection() as conn:
+            cursor = self._execute(conn, """
+                SELECT * FROM site_reports 
+                WHERE reported_by = ? AND status = 'pending' 
+                ORDER BY created_at DESC 
+            """, (reported_by,))
+            rows = self._fetchall(cursor)
+            return [self._row_to_dict(row) for row in rows]
+
     def get_latest_pending_report_for_user(self, reported_by: str) -> Optional[Dict[str, Any]]:
         """Get the most recent pending report for a specific user."""
         with self.get_connection() as conn:

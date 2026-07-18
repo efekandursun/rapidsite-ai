@@ -246,32 +246,84 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
     
     # --- NEW APPROVAL LOGIC ---
     cleaned_text = text.strip().lower()
-    is_approve = cleaned_text in ['1', '1.', '1)', 'onayla', 'onayliyorum', 'evet', 'approve', 'yes', 'y']
-    is_reject = cleaned_text in ['2', '2.', '2)', 'reddet', 'hayır', 'hayir', 'düzenle', 'duzenle', 'reject', 'no', 'n', 'edit']
     
-    if is_approve or is_reject:
-        pending_report = db.get_latest_pending_report_for_user(reporter_str) or db.get_latest_pending_report_for_user(from_number)
-        if pending_report:
-            try:
-                import json
-                parsed = json.loads(pending_report['parsed_data'])
-            except:
-                parsed = {}
+    # --- NEW: Specific Report Edit Command ---
+    # Matches: "edit 9: change quantity to 5" or "edit #9 change quantity"
+    import re
+    edit_match = re.match(r'^edit\s*#?(\d+)[:\s]+(.*)', cleaned_text)
+    if edit_match:
+        report_id = int(edit_match.group(1))
+        correction_text = edit_match.group(2).strip()
+        if not correction_text:
+            return {'company_name': company['name'], 'direct_reply': "✏️ Please provide the correction along with the Edit command. (e.g. 'Edit 9: change the quantity to 5')"}
+        
+        # We need to fetch the specific report by ID
+        # Let's bypass the usual `is_approve/is_reject` logic and just set it up for `resolve_incomplete`
+        specific_report = db._execute(db.get_connection(), "SELECT * FROM site_reports WHERE id=?", (report_id,)).fetchone()
+        if specific_report:
+            specific_report = db._row_to_dict(specific_report)
+            # Make sure it belongs to the user
+            if str(specific_report['reported_by']) in [reporter_str, from_number]:
+                try:
+                    import json
+                    parsed = json.loads(specific_report['parsed_data'])
+                except:
+                    parsed = {}
                 
-            if parsed.get('locked'):
-                return {'company_name': company['name'], 'direct_reply': "🔒 This report has already been sent to the Dashboard and cannot be edited. Please send a new message for a new report."}
+                if parsed.get('locked'):
+                    return {'company_name': company['name'], 'direct_reply': f"🔒 Report #{report_id} has already been sent to the Dashboard and cannot be edited."}
+                
+                # Treat this as an incomplete report to trigger `resolve_incomplete`
+                incomplete_report = specific_report
+                text = correction_text
+                # Reset these so it doesn't trigger the logic below
+                is_approve = False
+                is_reject = False
+                cleaned_text = text.strip().lower()
+            else:
+                return {'company_name': company['name'], 'direct_reply': f"❌ Report #{report_id} not found or you don't have permission to edit it."}
+        else:
+            return {'company_name': company['name'], 'direct_reply': f"❌ Report #{report_id} not found."}
+    else:
+        is_approve = cleaned_text in ['1', '1.', '1)', 'onayla', 'onayliyorum', 'evet', 'approve', 'yes', 'y']
+        is_reject = cleaned_text in ['2', '2.', '2)', 'reddet', 'hayır', 'hayir', 'düzenle', 'duzenle', 'reject', 'no', 'n', 'edit']
+
+    if is_approve or is_reject:
+        all_pending = db.get_all_pending_reports_for_user(reporter_str) or db.get_all_pending_reports_for_user(from_number)
+        
+        if all_pending:
+            import json
+            # Filter to only unlocked reports
+            unlocked_reports = []
+            for r in all_pending:
+                try:
+                    p = json.loads(r['parsed_data'])
+                except:
+                    p = {}
+                if not p.get('locked'):
+                    unlocked_reports.append((r, p))
+                    
+            if not unlocked_reports:
+                return {'company_name': company['name'], 'direct_reply': "🔒 Your recent reports have already been sent to the Dashboard and cannot be edited. Please send a new message for a new report."}
 
             if is_approve:
-                parsed['locked'] = True
-                db.update_report_parsed_data(pending_report['id'], parsed)
-                return {'company_name': company['name'], 'direct_reply': "✅ Done! Your data has been sent to the Dashboard and is locked for editing."}
+                for rep, parsed in unlocked_reports:
+                    parsed['locked'] = True
+                    db.update_report_parsed_data(rep['id'], parsed)
+                
+                count = len(unlocked_reports)
+                return {'company_name': company['name'], 'direct_reply': f"✅ Done! {count} report(s) sent to the Dashboard and locked for editing."}
 
             
             elif is_reject:
-                with db.get_connection() as conn:
-                    db._execute(conn, "UPDATE site_reports SET status='incomplete' WHERE id=?", (pending_report['id'],))
-                return {'company_name': company['name'], 'direct_reply': "✏️ Report status updated to 'To be edited'. Please write (or say) what you would like to edit or add."}
-    # --------------------------
+                if len(unlocked_reports) == 1:
+                    rep, parsed = unlocked_reports[0]
+                    with db.get_connection() as conn:
+                        db._execute(conn, "UPDATE site_reports SET status='incomplete' WHERE id=?", (rep['id'],))
+                    return {'company_name': company['name'], 'direct_reply': "✏️ Report status updated to 'To be edited'. Please write (or say) what you would like to edit or add."}
+                else:
+                    return {'company_name': company['name'], 'direct_reply': "✏️ You have multiple ready reports. To edit a specific one, please reply with 'Edit [ID]: [your correction]'. (e.g. 'Edit 9: change quantity to 5')"}
+        # end of all_pending logic
 
     
     parsed_data_list = []
@@ -471,7 +523,10 @@ def format_confirmation(result: dict) -> str:
     final_msg = ""
     if completed_msgs:
         final_msg += "📋 *Your Report is Ready:*\n\n" + "\n".join(completed_msgs)
-        final_msg += "\n\n🤔 *What would you like to do?*\n1️⃣ Send to Dashboard\n2️⃣ Edit / Add extra info"
+        if len(completed_msgs) == 1:
+            final_msg += "\n\n🤔 *What would you like to do?*\n1️⃣ Send to Dashboard\n2️⃣ Edit / Add extra info"
+        else:
+            final_msg += "\n\n🤔 *What would you like to do?*\n1️⃣ Send ALL to Dashboard\n✏️ To edit a specific report, reply with 'Edit [ID]: [correction]' (e.g. 'Edit 9: change vendor to Apex')"
         
     if incomplete_msgs:
         if final_msg: final_msg += "\n\n"
