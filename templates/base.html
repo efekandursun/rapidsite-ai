@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rapid Site | Dashboard</title>
     <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo_web.png') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
     {% block styles %}{% endblock %}
 </head>
@@ -13,16 +14,14 @@
 <body>
     <!-- Mobile Header -->
     <div class="mobile-header">
-        <div class="logo-text" style="margin-bottom: 0;">RapidSite AI</div>
+        <img src="{{ url_for('static', filename='images/logo_web.png') }}" alt="Rapid Site" style="height: 30px; object-fit: contain;">
         <button id="mobile-menu-btn" class="hamburger-btn">☰</button>
     </div>
 
     <!-- Sidebar Navigation -->
     <aside class="sidebar">
-        <div class="logo-container">
-            <div class="logo-text">RapidSite AI</div>
-            <div class="logo-sub">Enterprise Edition</div>
-
+        <div class="logo-container" style="display: flex; justify-content: center; align-items: center; padding: 1.5rem;">
+            <img src="{{ url_for('static', filename='images/logo_web.png') }}" alt="Rapid Site AI" style="max-width: 80%; height: auto; object-fit: contain;">
         </div>
 
         <nav class="nav-menu">
