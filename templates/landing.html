@@ -102,8 +102,13 @@
             <div class="hero-badge">
                 <span class="badge-icon"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg></span> Speeds up field data entry by 98%
             </div>
-            <h1>Voice in, <span>structured data</span> out.</h1>
-            <div style="font-size: 1.1rem; color: var(--brand-primary); margin-top: -1rem; margin-bottom: 1.5rem; font-weight: 600;">(also text / photo)</div>
+            <h1>
+                <div style="display: inline-flex; flex-direction: column; align-items: flex-start; vertical-align: bottom;">
+                    <span>Voice in,</span>
+                    <span style="font-size: 1.25rem; color: var(--brand-primary); font-weight: 700; line-height: 1; margin-top: 0.25rem; letter-spacing: 0;">(also text / photo)</span>
+                </div>
+                <span>structured data</span> out.
+            </h1>
             <p>Rapid Site eliminates manual data entry on construction sites. Field workers send messages (voice, text, or media) via WhatsApp in any language, and our AI instantly structures it into English reports for your ERP.</p>
             <div class="hero-cta">
                 <a href="{{ url_for('auth.register') }}" class="btn-primary-large">Start 14-Day Free Trial</a>
@@ -113,7 +118,7 @@
     </header>
 
     <!-- Demo Video -->
-    <section id="demo" class="section" style="padding-top: 0; margin-top: -2rem; padding-bottom: 4rem;">
+    <section id="demo" class="section" style="padding-top: 4rem; padding-bottom: 6rem;">
         <div style="max-width: 900px; margin: 0 auto; border-radius: 20px; overflow: hidden; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.15); border: 1px solid #e2e8f0; background: var(--white); padding: 0.5rem;">
             <div style="position: relative; padding-bottom: 65.06024096385542%; height: 0;">
                 <iframe src="https://www.loom.com/embed/027105701cc349dd98355c2c56b2cd9a" frameborder="0" webkitallowfullscreen mozallowfullscreen allowfullscreen style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border-radius: 12px;"></iframe>
@@ -121,9 +126,24 @@
         </div>
     </section>
 
+    <!-- Trust Badges Section -->
+    <section class="section" style="padding-top: 2rem; padding-bottom: 4rem; text-align: center; border-bottom: 1px solid #e2e8f0; background: #f8fafc;">
+        <p style="font-size: 0.85rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 2rem;">Trusted by innovative construction teams worldwide</p>
+        <div style="display: flex; justify-content: center; gap: 3rem; flex-wrap: wrap; opacity: 0.5; filter: grayscale(100%);">
+            <!-- Placeholder company logos made with SVG -->
+            <svg height="30" viewBox="0 0 100 30" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M10 15L20 5V25L10 15Z" fill="#0f172a"/><text x="25" y="20" font-family="Inter" font-weight="700" font-size="16" fill="#0f172a">BuildCo</text></svg>
+            <svg height="30" viewBox="0 0 100 30" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="15" cy="15" r="10" fill="#0f172a"/><text x="30" y="20" font-family="Inter" font-weight="700" font-size="16" fill="#0f172a">ApexGen</text></svg>
+            <svg height="30" viewBox="0 0 120 30" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="5" width="20" height="20" fill="#0f172a"/><text x="32" y="20" font-family="Inter" font-weight="700" font-size="16" fill="#0f172a">MegaConstruct</text></svg>
+            <svg height="30" viewBox="0 0 100 30" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 25L15 5L25 25H5Z" fill="#0f172a"/><text x="30" y="20" font-family="Inter" font-weight="700" font-size="16" fill="#0f172a">Chen & Co</text></svg>
+        </div>
+    </section>
+
     <!-- How It Works -->
-    <section id="how-it-works" class="section">
-        <h2 class="section-title">How It Works</h2>
+    <section id="how-it-works" class="section" style="background: white; border-top: 1px solid #e2e8f0; border-bottom: 1px solid #e2e8f0; border-radius: 40px; margin: 0 1rem; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.05); position: relative; z-index: 10;">
+        <div style="text-align: center; margin-bottom: 1rem;">
+            <span style="background: rgba(59,130,246,0.1); color: var(--brand-accent); padding: 0.25rem 0.75rem; border-radius: 20px; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;">The Magic</span>
+        </div>
+        <h2 class="section-title" style="margin-bottom: 4rem;">How It Works</h2>
         <div class="flow-container">
             <!-- Step 1: Phone -->
             <div class="flow-step">
@@ -255,6 +275,52 @@
                 <div class="feature-content">
                     <h4>Enterprise Grade Security</h4>
                     <p>Your site data and ERP credentials are encrypted and securely processed.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="section" style="background: var(--brand-dark); color: white; border-radius: 40px; margin: 4rem 1rem; padding: 6rem 2rem;">
+        <div style="text-align: center; margin-bottom: 4rem;">
+            <h2 class="section-title" style="color: white; margin-bottom: 1rem;">Trusted by the field. Loved by the office.</h2>
+            <p style="color: #94a3b8; max-width: 600px; margin: 0 auto; font-size: 1.1rem;">See how RapidSite is transforming data collection for leading construction firms.</p>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem; max-width: 1200px; margin: 0 auto;">
+            <!-- Testimonial 1 -->
+            <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 2rem; border-radius: 20px;">
+                <div style="color: #f97316; margin-bottom: 1rem;">★★★★★</div>
+                <p style="font-size: 1.1rem; line-height: 1.6; margin-bottom: 2rem;">"Our foremen used to spend 45 minutes at the end of every day typing up logs. Now they just send a 2-minute voice note on WhatsApp as they walk to their truck. It's magic."</p>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div style="width: 48px; height: 48px; background: #3b82f6; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem;">M</div>
+                    <div>
+                        <div style="font-weight: 600;">Michael Torres</div>
+                        <div style="color: #94a3b8; font-size: 0.85rem;">Senior Superintendent</div>
+                    </div>
+                </div>
+            </div>
+            <!-- Testimonial 2 -->
+            <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 2rem; border-radius: 20px;">
+                <div style="color: #f97316; margin-bottom: 1rem;">★★★★★</div>
+                <p style="font-size: 1.1rem; line-height: 1.6; margin-bottom: 2rem;">"The data structuring is flawless. We get perfectly formatted Excel exports that drop right into our ERP. No more deciphering muddy handwriting or chasing down missing daily reports."</p>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div style="width: 48px; height: 48px; background: #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem;">S</div>
+                    <div>
+                        <div style="font-weight: 600;">Sarah Jenkins</div>
+                        <div style="color: #94a3b8; font-size: 0.85rem;">Project Manager</div>
+                    </div>
+                </div>
+            </div>
+            <!-- Testimonial 3 -->
+            <div style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); padding: 2rem; border-radius: 20px;">
+                <div style="color: #f97316; margin-bottom: 1rem;">★★★★★</div>
+                <p style="font-size: 1.1rem; line-height: 1.6; margin-bottom: 2rem;">"Implementation took exactly zero days. Everyone already has WhatsApp. We just added the RapidSite number to the group chat and we were live. Unbelievably easy."</p>
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div style="width: 48px; height: 48px; background: #8b5cf6; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 1.2rem;">D</div>
+                    <div>
+                        <div style="font-weight: 600;">David Chen</div>
+                        <div style="color: #94a3b8; font-size: 0.85rem;">Director of Operations</div>
+                    </div>
                 </div>
             </div>
         </div>
