@@ -419,9 +419,11 @@ body {
     50% { transform: scale(1.05); }
 }
 
-@keyframes scan {
-    from { transform: translateY(-20px); }
-    to { transform: translateY(20px); }
+@keyframes scan-json {
+    0% { top: 0; opacity: 0; }
+    10% { opacity: 1; }
+    90% { opacity: 1; }
+    100% { top: 100%; opacity: 0; }
 }
 
 /* Mock Dashboard */
