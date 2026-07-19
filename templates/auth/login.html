@@ -31,20 +31,10 @@
             margin-bottom: 2rem;
         }
 
-        .auth-logo h1 {
-            font-size: 1.5rem;
-            font-weight: 800;
-            color: var(--text-primary);
-        }
-
-        .auth-logo h1 span {
-            color: var(--accent-primary);
-        }
-
         .auth-logo p {
             color: var(--text-muted);
             font-size: 0.85rem;
-            margin-top: 0.25rem;
+            margin-top: 0.5rem;
         }
 
         .auth-form .form-group {
@@ -127,13 +117,32 @@
             color: var(--accent-secondary);
         }
     </style>
+    <style>
+        .back-link-wrapper {
+            margin-bottom: 1.5rem;
+            text-align: left;
+        }
+        .back-link {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .back-link:hover {
+            color: var(--text-primary);
+        }
+    </style>
 </head>
 
 <body>
     <div class="auth-card">
+        <div class="back-link-wrapper">
+            <a href="/" class="back-link">← Back to Home</a>
+        </div>
         <div class="auth-logo">
-            <h1>🏗️ Rapid<span>Site</span> AI</h1>
-            <p>Construction Report System</p>
+            <img src="{{ url_for('static', filename='images/logo_web.png') }}" alt="RapidSite AI" style="height: 48px; margin-bottom: 0.5rem; display: block; margin-left: auto; margin-right: auto;">
+            <p>Welcome back! Please sign in to continue.</p>
         </div>
 
         {% with messages = get_flashed_messages(with_categories=true) %}
