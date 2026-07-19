@@ -186,6 +186,8 @@ class Database:
                     verification_code TEXT,
                     verification_code_expires TEXT,
                     whatsapp_number TEXT,
+                    reset_token TEXT,
+                    reset_token_expires TEXT,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                 )
             """)
@@ -264,10 +266,22 @@ class Database:
                     verification_code TEXT,
                     verification_code_expires TEXT,
                     whatsapp_number TEXT,
+                    reset_token TEXT,
+                    reset_token_expires TEXT,
                     created_at TEXT DEFAULT CURRENT_TIMESTAMP,
                     FOREIGN KEY (company_id) REFERENCES companies(id)
                 )
             """)
+            
+            # Safely add columns if they don't exist (SQLite)
+            try:
+                cursor.execute("ALTER TABLE users ADD COLUMN reset_token TEXT")
+            except Exception:
+                pass
+            try:
+                cursor.execute("ALTER TABLE users ADD COLUMN reset_token_expires TEXT")
+            except Exception:
+                pass
             
             cursor.execute("""
                 CREATE TABLE IF NOT EXISTS company_authorized_numbers (
@@ -1016,6 +1030,60 @@ class Database:
             """, (email,))
             
             return True
+
+    def set_reset_token(self, email: str, token: str, expires_at: str) -> bool:
+        """Set a password reset token for a user."""
+        with self.get_connection() as conn:
+            cursor = self._execute(conn, """
+                UPDATE users 
+                SET reset_token = ?, reset_token_expires = ?
+                WHERE email = ? AND is_active = 1
+            """, (token, expires_at, email))
+            return cursor.rowcount > 0
+
+    def get_user_by_reset_token(self, token: str) -> Optional[Dict[str, Any]]:
+        """Find a user by reset token and ensure it's not expired."""
+        with self.get_connection() as conn:
+            cursor = self._execute(conn,
+                "SELECT * FROM users WHERE reset_token = ? AND is_active = 1",
+                (token,)
+            )
+            row = self._fetchone(cursor)
+            
+            if not row:
+                return None
+                
+            expires_at = row.get('reset_token_expires')
+            if not expires_at:
+                return None
+                
+            if isinstance(expires_at, str):
+                try:
+                    expires_dt = datetime.fromisoformat(expires_at.replace('Z', '+00:00'))
+                except ValueError:
+                    return None
+            elif isinstance(expires_at, datetime):
+                expires_dt = expires_at
+            else:
+                return None
+                
+            if expires_dt.tzinfo is not None:
+                expires_dt = expires_dt.replace(tzinfo=None)
+                
+            if expires_dt < datetime.now():
+                return None
+                
+            return row
+
+    def update_password(self, user_id: int, new_password_hash: str) -> bool:
+        """Update a user's password and clear the reset token."""
+        with self.get_connection() as conn:
+            cursor = self._execute(conn, """
+                UPDATE users 
+                SET password_hash = ?, reset_token = NULL, reset_token_expires = NULL
+                WHERE id = ?
+            """, (new_password_hash, user_id))
+            return cursor.rowcount > 0
     
     # =========================================================================
     # COMPANY-FILTERED DATA ACCESS

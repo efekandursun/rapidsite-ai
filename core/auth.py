@@ -305,3 +305,61 @@ def logout():
     session.clear()
     flash('You have been logged out.', 'info')
     return redirect(url_for('auth.login'))
+
+@auth_bp.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    """Handle forgot password requests."""
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip().lower()
+        if not email:
+            flash('Please enter your email address.', 'error')
+            return redirect(url_for('auth.forgot_password'))
+            
+        user = db.get_user_by_email(email)
+        if user:
+            # Generate token
+            token = secrets.token_urlsafe(32)
+            # Expires in 15 mins
+            from datetime import datetime, timedelta
+            expires_at = (datetime.now() + timedelta(minutes=15)).isoformat()
+            
+            db.set_reset_token(email, token, expires_at)
+            
+            reset_link = request.host_url.rstrip('/') + url_for('auth.reset_password', token=token)
+            from core.mailer import send_password_reset_email
+            send_password_reset_email(email, reset_link)
+            
+        # Always show success message to prevent email enumeration attacks
+        flash('If an account exists with that email, a password reset link has been sent.', 'success')
+        return redirect(url_for('auth.login'))
+        
+    return render_template('auth/forgot_password.html')
+
+@auth_bp.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    """Handle password reset via token."""
+    user = db.get_user_by_reset_token(token)
+    
+    if not user:
+        flash('Invalid or expired reset link. Please request a new one.', 'error')
+        return redirect(url_for('auth.forgot_password'))
+        
+    if request.method == 'POST':
+        password = request.form.get('password', '')
+        confirm_password = request.form.get('confirm_password', '')
+        
+        if len(password) < 6:
+            flash('Password must be at least 6 characters.', 'error')
+            return render_template('auth/reset_password.html', token=token)
+            
+        if password != confirm_password:
+            flash('Passwords do not match.', 'error')
+            return render_template('auth/reset_password.html', token=token)
+            
+        db.update_password(user['id'], hash_password(password))
+        
+        flash('Your password has been successfully reset. Please log in.', 'success')
+        return redirect(url_for('auth.login'))
+        
+    return render_template('auth/reset_password.html', token=token)
+
