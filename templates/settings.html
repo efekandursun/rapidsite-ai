@@ -4,104 +4,19 @@
 <div class="page-header">
     <div>
         <h1 class="page-title">Settings</h1>
-        <p class="page-subtitle">Manage your company, team, and integrations</p>
+        <p class="page-subtitle">Complete the setup steps to activate your field reporting pipeline.</p>
     </div>
 </div>
 
 <div style="display: grid; gap: 1.5rem;">
 
-    <!-- Company Profile & Authorized Numbers -->
-    <div class="glass-card">
-        <h3 style="margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.75rem; font-size: 1rem;">
-            <span style="background: #eff6ff; padding: 0.5rem; border-radius: 8px;">🏢</span>
-            Authorized Personnel
-        </h3>
-
-        <div class="table-container">
-            <table class="premium-table">
-                <thead>
-                    <tr>
-                        <th>Employee</th>
-                        <th>Job Title</th>
-                        <th>WhatsApp Number</th>
-                        <th style="text-align: right;">Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% if authorized_numbers %}
-                    {% for num in authorized_numbers %}
-                    <tr>
-                        <td>
-                            <div style="font-weight: 600; color: var(--text-primary);">{{ num.employee_name }}</div>
-                        </td>
-                        <td>
-                            <div style="color: var(--text-secondary); font-size: 0.9rem;">{{ num.job_title or '—' }}</div>
-                        </td>
-                        <td>
-                            <span style="font-family: monospace; color: var(--accent-secondary);">
-                                {{ num.phone_number }}
-                            </span>
-                        </td>
-                        <td style="text-align: right;">
-                            <form method="POST" action="{{ url_for('delete_authorized_number', number_id=num.id) }}"
-                                onsubmit="return confirm('Remove {{ num.employee_name or num.phone_number }}?');"
-                                style="display: inline;">
-                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                                <button type="submit" class="btn btn-secondary"
-                                    style="padding: 0.3rem 0.6rem; font-size: 0.75rem; color: var(--accent-danger);">
-                                    Remove
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                    {% else %}
-                    <tr>
-                        <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 2rem;">
-                            No authorized numbers yet. Add one below.
-                        </td>
-                    </tr>
-                    {% endif %}
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Add New Number -->
-        <div style="margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid var(--border-light);">
-            <div
-                style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 0.75rem;">
-                Add New Authorization
-            </div>
-            <form method="POST" action="{{ url_for('add_authorized_number') }}"
-                style="display: flex; gap: 0.75rem; align-items: flex-end;">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                <div class="form-group" style="flex: 1; margin-bottom: 0;">
-                    <label class="form-label">Employee Name</label>
-                    <input type="text" name="employee_name" class="form-control" placeholder="e.g. John Foreman"
-                        required>
-                </div>
-                <div class="form-group" style="flex: 1; margin-bottom: 0;">
-                    <label class="form-label">Job Title</label>
-                    <input type="text" name="job_title" class="form-control" placeholder="e.g. Site Foreman">
-                </div>
-                <div class="form-group" style="flex: 1; margin-bottom: 0;">
-                    <label class="form-label">WhatsApp Number</label>
-                    <input type="text" name="phone_number" class="form-control" placeholder="e.g. +14155552671"
-                        required>
-                </div>
-                <button type="submit" class="btn btn-primary" style="margin-bottom: 0; white-space: nowrap;">
-                    + Add
-                </button>
-            </form>
-        </div>
-    </div>
-
     <!-- Procore Integration -->
     <div class="glass-card">
-        <h3 style="margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.75rem; font-size: 1rem;">
-            <span style="background: #fff7ed; padding: 0.5rem; border-radius: 8px;">🔌</span>
-            Procore Integration
+        <h3 style="margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.75rem; font-size: 1.1rem;">
+            <span style="background: #fff7ed; padding: 0.5rem; border-radius: 8px;">1️⃣</span>
+            Step 1: Connect Your Procore
         </h3>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">Link your Procore account to automatically sync daily logs to your selected project.</p>
 
         <div
             style="display: flex; align-items: center; justify-content: space-between; padding: 1.25rem; background: #f8fafc; border-radius: var(--radius-md); border: 1px solid var(--border-light);">
@@ -185,11 +100,101 @@
         {% endif %}
     </div>
 
+    <!-- Company Profile & Authorized Numbers -->
+    <div class="glass-card">
+        <h3 style="margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.75rem; font-size: 1.1rem;">
+            <span style="background: #eff6ff; padding: 0.5rem; border-radius: 8px;">2️⃣</span>
+            Step 2: Authorize Your Personnel
+        </h3>
+        <div style="background: #f8fafc; border: 1px solid var(--border-light); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem;">
+            <p style="margin: 0 0 0.5rem 0; font-weight: 600; color: var(--text-primary);">Activation Instructions:</p>
+            <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem; line-height: 1.5;">Add your field workers below. Then, tell them to send a WhatsApp message to <strong style="color: var(--brand-accent);">+1 415 523 8886</strong> with the exact text <strong style="background: #e2e8f0; padding: 0.2rem 0.4rem; border-radius: 4px; font-family: monospace;">join author-combination</strong> to activate their number in the system.</p>
+        </div>
+
+        <div class="table-container">
+            <table class="premium-table">
+                <thead>
+                    <tr>
+                        <th>Employee</th>
+                        <th>Job Title</th>
+                        <th>WhatsApp Number</th>
+                        <th style="text-align: right;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if authorized_numbers %}
+                    {% for num in authorized_numbers %}
+                    <tr>
+                        <td>
+                            <div style="font-weight: 600; color: var(--text-primary);">{{ num.employee_name }}</div>
+                        </td>
+                        <td>
+                            <div style="color: var(--text-secondary); font-size: 0.9rem;">{{ num.job_title or '—' }}</div>
+                        </td>
+                        <td>
+                            <span style="font-family: monospace; color: var(--accent-secondary);">
+                                {{ num.phone_number }}
+                            </span>
+                        </td>
+                        <td style="text-align: right;">
+                            <form method="POST" action="{{ url_for('delete_authorized_number', number_id=num.id) }}"
+                                onsubmit="return confirm('Remove {{ num.employee_name or num.phone_number }}?');"
+                                style="display: inline;">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                <button type="submit" class="btn btn-secondary"
+                                    style="padding: 0.3rem 0.6rem; font-size: 0.75rem; color: var(--accent-danger);">
+                                    Remove
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td colspan="4" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+                            No authorized numbers yet. Add one below.
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Add New Number -->
+        <div style="margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid var(--border-light);">
+            <div
+                style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 0.75rem;">
+                Add New Authorization
+            </div>
+            <form method="POST" action="{{ url_for('add_authorized_number') }}"
+                style="display: flex; gap: 0.75rem; align-items: flex-end;">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                    <label class="form-label">Employee Name</label>
+                    <input type="text" name="employee_name" class="form-control" placeholder="e.g. John Foreman"
+                        required>
+                </div>
+                <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                    <label class="form-label">Job Title</label>
+                    <input type="text" name="job_title" class="form-control" placeholder="e.g. Site Foreman">
+                </div>
+                <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                    <label class="form-label">WhatsApp Number</label>
+                    <input type="text" name="phone_number" class="form-control" placeholder="e.g. +14155552671"
+                        required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="margin-bottom: 0; white-space: nowrap;">
+                    + Add
+                </button>
+            </form>
+        </div>
+    </div>
+
     <!-- Team Members -->
     <div class="glass-card">
-        <h3 style="margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.75rem; font-size: 1rem;">
-            <span style="background: #f5f3ff; padding: 0.5rem; border-radius: 8px;">👥</span>
-            Team Members
+        <h3 style="margin-bottom: 1.25rem; display: flex; align-items: center; gap: 0.75rem; font-size: 1.1rem;">
+            <span style="background: #f5f3ff; padding: 0.5rem; border-radius: 8px;">3️⃣</span>
+            Step 3: Manage Team Members (Dashboard Access)
         </h3>
 
         {% if users %}
