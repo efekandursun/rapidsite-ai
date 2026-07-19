@@ -1,5 +1,10 @@
 import os
-from datetime import datetime
+import json
+import logging
+import hmac
+import hashlib
+from datetime import datetime, timedelta
+from functools import wraps
 from flask import Flask, jsonify, request, render_template, redirect, url_for, session, flash
 from dotenv import load_dotenv
 
@@ -83,7 +88,7 @@ def check_trial_status():
     
     # Skip enforcement on static files, auth routes, public pages, health, and admin routes
     skip_endpoints = ['static', 'auth.', 'health_check', 'landing', 'pricing', 'privacy', 'terms',
-                      'super_admin_dashboard', 'extend_subscription', 'serve_media']
+                      'super_admin_dashboard', 'extend_subscription', 'serve_media', 'lemonsqueezy_webhook']
     if request.endpoint:
         for skip in skip_endpoints:
             if request.endpoint == skip or request.endpoint.startswith(skip):
@@ -1084,6 +1089,50 @@ def delete_authorized_number(number_id):
     db.remove_authorized_number(number_id, user['company_id'])
     
     return redirect(url_for('settings'))
+
+@app.route('/webhook/lemonsqueezy', methods=['POST'])
+def lemonsqueezy_webhook():
+    secret = os.getenv('LEMON_SQUEEZY_WEBHOOK_SECRET', '')
+    if not secret:
+        return "No secret configured", 500
+
+    raw_body = request.get_data()
+    signature = request.headers.get('X-Signature', '')
+
+    # Verify signature
+    digest = hmac.new(secret.encode(), raw_body, hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(digest, signature):
+        return "Invalid signature", 401
+
+    try:
+        data = request.json
+        event_name = data.get('meta', {}).get('event_name')
+        custom_data = data.get('meta', {}).get('custom_data', {})
+        
+        company_id = custom_data.get('company_id')
+        if not company_id:
+            # Fallback to email matching if company_id wasn't passed in checkout
+            user_email = data.get('data', {}).get('attributes', {}).get('user_email')
+            if user_email:
+                user = db.get_user_by_email(user_email)
+                if user:
+                    company_id = user['company_id']
+
+        if not company_id:
+            return "Company ID not found", 404
+
+        if event_name in ['subscription_created', 'subscription_updated']:
+            # Extend by 32 days (1 month + grace) and set active
+            db.extend_company_subscription(int(company_id), 32, 'active')
+        elif event_name in ['subscription_cancelled', 'subscription_expired']:
+            # Terminate subscription
+            db.extend_company_subscription(int(company_id), 0, 'cancelled')
+
+        return "OK", 200
+    except Exception as e:
+        print(f"Webhook Error: {e}")
+        return "Internal Server Error", 500
+
 
 
 # =============================================================================

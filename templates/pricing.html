@@ -1,382 +1,385 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RapidSite AI | Pricing</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<style>
-    :root {
-        --text-dark: #0f172a;
-    }
-
-    .pricing-page {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 6rem 1.5rem 4rem;
-    }
-
-    .pricing-header {
-        text-align: center;
-        margin-bottom: 3rem;
-    }
-
-    .pricing-title {
-        font-size: 2.5rem;
-        font-weight: 800;
-        color: var(--text-dark);
-        margin-bottom: 0.75rem;
-        letter-spacing: -1px;
-    }
-
-    .pricing-subtitle {
-        font-size: 1.1rem;
-        color: var(--text-main);
-        max-width: 600px;
-        margin: 0 auto 2rem;
-    }
-
-    /* Billing Toggle */
-    .billing-toggle {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.75rem;
-        margin-bottom: 2.5rem;
-    }
-
-    .billing-label {
-        font-size: 0.95rem;
-        font-weight: 500;
-        color: var(--text-main);
-        cursor: pointer;
-        transition: color 0.2s;
-    }
-
-    .billing-label.active {
-        color: var(--text-dark);
-        font-weight: 600;
-    }
-
-    .toggle-switch {
-        position: relative;
-        width: 52px;
-        height: 28px;
-        background: #cbd5e1;
-        border-radius: 14px;
-        cursor: pointer;
-        transition: background 0.3s;
-    }
-
-    .toggle-switch.active {
-        background: var(--brand-primary);
-    }
-
-    .toggle-switch::after {
-        content: '';
-        position: absolute;
-        width: 22px;
-        height: 22px;
-        background: white;
-        border-radius: 50%;
-        top: 3px;
-        left: 3px;
-        transition: transform 0.3s;
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-    }
-
-    .toggle-switch.active::after {
-        transform: translateX(24px);
-    }
-
-    .save-badge {
-        background: linear-gradient(135deg, #10b981, #059669);
-        color: white;
-        font-size: 0.75rem;
-        font-weight: 600;
-        padding: 0.2rem 0.6rem;
-        border-radius: 10px;
-        letter-spacing: 0.5px;
-    }
-
-    /* Pricing Cards */
-    .pricing-cards {
-        display: flex;
-        justify-content: center;
-        gap: 1.5rem;
-        flex-wrap: wrap;
-    }
-
-    .pricing-card {
-        background: var(--white);
-        border: 1px solid #e2e8f0;
-        border-radius: 16px;
-        padding: 2.25rem 2rem;
-        flex: 1;
-        min-width: 280px;
-        max-width: 380px;
-        box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
-        display: flex;
-        flex-direction: column;
-        position: relative;
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-
-    .pricing-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1);
-    }
-
-    .pricing-card.popular {
-        border: 2px solid var(--brand-primary);
-        box-shadow: 0 8px 30px rgba(59, 130, 246, 0.15);
-        transform: scale(1.03);
-    }
-
-    .pricing-card.popular:hover {
-        transform: scale(1.03) translateY(-4px);
-        box-shadow: 0 12px 40px rgba(59, 130, 246, 0.2);
-    }
-
-    .popular-badge {
-        position: absolute;
-        top: -12px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: linear-gradient(135deg, var(--brand-primary), #7c3aed);
-        color: white;
-        padding: 0.3rem 1.25rem;
-        border-radius: 20px;
-        font-size: 0.75rem;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        white-space: nowrap;
-    }
-
-    .plan-name {
-        font-size: 1.2rem;
-        font-weight: 700;
-        color: var(--text-dark);
-        margin-bottom: 0.4rem;
-    }
-
-    .plan-desc {
-        font-size: 0.85rem;
-        color: var(--text-main);
-        margin-bottom: 1.25rem;
-        line-height: 1.4;
-    }
-
-    .plan-price-container {
-        display: flex;
-        align-items: baseline;
-        gap: 0.4rem;
-        margin-bottom: 0.25rem;
-    }
-
-    .plan-price {
-        font-size: 3rem;
-        font-weight: 800;
-        color: var(--text-dark);
-        letter-spacing: -2px;
-        line-height: 1;
-    }
-
-    .plan-price-strike {
-        font-size: 1.3rem;
-        font-weight: 600;
-        color: #94a3b8;
-        text-decoration: line-through;
-    }
-
-    .plan-period {
-        color: var(--text-light);
-        font-weight: 500;
-        font-size: 0.95rem;
-    }
-
-    .plan-billing-note {
-        font-size: 0.8rem;
-        color: var(--text-light);
-        margin-bottom: 1.5rem;
-    }
-
-    .plan-divider {
-        height: 1px;
-        background: #e2e8f0;
-        margin: 0.5rem 0 1.25rem;
-    }
-
-    .plan-features-title {
-        font-size: 0.8rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        color: var(--text-light);
-        margin-bottom: 1rem;
-    }
-
-    .plan-features {
-        list-style: none;
-        margin-bottom: 2rem;
-        flex-grow: 1;
-        padding: 0;
-    }
-
-    .plan-features li {
-        display: flex;
-        align-items: flex-start;
-        gap: 0.6rem;
-        margin-bottom: 0.75rem;
-        color: var(--text-main);
-        font-size: 0.9rem;
-        line-height: 1.4;
-    }
-
-    .feature-icon {
-        color: #10b981;
-        font-weight: bold;
-        flex-shrink: 0;
-        margin-top: 1px;
-    }
-
-    .feature-icon.missing {
-        color: var(--text-light);
-        opacity: 0.4;
-    }
-
-    .feature-highlight {
-        font-weight: 600;
-        color: var(--text-dark);
-    }
-
-    .btn-plan {
-        width: 100%;
-        padding: 0.875rem;
-        border-radius: 8px;
-        font-weight: 600;
-        font-size: 1rem;
-        text-align: center;
-        text-decoration: none;
-        transition: all 0.2s;
-        cursor: pointer;
-        display: inline-block;
-        box-sizing: border-box;
-    }
-
-    .btn-plan-primary {
-        background: linear-gradient(135deg, var(--brand-primary), #7c3aed);
-        color: white;
-        border: none;
-        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-    }
-
-    .btn-plan-primary:hover {
-        box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
-        transform: translateY(-1px);
-        color: white;
-    }
-
-    .btn-plan-secondary {
-        background: white;
-        color: var(--text-dark);
-        border: 1px solid #cbd5e1;
-    }
-
-    .btn-plan-secondary:hover {
-        background: #f8fafc;
-        border-color: var(--brand-primary);
-        color: var(--brand-primary);
-    }
-
-    /* FAQ Section */
-    .faq-section {
-        max-width: 700px;
-        margin: 4rem auto 0;
-    }
-
-    .faq-title {
-        text-align: center;
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: var(--text-dark);
-        margin-bottom: 2rem;
-    }
-
-    .faq-item {
-        border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        margin-bottom: 0.75rem;
-        overflow: hidden;
-        background: var(--white);
-    }
-
-    .faq-question {
-        padding: 1rem 1.25rem;
-        font-weight: 600;
-        color: var(--text-dark);
-        cursor: pointer;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 0.95rem;
-    }
-
-    .faq-question:hover {
-        background: #f8fafc;
-    }
-
-    .faq-arrow {
-        transition: transform 0.2s;
-        color: var(--text-light);
-    }
-
-    .faq-item.active .faq-arrow {
-        transform: rotate(180deg);
-    }
-
-    .faq-answer {
-        padding: 0 1.25rem 0;
-        color: var(--text-main);
-        font-size: 0.9rem;
-        line-height: 1.6;
-        max-height: 0;
-        overflow: hidden;
-        transition: all 0.3s ease-out;
-    }
-
-    .faq-item.active .faq-answer {
-        max-height: 500px;
-        padding-bottom: 1rem;
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-        .pricing-title {
-            font-size: 1.75rem;
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --text-dark: #0f172a;
         }
 
-        .pricing-cards {
-            flex-direction: column;
+        .pricing-page {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 6rem 1.5rem 4rem;
+        }
+
+        .pricing-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .pricing-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--text-dark);
+            margin-bottom: 0.75rem;
+            letter-spacing: -1px;
+        }
+
+        .pricing-subtitle {
+            font-size: 1.1rem;
+            color: var(--text-main);
+            max-width: 600px;
+            margin: 0 auto 2rem;
+        }
+
+        /* Billing Toggle */
+        .billing-toggle {
+            display: flex;
             align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .billing-label {
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .billing-label.active {
+            color: var(--text-dark);
+            font-weight: 600;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 52px;
+            height: 28px;
+            background: #cbd5e1;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .toggle-switch.active {
+            background: var(--brand-primary);
+        }
+
+        .toggle-switch::after {
+            content: '';
+            position: absolute;
+            width: 22px;
+            height: 22px;
+            background: white;
+            border-radius: 50%;
+            top: 3px;
+            left: 3px;
+            transition: transform 0.3s;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle-switch.active::after {
+            transform: translateX(24px);
+        }
+
+        .save-badge {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 0.2rem 0.6rem;
+            border-radius: 10px;
+            letter-spacing: 0.5px;
+        }
+
+        /* Pricing Cards */
+        .pricing-cards {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
         }
 
         .pricing-card {
-            max-width: 100%;
+            background: var(--white);
+            border: 1px solid #e2e8f0;
+            border-radius: 16px;
+            padding: 2.25rem 2rem;
+            flex: 1;
+            min-width: 280px;
+            max-width: 380px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
         }
 
         .pricing-card.popular {
-            transform: scale(1);
+            border: 2px solid var(--brand-primary);
+            box-shadow: 0 8px 30px rgba(59, 130, 246, 0.15);
+            transform: scale(1.03);
         }
 
         .pricing-card.popular:hover {
-            transform: translateY(-4px);
+            transform: scale(1.03) translateY(-4px);
+            box-shadow: 0 12px 40px rgba(59, 130, 246, 0.2);
         }
-    }
-</style>
+
+        .popular-badge {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, var(--brand-primary), #7c3aed);
+            color: white;
+            padding: 0.3rem 1.25rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            white-space: nowrap;
+        }
+
+        .plan-name {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 0.4rem;
+        }
+
+        .plan-desc {
+            font-size: 0.85rem;
+            color: var(--text-main);
+            margin-bottom: 1.25rem;
+            line-height: 1.4;
+        }
+
+        .plan-price-container {
+            display: flex;
+            align-items: baseline;
+            gap: 0.4rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .plan-price {
+            font-size: 3rem;
+            font-weight: 800;
+            color: var(--text-dark);
+            letter-spacing: -2px;
+            line-height: 1;
+        }
+
+        .plan-price-strike {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #94a3b8;
+            text-decoration: line-through;
+        }
+
+        .plan-period {
+            color: var(--text-light);
+            font-weight: 500;
+            font-size: 0.95rem;
+        }
+
+        .plan-billing-note {
+            font-size: 0.8rem;
+            color: var(--text-light);
+            margin-bottom: 1.5rem;
+        }
+
+        .plan-divider {
+            height: 1px;
+            background: #e2e8f0;
+            margin: 0.5rem 0 1.25rem;
+        }
+
+        .plan-features-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-light);
+            margin-bottom: 1rem;
+        }
+
+        .plan-features {
+            list-style: none;
+            margin-bottom: 2rem;
+            flex-grow: 1;
+            padding: 0;
+        }
+
+        .plan-features li {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.6rem;
+            margin-bottom: 0.75rem;
+            color: var(--text-main);
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .feature-icon {
+            color: #10b981;
+            font-weight: bold;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .feature-icon.missing {
+            color: var(--text-light);
+            opacity: 0.4;
+        }
+
+        .feature-highlight {
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        .btn-plan {
+            width: 100%;
+            padding: 0.875rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 1rem;
+            text-align: center;
+            text-decoration: none;
+            transition: all 0.2s;
+            cursor: pointer;
+            display: inline-block;
+            box-sizing: border-box;
+        }
+
+        .btn-plan-primary {
+            background: linear-gradient(135deg, var(--brand-primary), #7c3aed);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-plan-primary:hover {
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+            transform: translateY(-1px);
+            color: white;
+        }
+
+        .btn-plan-secondary {
+            background: white;
+            color: var(--text-dark);
+            border: 1px solid #cbd5e1;
+        }
+
+        .btn-plan-secondary:hover {
+            background: #f8fafc;
+            border-color: var(--brand-primary);
+            color: var(--brand-primary);
+        }
+
+        /* FAQ Section */
+        .faq-section {
+            max-width: 700px;
+            margin: 4rem auto 0;
+        }
+
+        .faq-title {
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-dark);
+            margin-bottom: 2rem;
+        }
+
+        .faq-item {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            margin-bottom: 0.75rem;
+            overflow: hidden;
+            background: var(--white);
+        }
+
+        .faq-question {
+            padding: 1rem 1.25rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.95rem;
+        }
+
+        .faq-question:hover {
+            background: #f8fafc;
+        }
+
+        .faq-arrow {
+            transition: transform 0.2s;
+            color: var(--text-light);
+        }
+
+        .faq-item.active .faq-arrow {
+            transform: rotate(180deg);
+        }
+
+        .faq-answer {
+            padding: 0 1.25rem 0;
+            color: var(--text-main);
+            font-size: 0.9rem;
+            line-height: 1.6;
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.3s ease-out;
+        }
+
+        .faq-item.active .faq-answer {
+            max-height: 500px;
+            padding-bottom: 1rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .pricing-title {
+                font-size: 1.75rem;
+            }
+
+            .pricing-cards {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .pricing-card {
+                max-width: 100%;
+            }
+
+            .pricing-card.popular {
+                transform: scale(1);
+            }
+
+            .pricing-card.popular:hover {
+                transform: translateY(-4px);
+            }
+        }
+    </style>
 </head>
+
 <body>
 
     <!-- Navigation -->
@@ -391,188 +394,196 @@
         </div>
     </nav>
 
-<div class="pricing-page">
-    <div class="pricing-header">
-        <h1 class="pricing-title">Simple, transparent pricing</h1>
-        <p class="pricing-subtitle">Start turning field voice notes into structured Procore data. No hidden fees, cancel
-            anytime.</p>
+    <div class="pricing-page">
+        <div class="pricing-header">
+            <h1 class="pricing-title">Simple, transparent pricing</h1>
+            <p class="pricing-subtitle">Start turning field voice notes into structured Procore data. No hidden fees,
+                cancel
+                anytime.</p>
+        </div>
+
+        <!-- Billing Toggle -->
+        <div class="billing-toggle">
+            <span class="billing-label active" id="monthly-label">Monthly</span>
+            <div class="toggle-switch" id="billing-toggle" onclick="toggleBilling()"></div>
+            <span class="billing-label" id="annual-label">Annual</span>
+            <span class="save-badge">Save 20%</span>
+        </div>
+
+        <div class="pricing-cards">
+            <!-- Pro Plan -->
+            <div class="pricing-card popular">
+                <div class="popular-badge">Launch Special</div>
+                <div class="plan-name">Pro</div>
+                <div class="plan-desc">Full power for growing construction teams. Everything you need.</div>
+                <div class="plan-price-container">
+                    <div class="plan-price-strike">$1,199</div>
+                    <div class="plan-price" data-monthly="199" data-annual="159">$199</div>
+                    <div class="plan-period">/ mo</div>
+                </div>
+                <div class="plan-billing-note" data-monthly="Billed monthly — launch price"
+                    data-annual="Billed annually ($1,908/yr)">Billed monthly — launch price</div>
+                <div class="plan-divider"></div>
+                <div class="plan-features-title">What's included</div>
+                <ul class="plan-features">
+                    <li><span class="feature-icon">&#10003;</span> <span class="feature-highlight">Up to 15</span> field
+                        workers (WhatsApp)</li>
+                    <li><span class="feature-icon">&#10003;</span> <span class="feature-highlight">Unlimited</span>
+                        AI-parsed reports</li>
+                    <li><span class="feature-icon">&#10003;</span> Voice, text, photo & video reports</li>
+                    <li><span class="feature-icon">&#10003;</span> <span class="feature-highlight">Direct Procore
+                            sync</span> (Daily Logs)</li>
+                    <li><span class="feature-icon">&#10003;</span> Smart cost code & vendor matching</li>
+                    <li><span class="feature-icon">&#10003;</span> Incomplete report follow-ups</li>
+                    <li><span class="feature-icon">&#10003;</span> Team management (multi-user dashboard)</li>
+                    <li><span class="feature-icon">&#10003;</span> Priority email & WhatsApp support</li>
+                </ul>
+                {% if g.subscription_status == 'trialing' %}
+                <a href="https://rapidsite.lemonsqueezy.com/checkout/buy/f70b3a8f-8d3c-4e07-9fe1-4bbea7c0cd27{% if session.get('company_id') %}?checkout[custom][company_id]={{ session.get('company_id') }}{% endif %}" class="btn-plan btn-plan-primary">Upgrade to Pro</a>
+                {% else %}
+                <a href="{{ url_for('auth.register') }}" class="btn-plan btn-plan-primary">Start 14-Day Free Trial</a>
+                {% endif %}
+            </div>
+
+            <!-- Enterprise Plan -->
+            <div class="pricing-card">
+                <div class="plan-name">Enterprise</div>
+                <div class="plan-desc">For large contractors needing custom integrations and dedicated support.</div>
+                <div class="plan-price-container">
+                    <div class="plan-price">Custom</div>
+                </div>
+                <div class="plan-billing-note">Tailored to your organization</div>
+                <div class="plan-divider"></div>
+                <div class="plan-features-title">Everything in Pro, plus</div>
+                <ul class="plan-features">
+                    <li><span class="feature-icon">&#10003;</span> <span class="feature-highlight">Unlimited</span>
+                        field
+                        workers</li>
+                    <li><span class="feature-icon">&#10003;</span> <span class="feature-highlight">Multiple
+                            projects</span>
+                        & job sites</li>
+                    <li><span class="feature-icon">&#10003;</span> Custom ERP integrations (Viewpoint, Sage, etc.)</li>
+                    <li><span class="feature-icon">&#10003;</span> Custom AI prompt tuning for your workflow</li>
+                    <li><span class="feature-icon">&#10003;</span> SSO & advanced security</li>
+                    <li><span class="feature-icon">&#10003;</span> Dedicated Customer Success Manager</li>
+                    <li><span class="feature-icon">&#10003;</span> SLA & uptime guarantee</li>
+                    <li><span class="feature-icon">&#10003;</span> On-site onboarding & training</li>
+                </ul>
+                <a href="mailto:efekan@rapidsite.app?subject=Enterprise%20Inquiry"
+                    class="btn-plan btn-plan-secondary">Contact Sales</a>
+            </div>
+        </div>
+
+        <!-- Free Trial Banner -->
+        <div
+            style="text-align: center; margin-top: 2.5rem; padding: 1.5rem; background: linear-gradient(135deg, rgba(59,130,246,0.05), rgba(124,58,237,0.05)); border-radius: 12px; border: 1px solid rgba(59,130,246,0.1);">
+            <p style="margin: 0; color: var(--text-secondary); font-size: 0.95rem;">
+                All plans include a <strong style="color: var(--text-primary);">14-day free trial</strong> with up to
+                <strong style="color: var(--text-primary);">100 WhatsApp reports</strong>. No credit card required.
+            </p>
+        </div>
+
+        <!-- FAQ Section -->
+        <div class="faq-section">
+            <h2 class="faq-title">Frequently Asked Questions</h2>
+
+            <div class="faq-item open">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    What happens during the 14-day free trial?
+                    <span class="faq-arrow">&#9660;</span>
+                </div>
+                <div class="faq-answer">
+                    You get full access to the Pro plan features for 14 days, with a limit of 100 WhatsApp reports. No
+                    credit card is required to start. At the end of the trial, you can choose a plan or your account
+                    will be
+                    paused (no data is deleted).
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    How does the WhatsApp integration work?
+                    <span class="faq-arrow">&#9660;</span>
+                </div>
+                <div class="faq-answer">
+                    Your field workers send voice notes, text messages, or photos to your dedicated WhatsApp number. Our
+                    AI
+                    instantly transcribes, translates (if needed), and structures the data into professional reports —
+                    no
+                    app download required.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    What languages are supported?
+                    <span class="faq-arrow">&#9660;</span>
+                </div>
+                <div class="faq-answer">
+                    Field workers can send reports in any language — Spanish, Portuguese, Turkish, Arabic, and more. Our
+                    AI
+                    automatically translates everything into professional US construction English for your ERP system.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    Can I cancel anytime?
+                    <span class="faq-arrow">&#9660;</span>
+                </div>
+                <div class="faq-answer">
+                    Yes, absolutely. There are no long-term contracts. You can cancel your subscription at any time, and
+                    you'll retain access until the end of your current billing period.
+                </div>
+            </div>
+
+            <div class="faq-item">
+                <div class="faq-question" onclick="toggleFaq(this)">
+                    Do I need a Procore account?
+                    <span class="faq-arrow">&#9660;</span>
+                </div>
+                <div class="faq-answer">
+                    No! Procore integration is available on the Pro plan and above, but it's optional. The Starter plan
+                    works perfectly without any ERP — you can manage reports in the dashboard and export as CSV.
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Billing Toggle -->
-    <div class="billing-toggle">
-        <span class="billing-label active" id="monthly-label">Monthly</span>
-        <div class="toggle-switch" id="billing-toggle" onclick="toggleBilling()"></div>
-        <span class="billing-label" id="annual-label">Annual</span>
-        <span class="save-badge">Save 20%</span>
-    </div>
+    <script>
+        let isAnnual = false;
 
-    <div class="pricing-cards">
-        <!-- Pro Plan -->
-        <div class="pricing-card popular">
-            <div class="popular-badge">Launch Special</div>
-            <div class="plan-name">Pro</div>
-            <div class="plan-desc">Full power for growing construction teams. Everything you need.</div>
-            <div class="plan-price-container">
-                <div class="plan-price-strike">$1,199</div>
-                <div class="plan-price" data-monthly="199" data-annual="159">$199</div>
-                <div class="plan-period">/ mo</div>
-            </div>
-            <div class="plan-billing-note" data-monthly="Billed monthly — launch price"
-                data-annual="Billed annually ($1,908/yr)">Billed monthly — launch price</div>
-            <div class="plan-divider"></div>
-            <div class="plan-features-title">What's included</div>
-            <ul class="plan-features">
-                <li><span class="feature-icon">&#10003;</span> <span class="feature-highlight">Up to 15</span> field
-                    workers (WhatsApp)</li>
-                <li><span class="feature-icon">&#10003;</span> <span class="feature-highlight">Unlimited</span>
-                    AI-parsed reports</li>
-                <li><span class="feature-icon">&#10003;</span> Voice, text, photo & video reports</li>
-                <li><span class="feature-icon">&#10003;</span> <span class="feature-highlight">Direct Procore
-                        sync</span> (Daily Logs)</li>
-                <li><span class="feature-icon">&#10003;</span> Smart cost code & vendor matching</li>
-                <li><span class="feature-icon">&#10003;</span> Incomplete report follow-ups</li>
-                <li><span class="feature-icon">&#10003;</span> Team management (multi-user dashboard)</li>
-                <li><span class="feature-icon">&#10003;</span> Priority email & WhatsApp support</li>
-            </ul>
-            {% if g.subscription_status == 'trialing' %}
-            <a href="https://rapidsite.lemonsqueezy.com/checkout/buy/f70b3a8f-8d3c-4e07-9fe1-4bbea7c0cd27" class="btn-plan btn-plan-primary">Upgrade to Pro</a>
-            {% else %}
-            <a href="{{ url_for('auth.register') }}" class="btn-plan btn-plan-primary">Start 14-Day Free Trial</a>
-            {% endif %}
-        </div>
+        function toggleBilling() {
+            isAnnual = !isAnnual;
+            const toggle = document.getElementById('billing-toggle');
+            const monthlyLabel = document.getElementById('monthly-label');
+            const annualLabel = document.getElementById('annual-label');
 
-        <!-- Enterprise Plan -->
-        <div class="pricing-card">
-            <div class="plan-name">Enterprise</div>
-            <div class="plan-desc">For large contractors needing custom integrations and dedicated support.</div>
-            <div class="plan-price-container">
-                <div class="plan-price">Custom</div>
-            </div>
-            <div class="plan-billing-note">Tailored to your organization</div>
-            <div class="plan-divider"></div>
-            <div class="plan-features-title">Everything in Pro, plus</div>
-            <ul class="plan-features">
-                <li><span class="feature-icon">&#10003;</span> <span class="feature-highlight">Unlimited</span> field
-                    workers</li>
-                <li><span class="feature-icon">&#10003;</span> <span class="feature-highlight">Multiple projects</span>
-                    & job sites</li>
-                <li><span class="feature-icon">&#10003;</span> Custom ERP integrations (Viewpoint, Sage, etc.)</li>
-                <li><span class="feature-icon">&#10003;</span> Custom AI prompt tuning for your workflow</li>
-                <li><span class="feature-icon">&#10003;</span> SSO & advanced security</li>
-                <li><span class="feature-icon">&#10003;</span> Dedicated Customer Success Manager</li>
-                <li><span class="feature-icon">&#10003;</span> SLA & uptime guarantee</li>
-                <li><span class="feature-icon">&#10003;</span> On-site onboarding & training</li>
-            </ul>
-            <a href="mailto:efekan@rapidsite.app?subject=Enterprise%20Inquiry"
-                class="btn-plan btn-plan-secondary">Contact Sales</a>
-        </div>
-    </div>
+            toggle.classList.toggle('active', isAnnual);
+            monthlyLabel.classList.toggle('active', !isAnnual);
+            annualLabel.classList.toggle('active', isAnnual);
 
-    <!-- Free Trial Banner -->
-    <div
-        style="text-align: center; margin-top: 2.5rem; padding: 1.5rem; background: linear-gradient(135deg, rgba(59,130,246,0.05), rgba(124,58,237,0.05)); border-radius: 12px; border: 1px solid rgba(59,130,246,0.1);">
-        <p style="margin: 0; color: var(--text-secondary); font-size: 0.95rem;">
-            All plans include a <strong style="color: var(--text-primary);">14-day free trial</strong> with up to
-            <strong style="color: var(--text-primary);">100 WhatsApp reports</strong>. No credit card required.
-        </p>
-    </div>
+            // Update all prices
+            document.querySelectorAll('.plan-price[data-monthly]').forEach(el => {
+                const price = isAnnual ? el.dataset.annual : el.dataset.monthly;
+                el.textContent = `$${price}`;
+            });
 
-    <!-- FAQ Section -->
-    <div class="faq-section">
-        <h2 class="faq-title">Frequently Asked Questions</h2>
+            // Update billing notes
+            document.querySelectorAll('.plan-billing-note[data-monthly]').forEach(el => {
+                el.textContent = isAnnual ? el.dataset.annual : el.dataset.monthly;
+            });
+        }
 
-        <div class="faq-item open">
-            <div class="faq-question" onclick="toggleFaq(this)">
-                What happens during the 14-day free trial?
-                <span class="faq-arrow">&#9660;</span>
-            </div>
-            <div class="faq-answer">
-                You get full access to the Pro plan features for 14 days, with a limit of 100 WhatsApp reports. No
-                credit card is required to start. At the end of the trial, you can choose a plan or your account will be
-                paused (no data is deleted).
-            </div>
-        </div>
-
-        <div class="faq-item">
-            <div class="faq-question" onclick="toggleFaq(this)">
-                How does the WhatsApp integration work?
-                <span class="faq-arrow">&#9660;</span>
-            </div>
-            <div class="faq-answer">
-                Your field workers send voice notes, text messages, or photos to your dedicated WhatsApp number. Our AI
-                instantly transcribes, translates (if needed), and structures the data into professional reports — no
-                app download required.
-            </div>
-        </div>
-
-        <div class="faq-item">
-            <div class="faq-question" onclick="toggleFaq(this)">
-                What languages are supported?
-                <span class="faq-arrow">&#9660;</span>
-            </div>
-            <div class="faq-answer">
-                Field workers can send reports in any language — Spanish, Portuguese, Turkish, Arabic, and more. Our AI
-                automatically translates everything into professional US construction English for your ERP system.
-            </div>
-        </div>
-
-        <div class="faq-item">
-            <div class="faq-question" onclick="toggleFaq(this)">
-                Can I cancel anytime?
-                <span class="faq-arrow">&#9660;</span>
-            </div>
-            <div class="faq-answer">
-                Yes, absolutely. There are no long-term contracts. You can cancel your subscription at any time, and
-                you'll retain access until the end of your current billing period.
-            </div>
-        </div>
-
-        <div class="faq-item">
-            <div class="faq-question" onclick="toggleFaq(this)">
-                Do I need a Procore account?
-                <span class="faq-arrow">&#9660;</span>
-            </div>
-            <div class="faq-answer">
-                No! Procore integration is available on the Pro plan and above, but it's optional. The Starter plan
-                works perfectly without any ERP — you can manage reports in the dashboard and export as CSV.
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-    let isAnnual = false;
-
-    function toggleBilling() {
-        isAnnual = !isAnnual;
-        const toggle = document.getElementById('billing-toggle');
-        const monthlyLabel = document.getElementById('monthly-label');
-        const annualLabel = document.getElementById('annual-label');
-
-        toggle.classList.toggle('active', isAnnual);
-        monthlyLabel.classList.toggle('active', !isAnnual);
-        annualLabel.classList.toggle('active', isAnnual);
-
-        // Update all prices
-        document.querySelectorAll('.plan-price[data-monthly]').forEach(el => {
-            const price = isAnnual ? el.dataset.annual : el.dataset.monthly;
-            el.textContent = `$${price}`;
-        });
-
-        // Update billing notes
-        document.querySelectorAll('.plan-billing-note[data-monthly]').forEach(el => {
-            el.textContent = isAnnual ? el.dataset.annual : el.dataset.monthly;
-        });
-    }
-
-    function toggleFaq(element) {
-        const item = element.parentElement;
-        // Close all others
-        document.querySelectorAll('.faq-item').forEach(i => {
-            if (i !== item) i.classList.remove('active');
-        });
-        item.classList.toggle('active');
-    }
-</script>
+        function toggleFaq(element) {
+            const item = element.parentElement;
+            // Close all others
+            document.querySelectorAll('.faq-item').forEach(i => {
+                if (i !== item) i.classList.remove('active');
+            });
+            item.classList.toggle('active');
+        }
+    </script>
 </body>
+
 </html>
