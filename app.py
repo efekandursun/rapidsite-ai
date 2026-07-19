@@ -295,8 +295,15 @@ def procore_callback():
         expires_in = tokens.get('expires_in', 7200)
         expires_at = int(datetime.now().timestamp()) + expires_in
         
-        # Get Procore company ID (optional, can be selected later)
-        # For now we'll just store the tokens
+        # Auto-fetch and store the first Procore company ID
+        try:
+            # We need to set the access token on the connector to use it immediately
+            connector.access_token = tokens['access_token']
+            companies = connector.get_companies()
+            if companies and len(companies) > 0:
+                db.update_company_procore_company_id(company['id'], str(companies[0]['id']))
+        except Exception as fetch_err:
+            print(f"⚠️ Could not auto-fetch Procore company ID: {fetch_err}")
         
         db.update_company_procore_tokens(
             company['id'],
@@ -347,13 +354,8 @@ def update_procore_project():
         return "Unauthorized", 403
         
     project_id = request.form.get('project_id')
-    procore_company_id = request.form.get('procore_company_id')
-    
     if project_id:
         db.update_company_procore_project(company['id'], project_id)
-        
-    if procore_company_id:
-        db.update_company_procore_company_id(company['id'], procore_company_id)
 
     flash("Procore settings updated successfully!", "success")
     return redirect(url_for('settings'))
