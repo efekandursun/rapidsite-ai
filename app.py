@@ -84,24 +84,34 @@ def check_trial_status():
     g.trial_days_left = None
     g.trial_expired = False
     g.subscription_plan = 'pro'
-    g.subscription_status = 'trialing'
+    g.subscription_status = None
     
-    # Skip enforcement on static files, auth routes, public pages, health, and admin routes
-    skip_endpoints = ['static', 'auth.', 'health_check', 'landing', 'pricing', 'privacy', 'terms',
-                      'super_admin_dashboard', 'extend_subscription', 'serve_media', 'lemonsqueezy_webhook']
-    if request.endpoint:
-        for skip in skip_endpoints:
-            if request.endpoint == skip or request.endpoint.startswith(skip):
-                return
-    
-    # If user is not logged in, skip trial check entirely
+    # 1. Skip static assets immediately for performance
+    if request.endpoint and (request.endpoint == 'static' or request.endpoint == 'serve_media'):
+        return
+
+    # 2. If user is not logged in, nothing more to do
     if 'user_id' not in session:
         return
         
+    # 3. User is logged in, fetch company info to populate g
     company = get_current_company()
     if not company:
         return
         
+    g.subscription_plan = company.get('subscription_plan', 'pro')
+    g.subscription_status = company.get('subscription_status', 'trialing')
+    
+    # 4. Check if we need to enforce trial expiration redirect
+    skip_enforcement = ['auth.', 'health_check', 'landing', 'pricing', 'privacy', 'terms',
+                      'super_admin_dashboard', 'extend_subscription', 'lemonsqueezy_webhook']
+    
+    if request.endpoint:
+        for skip in skip_enforcement:
+            if request.endpoint == skip or request.endpoint.startswith(skip):
+                return
+                
+    # 5. Enforce trial logic
     if company.get('trial_ends_at'):
         try:
             trial_end_str = company['trial_ends_at']
@@ -120,9 +130,6 @@ def check_trial_status():
             now = datetime.utcnow()
             diff = trial_end - now
             
-            g.subscription_plan = company.get('subscription_plan', 'pro')
-            g.subscription_status = company.get('subscription_status', 'trialing')
-            
             if g.subscription_status == 'active':
                 # Paid customer, no trial restrictions
                 g.trial_days_left = None
@@ -132,9 +139,8 @@ def check_trial_status():
                     g.trial_days_left = diff.days
                 else:
                     g.trial_expired = True
-                    if request.endpoint not in ['pricing', 'auth.logout', 'serve_media']:
-                        flash("Your 14-day free trial has expired. Please upgrade to continue using RapidSite AI.", "warning")
-                        return redirect(url_for('pricing'))
+                    flash("Your 14-day free trial has expired. Please upgrade to continue using RapidSite AI.", "warning")
+                    return redirect(url_for('pricing'))
         except Exception as e:
             print(f"Error parsing trial_ends_at: {e}")
 
