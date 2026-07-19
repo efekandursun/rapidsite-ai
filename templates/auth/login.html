@@ -6,43 +6,44 @@
     <title>Sign In — RapidSite AI</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
     <style>
-        body {
+                body {
             margin: 0;
             padding: 0;
             font-family: 'Inter', sans-serif;
             display: flex;
             min-height: 100vh;
             background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-            align-items: center;
-            justify-content: center;
-            padding: 2rem;
-            box-sizing: border-box;
         }
 
         .auth-container {
             display: flex;
             width: 100%;
-            max-width: 1200px;
-            background: rgba(255, 255, 255, 0.03);
-            border-radius: 30px;
-            overflow: hidden;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            height: 100vh; /* Full height */
         }
 
         .auth-left {
-            flex: 1.1;
+            width: 550px;
+            flex-shrink: 0;
             background: #ffffff;
             display: flex;
             flex-direction: column;
             justify-content: center;
             padding: 4rem;
+            margin-left: 8%;
+            box-shadow: 0 0 50px rgba(0,0,0,0.3);
+            overflow-y: auto;
+            position: relative;
+        }
+
+        /* Wrap the form content so it stays centered vertically, while back link stays top */
+        .auth-content-wrapper {
+            margin: auto 0;
         }
 
         .auth-right {
-            flex: 0.9;
+            flex: 1;
             background: transparent;
-            display: none;
+            display: flex; /* Changed from none to flex by default, or keep none for mobile */
             position: relative;
             overflow: hidden;
             align-items: center;
@@ -50,9 +51,13 @@
             padding: 4rem;
         }
 
-        @media (min-width: 900px) {
+        @media (max-width: 900px) {
+            .auth-left {
+                width: 100%;
+                margin-left: 0;
+            }
             .auth-right {
-                display: flex;
+                display: none;
             }
         }
 
@@ -208,6 +213,9 @@
         .flash.info { background: #eff6ff; color: #2563eb; border: 1px solid #bfdbfe; }
         
         .back-link {
+            position: absolute;
+            top: 4rem;
+            left: 4rem;
             display: inline-flex;
             align-items: center;
             color: #64748b;
@@ -282,7 +290,6 @@
                     "RapidSite completely eliminated our data entry backlog. Our foremen just send WhatsApp voice notes, and the daily logs are instantly in Procore. It's magic."
                 </div>
                 <div class="testimonial-author">
-                    <div class="author-avatar">M</div>
                     <div class="author-info">
                         <div>Michael Torres</div>
                         <div>Senior Superintendent, BuildCo Inc.</div>
