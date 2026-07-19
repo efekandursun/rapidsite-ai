@@ -36,28 +36,28 @@
         text-decoration: underline;
     }
     .admin-table-wrapper {
-        background: var(--card-bg, #fff);
-        border-radius: 12px;
+        background: var(--bg-card);
+        border-radius: var(--radius-md);
         overflow: hidden;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        border: 1px solid var(--border-color, #e2e8f0);
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border-light);
     }
     .admin-table {
         width: 100%;
         border-collapse: collapse;
     }
     .admin-table thead {
-        background: var(--bg-secondary, #f8fafc);
+        background: #f8fafc;
     }
     .admin-table th {
-        padding: 0.75rem 1.25rem;
+        padding: 1.25rem 1.5rem;
         text-align: left;
         font-size: 0.75rem;
-        font-weight: 600;
-        color: var(--text-secondary);
+        font-weight: 700;
+        color: var(--text-muted);
         text-transform: uppercase;
-        letter-spacing: 0.05em;
-        border-bottom: 1px solid var(--border-color, #e2e8f0);
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid var(--border-light);
     }
     .admin-table th:last-child {
         text-align: right;

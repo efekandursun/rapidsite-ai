@@ -13,16 +13,17 @@
         background: var(--bg-card);
         border: 1px solid var(--border-light);
         border-radius: var(--radius-md);
-        padding: 1.25rem 1.5rem;
+        padding: 1.5rem;
         display: flex;
         justify-content: space-between;
         align-items: center;
         box-shadow: var(--shadow-sm);
-        transition: all 0.2s ease;
+        transition: all 0.3s ease;
     }
     .stat-card:hover {
         box-shadow: var(--shadow-md);
         transform: translateY(-2px);
+        border-color: var(--border-dark);
     }
     .stat-label {
         font-size: 0.75rem;
@@ -54,10 +55,12 @@
         border-radius: var(--radius-md);
         box-shadow: var(--shadow-sm);
         overflow: hidden;
-        transition: all 0.2s ease;
+        transition: all 0.3s ease;
     }
     .report-card:hover {
         box-shadow: var(--shadow-md);
+        border-color: var(--border-dark);
+        transform: translateY(-2px);
     }
     .report-header {
         display: flex;
