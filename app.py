@@ -43,11 +43,7 @@ app.config.update(
     PERMANENT_SESSION_LIFETIME=86400  # 24 hours
 )
 
-# CSRF Protection
-from flask_wtf.csrf import CSRFProtect
-csrf = CSRFProtect(app)
-
-# Rate Limiting
+# CSRF Protection already initialized above
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
@@ -88,11 +84,11 @@ from core.mailer import init_mail
 from connectors.procore import ProcoreConnector
 from connectors.base import ERPError
 
-# Disable CSRF for webhook endpoints (Twilio handles its own signature validation)
-csrf.exempt(whatsapp_bp)
-
 app.register_blueprint(whatsapp_bp)
 csrf.exempt(whatsapp_bp) # Twilio cannot send CSRF tokens
+# Explicitly exempt the view function to bypass Flask-WTF Blueprint bugs
+if 'whatsapp.whatsapp_webhook' in app.view_functions:
+    csrf.exempt(app.view_functions['whatsapp.whatsapp_webhook'])
 app.register_blueprint(auth_bp)
 
 # Initialize database
