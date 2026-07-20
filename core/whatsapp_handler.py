@@ -61,7 +61,7 @@ def whatsapp_webhook():
             
         params = request.form.to_dict()  # Twilio signs form params
         if not request_validator.validate(url, params, signature):
-            logging.warning("⚠️ Invalid Twilio Signature! Rejecting request.")
+            logging.warning(f"⚠️ Invalid Twilio Signature! URL: {url} | Params: {params}")
             abort(403)
 
     message_sid = request.values.get('MessageSid')
