@@ -577,7 +577,7 @@ class ProcoreConnector(ERPConnector):
                     "hours_operating": float(hours_op),
                     "hours_idle": float(hours_idle),
                     "inspected": inspected,
-                    "notes": notes
+                    "notes": description
                 }
             }
             add_loc(payload['equipment_log'])
@@ -626,9 +626,8 @@ class ProcoreConnector(ERPConnector):
                     "status": "pending",
                     "delivery_from": vendor,
                     "tracking_number": tracking,
-                    "contents": f"{item} - {quantity} {unit}",
-                    "description": full_desc,
-                    "comments": f"{full_desc} | {description}"
+                    "contents": f"{quantity} {unit} {item}".strip(),
+                    "comments": description
                 }
             }
             add_loc(payload['delivery_log'])
