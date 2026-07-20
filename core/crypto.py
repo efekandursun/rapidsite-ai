@@ -10,10 +10,14 @@ def get_cipher():
             logging.error("CRITICAL SECURITY ERROR: ENCRYPTION_KEY is missing in production environment!")
             raise ValueError("ENCRYPTION_KEY must be set in production to prevent data loss on restarts.")
             
-        # Fallback for development only
-        logging.warning("⚠️ ENCRYPTION_KEY not set in environment. Using a temporary key. Tokens will be lost on restart.")
-        key = Fernet.generate_key()
-        os.environ['ENCRYPTION_KEY'] = key.decode()
+        # Fallback for environments where ENCRYPTION_KEY is missing
+        logging.warning("⚠️ ENCRYPTION_KEY not set in environment. Using a deterministic fallback key derived from DB URL.")
+        import hashlib
+        import base64
+        stable_seed = os.getenv('DATABASE_URL') or os.getenv('SUPABASE_URL') or 'fallback-local-dev-seed-123'
+        key_hash = hashlib.sha256(stable_seed.encode('utf-8')).digest()
+        key = base64.urlsafe_b64encode(key_hash).decode('utf-8')
+        os.environ['ENCRYPTION_KEY'] = key
     
     try:
         return Fernet(key.encode('utf-8') if isinstance(key, str) else key)
