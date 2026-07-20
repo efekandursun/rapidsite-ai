@@ -198,11 +198,66 @@ def send_followup(to_number: str, response_xml: str):
     try:
         print(f"📤 Sending WhatsApp follow-up to {to_number}")
         print(f"📝 Body preview: {body[:200]}")
-        msg = twilio_client.messages.create(body=body, from_=from_number, to=to_number)
-        print(f"✅ Twilio message sent: SID={msg.sid}")
+        
+        # Check if this is a Report Ready message, if so, we'll send the text and then a button
+        is_ready_msg = "*REPORT READY*" in body
+        
+        # Send the main text message
+        if is_ready_msg:
+            # We don't want the button text in the body if we are sending a button
+            clean_body = body.split("*ACTIONS:*")[0].strip() if "*ACTIONS:*" in body else body
+            msg = twilio_client.messages.create(body=clean_body, from_=from_number, to=to_number)
+            print(f"✅ Twilio text message sent: SID={msg.sid}")
+            
+            # Now send the button message
+            button_sid = _get_or_create_button_sid()
+            if button_sid:
+                btn_msg = twilio_client.messages.create(
+                    content_sid=button_sid,
+                    from_=from_number,
+                    to=to_number
+                )
+                print(f"✅ Twilio button sent: SID={btn_msg.sid}")
+        else:
+            msg = twilio_client.messages.create(body=body, from_=from_number, to=to_number)
+            print(f"✅ Twilio message sent: SID={msg.sid}")
+            
     except Exception as e:
         print(f"❌ Failed to send WhatsApp follow-up: {e}")
         logging.exception("Failed to send WhatsApp follow-up")
+
+# Cache for button template SID
+_BUTTON_CONTENT_SID = None
+
+def _get_or_create_button_sid():
+    """Create a Twilio Content API template for the approval button if it doesn't exist."""
+    global _BUTTON_CONTENT_SID
+    if _BUTTON_CONTENT_SID:
+        return _BUTTON_CONTENT_SID
+        
+    try:
+        account_sid = os.getenv('TWILIO_ACCOUNT_SID')
+        auth_token = os.getenv('TWILIO_AUTH_TOKEN')
+        url = "https://content.twilio.com/v1/Content"
+        payload = {
+            "friendly_name": "Fieldflow Approval Button",
+            "language": "en",
+            "types": {
+                "twilio/quick-reply": {
+                    "body": "What would you like to do? (You can type to edit)",
+                    "actions": [
+                        {"title": "👍 Dashboard'a Gönder", "id": "1"}
+                    ]
+                }
+            }
+        }
+        res = requests.post(url, auth=(account_sid, auth_token), json=payload, timeout=5)
+        if res.status_code == 201:
+            _BUTTON_CONTENT_SID = res.json().get('sid')
+            return _BUTTON_CONTENT_SID
+    except Exception as e:
+        logging.error(f"Failed to create button content: {e}")
+    return None
 
 
 def extract_body_from_twiml(twiml_xml: str) -> str:
@@ -590,10 +645,7 @@ def format_confirmation(result: dict) -> str:
     final_msg = ""
     if completed_msgs:
         final_msg += "*REPORT READY*\n\n" + "\n\n".join(completed_msgs)
-        if len(completed_msgs) == 1:
-            final_msg += "\n\n*ACTIONS:*\n[1] Send to Dashboard\n[2] Edit / Add info"
-        else:
-            final_msg += "\n\n*ACTIONS:*\n[1] Send ALL to Dashboard\n[Edit ID: correction] Edit specific (e.g. 'Edit 9: change vendor')"
+        # Note: ACTIONS text is now handled by the interactive button logic in send_followup
         
     if incomplete_msgs:
         if final_msg: final_msg += "\n\n"
