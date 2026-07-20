@@ -340,14 +340,17 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
     # Remove any accidental quotation marks if the user copy-pasted the example
     cleaned_text = cleaned_text.replace('"', '').replace("'", "").replace("“", "").replace("”", "").replace("‘", "").replace("’", "").strip()
     
-    # --- NEW: Specific Report Edit Command ---
-    # Matches: "edit 9: change quantity to 5" or "edit #9 change quantity" or "9 numarayi duzenle..."
+    # Matches: "edit 9: change quantity to 5" or "edit #9 change quantity"
     import re
     # Look for "edit 9" or "düzenle 9" or "9 düzenle"
     edit_match = re.match(r'^(?:edit|düzenle|duzenle|değiştir|degistir)\s*(?:rapor|report|numara|#)?\s*(\d+)[:\s,\-]+(.*)', cleaned_text)
     if not edit_match:
-        # Try reverse: "9 numarayı düzenle..."
-        edit_match = re.match(r'^(\d+)\s*(?:numarayı|numarali|numaralı|raporu|report|\'ü|\'u|i|ı)?\s*(?:edit|düzenle|duzenle|değiştir|degistir)[:\s,\-]+(.*)', cleaned_text)
+        # Try reverse WITH explicit keyword: "9 numarayı düzenle..."
+        edit_match = re.match(r'^(\d+)\s*(?:numarayı|numarali|numaralı|raporu|report|i|ı)?\s*(?:edit|düzenle|duzenle|değiştir|degistir)[:\s,\-]+(.*)', cleaned_text)
+    if not edit_match:
+        # Try reverse WITHOUT explicit keyword but WITH strong suffix reference: "9 un companyisi..."
+        # Suffixes like un, in, ü, u, numaralı, raporu strongly imply referencing the ID
+        edit_match = re.match(r'^(\d+)\s*(?:numarayı|numarali|numaralı|raporu|report|\'ü|\'u|\'un|\'in|\'nun|\'nin|un|in|nun|nin|ü|u|yi|yı|inci|ıncı)\s+([^:]+)', cleaned_text)
         
     if edit_match:
         report_id = int(edit_match.group(1))
