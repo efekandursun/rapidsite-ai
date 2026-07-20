@@ -511,7 +511,7 @@ def extract_project_id(text: str) -> str:
 
 def format_confirmation(result: dict) -> str:
     """
-    Format confirmation message for user.
+    Format confirmation message for user based on Procore fields.
     """
     if 'direct_reply' in result:
         return result['direct_reply']
@@ -531,47 +531,69 @@ def format_confirmation(result: dict) -> str:
         if parsed.get('status') == 'incomplete' and parsed.get('follow_up_question'):
             incomplete_msgs.append(f"[MISSING INFO] {parsed.get('follow_up_question')}")
         else:
-            msg = f"[ID: #{r_id} | TYPE: {parsed.get('log_type', 'N/A').upper()}]\n"
-            msg += f"- Item/Trade: {parsed.get('item', 'N/A')}\n"
+            log_type = parsed.get('log_type', 'unknown').lower()
+            msg = f"[ID: #{r_id} | TYPE: {log_type.upper()}]\n"
             
-            # Quantity
-            quantity = parsed.get('quantity')
-            unit = parsed.get('unit', '')
-            msg += f"- Quantity: {f'{quantity} {unit}' if quantity else 'N/A'}\n"
+            def val(v): return str(v) if v not in (None, "", "null") else "Boş (Empty)"
             
-            # Location
-            location = parsed.get('location', {})
-            loc_name = location.get('name') if isinstance(location, dict) else location
-            msg += f"- Location: {loc_name if loc_name else 'N/A'}\n"
+            loc = parsed.get('location', {})
+            loc_name = loc.get('name') if isinstance(loc, dict) else loc
             
-            # Vendor / Subcontractor
-            delivery_vendor = parsed.get('delivery_details', {}).get('delivery_from') if isinstance(parsed.get('delivery_details'), dict) else None
-            crew_vendor = parsed.get('crew', {}).get('company_name') if isinstance(parsed.get('crew'), dict) else None
-            vendor = delivery_vendor or crew_vendor
-            msg += f"- Vendor/Sub: {vendor if vendor else 'N/A'}\n"
-            
-            # Cost Code
-            cost_code = parsed.get('cost_code')
-            msg += f"- Cost Code: {cost_code if cost_code else 'N/A'}\n"
-            
-            # Crew / Equipment Specifics
-            crew_count = parsed.get('crew', {}).get('count') if isinstance(parsed.get('crew'), dict) else None
-            if crew_count:
-                msg += f"- Crew Count: {crew_count}\n"
+            if log_type == "delivery":
+                details = parsed.get('delivery_details', {})
+                q = parsed.get('quantity', '')
+                u = parsed.get('unit', '')
+                item = parsed.get('item', '')
+                contents = f"{q} {u} {item}".strip()
                 
-            eq_hours = parsed.get('equipment_details', {}).get('hours_operating') if isinstance(parsed.get('equipment_details'), dict) else None
-            if eq_hours:
-                msg += f"- Operating Hours: {eq_hours}\n"
-
+                msg += f"- Time: {val(details.get('time'))}\n"
+                msg += f"- Delivery From: {val(details.get('delivery_from'))}\n"
+                msg += f"- Tracking Number: {val(details.get('tracking_number'))}\n"
+                msg += f"- Contents: {val(contents)}\n"
+                msg += f"- Comments: {val(parsed.get('description'))}\n"
+                
+            elif log_type == "equipment":
+                details = parsed.get('equipment_details', {})
+                msg += f"- Equipment Name: {val(parsed.get('item'))}\n"
+                msg += f"- Hours Operating: {val(details.get('hours_operating') or parsed.get('quantity'))}\n"
+                msg += f"- Hours Idle: {val(details.get('hours_idle'))}\n"
+                msg += f"- Inspected: {'Yes' if details.get('inspected') else 'No'}\n"
+                msg += f"- Cost Code: {val(parsed.get('cost_code'))}\n"
+                msg += f"- Location: {val(loc_name)}\n"
+                msg += f"- Notes/Comments: {val(parsed.get('description'))}\n"
+                
+            elif log_type == "manpower":
+                crew = parsed.get('crew', {})
+                msg += f"- Company/Sub: {val(crew.get('company_name'))}\n"
+                msg += f"- Workers: {val(crew.get('count') or parsed.get('quantity'))}\n"
+                msg += f"- Hours: {val(crew.get('hours'))}\n"
+                msg += f"- Trade: {val(crew.get('trade') or parsed.get('item'))}\n"
+                msg += f"- Location: {val(loc_name)}\n"
+                msg += f"- Comments: {val(parsed.get('description'))}\n"
+                
+            elif log_type in ("materials", "production", "quantity"):
+                msg += f"- Item: {val(parsed.get('item'))}\n"
+                msg += f"- Quantity: {val(parsed.get('quantity'))} {val(parsed.get('unit'))}\n"
+                msg += f"- Cost Code: {val(parsed.get('cost_code'))}\n"
+                msg += f"- Location: {val(loc_name)}\n"
+                msg += f"- Comments: {val(parsed.get('description'))}\n"
+                
+            else:
+                msg += f"- Item: {val(parsed.get('item'))}\n"
+                msg += f"- Quantity: {val(parsed.get('quantity'))} {val(parsed.get('unit'))}\n"
+                msg += f"- Location: {val(loc_name)}\n"
+                msg += f"- Cost Code: {val(parsed.get('cost_code'))}\n"
+                msg += f"- Comments: {val(parsed.get('description'))}\n"
+                
             completed_msgs.append(msg)
             
     final_msg = ""
     if completed_msgs:
-        final_msg += "*REPORT READY*\n\n" + "\n".join(completed_msgs)
+        final_msg += "*REPORT READY*\n\n" + "\n\n".join(completed_msgs)
         if len(completed_msgs) == 1:
             final_msg += "\n\n*ACTIONS:*\n[1] Send to Dashboard\n[2] Edit / Add info"
         else:
-            final_msg += "\n\n*ACTIONS:*\n[1] Send ALL to Dashboard\n[Edit ID: correction] Edit a specific report (e.g. 'Edit 9: change vendor')"
+            final_msg += "\n\n*ACTIONS:*\n[1] Send ALL to Dashboard\n[Edit ID: correction] Edit specific (e.g. 'Edit 9: change vendor')"
         
     if incomplete_msgs:
         if final_msg: final_msg += "\n\n"
