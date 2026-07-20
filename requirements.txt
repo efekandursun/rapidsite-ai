@@ -43,3 +43,5 @@ redis>=5.0.0
 rq>=1.15.0
 
 Flask-WTF==1.2.1
+Flask-Cors==4.0.0
+rq-dashboard==0.8.2.3
