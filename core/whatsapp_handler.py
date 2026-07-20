@@ -353,7 +353,7 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
             if is_approve:
                 for rep, parsed in unlocked_reports:
                     parsed['locked'] = True
-                    db.update_report_parsed_data(rep['id'], parsed)
+                    db.update_report_parsed_data(rep['id'], company['id'], parsed)
                 
                 count = len(unlocked_reports)
                 return {'company_name': company['name'], 'direct_reply': f"[SUCCESS] {count} report(s) sent to the Dashboard and locked for editing."}
