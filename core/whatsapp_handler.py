@@ -542,8 +542,9 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
             parsed_data = [parsed_data]
             
         for item in parsed_data:
-            s = item.get('status', 'pending')
-            if s == 'complete': s = 'pending'
+            # We completely bypass the AI's "incomplete" blocking loop.
+            # Missing data will be sent to Dashboard as 'Empty', shifting the responsibility to the Human-in-the-Loop.
+            s = 'pending'
             
             # Use AI-detected project_id or fallback to the provided default project_id
             detected_project_id = item.get('project_id') or project_id
@@ -629,7 +630,7 @@ def format_confirmation(result: dict) -> str:
             log_type = parsed.get('log_type', 'unknown').lower()
             msg = f"[ID: #{r_id} | TYPE: {log_type.upper()}]\n"
             
-            def val(v): return str(v) if v not in (None, "", "null") else "Boş (Empty)"
+            def val(v): return str(v) if v not in (None, "", "null", "Boş", "Empty") else "Empty"
             
             loc = parsed.get('location', {})
             loc_name = loc.get('name') if isinstance(loc, dict) else loc
