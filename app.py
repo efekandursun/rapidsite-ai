@@ -198,9 +198,13 @@ def get_procore_connector(company_id: int = None):
                     "client_secret": os.getenv('PROCORE_CLIENT_SECRET'),
                     "redirect_uri": os.getenv('PROCORE_REDIRECT_URI', request.host_url.rstrip('/') + '/procore/callback') if request else None
                 })
+            else:
+                return None
         
-        # Fallback to env vars (legacy/single-tenant)
-        return ProcoreConnector()
+        # Fallback to env vars only if no company_id provided (e.g. system background jobs)
+        if os.getenv('PROCORE_ACCESS_TOKEN'):
+            return ProcoreConnector()
+        return None
     except Exception as e:
         print(f"❌ Procore connector init failed: {e}")
         return None
@@ -1025,14 +1029,14 @@ def sync_master_data():
         flash("No company associated with account.", "error")
         return redirect(url_for('settings'))
         
+    connector = get_procore_connector(company['id'])
+    if not connector:
+        flash("Please connect to Procore first before syncing master data.", "error")
+        return redirect(url_for('settings'))
+        
     project_id = company.get('procore_default_project_id')
     if not project_id:
         flash("Please set a Default Project first.", "warning")
-        return redirect(url_for('settings'))
-        
-    connector = get_procore_connector(company['id'])
-    if not connector:
-        flash("Procore connector unavailable.", "error")
         return redirect(url_for('settings'))
         
     try:
