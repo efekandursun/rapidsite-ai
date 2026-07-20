@@ -92,7 +92,7 @@ from connectors.base import ERPError
 csrf.exempt(whatsapp_bp)
 
 app.register_blueprint(whatsapp_bp)
-csrf.exempt(whatsapp_bp)
+csrf.exempt(whatsapp_bp) # Twilio cannot send CSRF tokens
 app.register_blueprint(auth_bp)
 
 # Initialize database
