@@ -230,7 +230,7 @@ def send_followup(to_number: str, response_xml: str):
 _BUTTON_CONTENT_SID = None
 
 def _get_or_create_button_sid():
-    """Create a Twilio Content API template for the approval button if it doesn't exist."""
+    """Create a Twilio Content API template for the approval/edit buttons if it doesn't exist."""
     global _BUTTON_CONTENT_SID
     if _BUTTON_CONTENT_SID:
         return _BUTTON_CONTENT_SID
@@ -240,13 +240,14 @@ def _get_or_create_button_sid():
         auth_token = os.getenv('TWILIO_AUTH_TOKEN')
         url = "https://content.twilio.com/v1/Content"
         payload = {
-            "friendly_name": "Fieldflow Approval Button",
+            "friendly_name": "Fieldflow Action Buttons",
             "language": "en",
             "types": {
                 "twilio/quick-reply": {
-                    "body": "What would you like to do? (You can type to edit)",
+                    "body": "What would you like to do?",
                     "actions": [
-                        {"title": "👍 Dashboard'a Gönder", "id": "1"}
+                        {"title": "👍 Send", "id": "send"},
+                        {"title": "✏️ Edit", "id": "edit"}
                     ]
                 }
             }
@@ -340,9 +341,55 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
     # Remove any accidental quotation marks if the user copy-pasted the example
     cleaned_text = cleaned_text.replace('"', '').replace("'", "").replace("“", "").replace("”", "").replace("‘", "").replace("’", "").strip()
     
-    # Matches: "edit 9: change quantity to 5" or "edit #9 change quantity"
+    # --- INTERACTIVE BUTTON HANDLERS ---
+    is_approve = cleaned_text in ['👍 send', 'send', '👍 dashboard\'a gönder', '1', '1.', '1)', 'onayla', 'approve', 'yes', 'y', 'bir', 'one']
+    is_edit_btn = cleaned_text in ['✏️ edit', 'edit', '✏️ düzenle', 'düzenle']
+    
+    all_pending = db.get_all_pending_reports_for_user(reporter_str) or db.get_all_pending_reports_for_user(from_number)
+    
+    # If user clicked Edit button
+    if is_edit_btn and all_pending:
+        # Filter to only unlocked reports
+        import json
+        unlocked_reports = []
+        for r in all_pending:
+            try: p = json.loads(r['parsed_data'])
+            except: p = {}
+            if not p.get('locked'): unlocked_reports.append(r)
+                
+        if len(unlocked_reports) == 1:
+            rep = unlocked_reports[0]
+            with db.get_connection() as conn:
+                db._execute(conn, "UPDATE site_reports SET status='incomplete' WHERE id=?", (rep['id'],))
+            return {'company_name': company['name'], 'direct_reply': f"✏️ Report #{rep['id']} is in Edit mode. What would you like to change or add?"}
+        elif len(unlocked_reports) > 1:
+            return {'company_name': company['name'], 'direct_reply': "Please reply with the *ID number* of the report you want to edit. (e.g. 8, 9, or 10)"}
+        else:
+            return {'company_name': company['name'], 'direct_reply': "[LOCKED] Your recent reports have already been sent to the Dashboard and cannot be edited."}
+
+    # Matches: Pure number when multiple reports exist
     import re
-    # Look for "edit 9" or "düzenle 9" or "9 düzenle"
+    is_standalone_number = re.match(r'^(\d+)$', cleaned_text)
+    
+    if is_standalone_number and all_pending:
+        report_id = int(is_standalone_number.group(1))
+        # Find if this ID is in unlocked reports
+        import json
+        target_report = None
+        for r in all_pending:
+            if r['id'] == report_id:
+                try: p = json.loads(r['parsed_data'])
+                except: p = {}
+                if not p.get('locked'): target_report = r
+                break
+        
+        if target_report:
+            with db.get_connection() as conn:
+                db._execute(conn, "UPDATE site_reports SET status='incomplete' WHERE id=?", (target_report['id'],))
+            return {'company_name': company['name'], 'direct_reply': f"✏️ Report #{report_id} is in Edit mode. What would you like to change or add?"}
+    
+    # --- SPECIFIC REPORT EDIT COMMAND ---
+    # Matches: "edit 9: change quantity to 5" or "edit #9 change quantity"
     edit_match = re.match(r'^(?:edit|düzenle|duzenle|değiştir|degistir)\s*(?:rapor|report|numara|#)?\s*(\d+)[:\s,\-]+(.*)', cleaned_text)
     if not edit_match:
         # Try reverse WITH explicit keyword: "9 numarayı düzenle..."
@@ -356,14 +403,12 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
         report_id = int(edit_match.group(1))
         correction_text = edit_match.group(2).strip()
         if not correction_text:
-            return {'company_name': company['name'], 'direct_reply': "Please provide the correction along with the Edit command. (e.g. 'Edit 9: change the quantity to 5')"}
+            return {'company_name': company['name'], 'direct_reply': "Please provide the correction. (e.g. 'Edit 9: change the quantity to 5')"}
         
         # We need to fetch the specific report by ID
-        # Let's bypass the usual `is_approve/is_reject` logic and just set it up for `resolve_incomplete`
         specific_report = db._execute(db.get_connection(), "SELECT * FROM site_reports WHERE id=?", (report_id,)).fetchone()
         if specific_report:
             specific_report = db._row_to_dict(specific_report)
-            # Make sure it belongs to the user
             if str(specific_report['reported_by']) in [reporter_str, from_number]:
                 try:
                     import json
@@ -374,25 +419,18 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
                 if parsed.get('locked'):
                     return {'company_name': company['name'], 'direct_reply': f"[LOCKED] Report #{report_id} has already been sent to the Dashboard and cannot be edited."}
                 
-                # Treat this as an incomplete report to trigger `resolve_incomplete`
                 incomplete_report = specific_report
                 text = correction_text
-                # Reset these so it doesn't trigger the logic below
                 is_approve = False
-                is_reject = False
                 cleaned_text = text.strip().lower()
             else:
                 return {'company_name': company['name'], 'direct_reply': f"[ERROR] Report #{report_id} not found or you don't have permission to edit it."}
         else:
             return {'company_name': company['name'], 'direct_reply': f"[ERROR] Report #{report_id} not found."}
     else:
-        # Also include voice transcription equivalents like "bir", "one", "iki", "two"
-        is_approve = cleaned_text in ['1', '1.', '1)', 'onayla', 'onaylıyorum', 'onayliyorum', 'evet', 'approve', 'yes', 'y', 'bir', 'one']
-        is_reject = cleaned_text in ['2', '2.', '2)', 'reddet', 'hayır', 'hayir', 'düzenle', 'duzenle', 'reject', 'no', 'n', 'edit', 'iki', 'two']
+        is_reject = cleaned_text in ['2', '2.', '2)', 'reddet', 'hayır', 'hayir', 'reject', 'no', 'n', 'iki', 'two']
 
     if is_approve or is_reject:
-        all_pending = db.get_all_pending_reports_for_user(reporter_str) or db.get_all_pending_reports_for_user(from_number)
-        
         if all_pending:
             import json
             # Filter to only unlocked reports
@@ -414,17 +452,16 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
                     db.update_report_parsed_data(rep['id'], company['id'], parsed)
                 
                 count = len(unlocked_reports)
-                return {'company_name': company['name'], 'direct_reply': f"[SUCCESS] {count} report(s) sent to the Dashboard and locked for editing."}
-
+                return {'company_name': company['name'], 'direct_reply': f"✅ {count} report(s) successfully sent to the Dashboard."}
             
             elif is_reject:
                 if len(unlocked_reports) == 1:
                     rep, parsed = unlocked_reports[0]
                     with db.get_connection() as conn:
                         db._execute(conn, "UPDATE site_reports SET status='incomplete' WHERE id=?", (rep['id'],))
-                    return {'company_name': company['name'], 'direct_reply': "[EDIT MODE] Report status updated to 'To be edited'. Please write (or say) what you would like to edit or add."}
+                    return {'company_name': company['name'], 'direct_reply': f"✏️ Report #{rep['id']} is in Edit mode. What would you like to change or add?"}
                 else:
-                    return {'company_name': company['name'], 'direct_reply': "[EDIT] You have multiple ready reports. To edit a specific one, please reply with 'Edit [ID]: [your correction]'. (e.g. 'Edit 9: change quantity to 5')"}
+                    return {'company_name': company['name'], 'direct_reply': "Please reply with the *ID number* of the report you want to edit. (e.g. 8, 9, or 10)"}
         # end of all_pending logic
 
     
