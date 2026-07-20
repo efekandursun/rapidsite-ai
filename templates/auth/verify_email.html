@@ -184,6 +184,7 @@
         {% endwith %}
 
         <form method="POST" class="auth-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <div class="form-group">
                 <label class="form-label">Email Address</label>
@@ -203,6 +204,7 @@
         <div class="resend-section">
             <p class="resend-text">Didn't receive the code?</p>
             <form method="POST" action="{{ url_for('auth.resend_verification') }}" style="display: inline;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                 <button type="submit" class="resend-btn">Resend Code</button>
             </form>

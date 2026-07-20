@@ -6,7 +6,10 @@ import hashlib
 from datetime import datetime, timedelta
 from functools import wraps
 from flask import Flask, jsonify, request, render_template, redirect, url_for, session, flash
+from flask_cors import CORS
 from dotenv import load_dotenv
+import rq_dashboard
+from flask_wtf.csrf import CSRFProtect
 
 load_dotenv()
 
@@ -29,6 +32,9 @@ if not secret_key:
     raise RuntimeError("CRITICAL: FLASK_SECRET_KEY environment variable is missing. Refusing to start.")
 app.secret_key = secret_key
 
+# Enable CSRF Protection
+csrf = CSRFProtect(app)
+
 # Session Security Configuration
 app.config.update(
     SESSION_COOKIE_SECURE=os.getenv('FLASK_ENV') != 'development',
@@ -44,15 +50,38 @@ csrf = CSRFProtect(app)
 # Rate Limiting
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+
+redis_url = os.getenv('REDIS_URL')
+limiter_storage = redis_url if redis_url else "memory://"
+
 limiter = Limiter(
     get_remote_address,
     app=app,
     default_limits=["200 per day", "50 per hour"],
-    storage_uri="memory://"
+    storage_uri=limiter_storage
 )
 
 # Import and register blueprints
+from core.utils import retry_on_exception
 from core.whatsapp_handler import whatsapp_bp
+
+def get_authorized_report(report_id):
+    """
+    Fetch a report and ensure it belongs to the current user's company.
+    Prevents IDOR (Insecure Direct Object Reference) vulnerabilities.
+    """
+    report = db.get_report(report_id)
+    if not report:
+        return None
+        
+    company = get_current_company()
+    if not company or report.get('company_id') != company['id']:
+        import logging
+        logging.warning(f"IDOR ATTEMPT: User tried to access report {report_id} belonging to company {report.get('company_id')}")
+        return None
+        
+    return report
+
 from core.auth import auth_bp, login_required, get_current_user, get_current_company
 from core.database import Database
 from core.mailer import init_mail
@@ -63,6 +92,7 @@ from connectors.base import ERPError
 csrf.exempt(whatsapp_bp)
 
 app.register_blueprint(whatsapp_bp)
+csrf.exempt(whatsapp_bp)
 app.register_blueprint(auth_bp)
 
 # Initialize database
@@ -228,7 +258,7 @@ def sync_report_to_procore(report: dict):
 
         result = connector.push_daily_log(project_id, report['parsed_data'])
         erp_id = result.get("erp_id")
-        db.mark_synced(report['id'], erp_sync_id=erp_id)
+        db.mark_synced(report['id'], company_id=report['company_id'], erp_sync_id=erp_id)
         return True, erp_id
     except ERPError as e:
         print(f"❌ Procore sync failed for report {report.get('id')}: {e}")
@@ -254,7 +284,13 @@ def procore_auth():
             "client_id": os.getenv('PROCORE_CLIENT_ID'),
             "redirect_uri": redirect_uri
         })
-        auth_url = connector.get_auth_url()
+        
+        # Security: Prevent OAuth CSRF
+        import secrets
+        state = secrets.token_urlsafe(32)
+        session['procore_oauth_state'] = state
+        
+        auth_url = connector.get_auth_url(state=state)
         return redirect(auth_url)
     except Exception as e:
         return f"Error initiating Procore auth: {e}", 500
@@ -266,12 +302,18 @@ def procore_callback():
     """Handle Procore OAuth callback."""
     code = request.args.get('code')
     error = request.args.get('error')
+    state = request.args.get('state')
     
     if error:
         return f"Procore auth error: {error}", 400
     
     if not code:
         return "No code provided", 400
+        
+    # Security: Validate OAuth state
+    expected_state = session.pop('procore_oauth_state', None)
+    if not expected_state or state != expected_state:
+        return "Invalid or missing state parameter. CSRF attempt detected.", 403
     
     try:
         # Must match the redirect_uri used in auth step
@@ -577,12 +619,13 @@ def export_excel():
 # =============================================================================
 
 def is_super_admin():
+    """Check if current user is super admin."""
     user = get_current_user()
     if not user:
         return False
-    # Use environment variable or default to efekan@rapidsite.app
-    admin_email = os.getenv('ADMIN_EMAIL', 'efekan@rapidsite.app')
-    return user.get('email') == admin_email
+        
+    # Security: Use the database role, not a hardcoded email
+    return user.get('role') == 'super_admin'
 
 @app.route('/admin')
 @login_required
@@ -689,7 +732,7 @@ def api_create_report():
 @login_required
 def api_get_report(report_id):
     """Get a single report."""
-    report = db.get_report(report_id)
+    report = get_authorized_report(report_id)
     if not report:
         return jsonify({"success": False, "error": "Report not found"}), 404
     
@@ -703,7 +746,8 @@ def api_approve_report(report_id):
     data = request.get_json() or {}
     approved_by = data.get('approved_by', 'API User')
     
-    success = db.approve_report(report_id, approved_by)
+    company_id = get_current_company()['id']
+    success = db.approve_report(report_id, company_id, approved_by)
     
     if success:
         return jsonify({"success": True, "message": "Report approved"})
@@ -718,7 +762,8 @@ def api_reject_report(report_id):
     data = request.get_json() or {}
     reason = data.get('reason')
     
-    success = db.reject_report(report_id, reason)
+    company_id = get_current_company()['id']
+    success = db.reject_report(report_id, company_id, reason)
     
     if success:
         return jsonify({"success": True, "message": "Report rejected"})
@@ -730,7 +775,7 @@ def api_reject_report(report_id):
 @login_required
 def api_sync_report(report_id):
     """Sync report to ERP (placeholder for Procore integration)."""
-    report = db.get_report(report_id)
+    report = get_authorized_report(report_id)
     if not report:
         return jsonify({"success": False, "error": "Report not found"}), 404
     
@@ -834,8 +879,9 @@ def send_whatsapp_notification(phone_number: str, message: str):
 @login_required
 def dashboard_approve(report_id):
     """Approve report from dashboard and notify foreman."""
-    report = db.get_report(report_id)
-    db.approve_report(report_id, approved_by="Dashboard User")
+    report = get_authorized_report(report_id)
+    company_id = get_current_company()['id']
+    db.approve_report(report_id, company_id, approved_by="Dashboard User")
     
     # Attempt Procore sync (best-effort; errors are logged)
     if report:
@@ -886,7 +932,8 @@ def dashboard_edit(report_id):
         if not new_data:
             return jsonify({"success": False, "error": "No data provided"}), 400
             
-        success = db.update_report_parsed_data(report_id, new_data)
+        company_id = get_current_company()['id']
+        success = db.update_report_parsed_data(report_id, company_id, new_data)
         if success:
             return jsonify({"success": True})
         else:
@@ -901,8 +948,9 @@ def dashboard_edit(report_id):
 @login_required
 def dashboard_reject(report_id):
     """Reject report from dashboard and notify foreman."""
-    report = db.get_report(report_id)
-    db.reject_report(report_id)
+    report = get_authorized_report(report_id)
+    company_id = get_current_company()['id']
+    db.reject_report(report_id, company_id)
     
     # Send WhatsApp notification
     if report and report.get('reported_by'):
@@ -924,7 +972,7 @@ def dashboard_reject(report_id):
 @login_required
 def dashboard_sync(report_id):
     """Manually trigger Procore sync for an approved report."""
-    report = db.get_report(report_id)
+    report = get_authorized_report(report_id)
     if not report:
         flash("Report not found", "error")
         return redirect(url_for('dashboard'))
@@ -1058,6 +1106,11 @@ def add_team_member():
     email = request.form.get('email', '').strip().lower()
     job_title = request.form.get('job_title', '').strip()
     role = request.form.get('role', 'supervisor')
+    
+    # Security: Prevent privilege escalation (Mass Assignment)
+    if role not in ['supervisor', 'admin']:
+        role = 'supervisor'
+        
     password = request.form.get('password', '')
     
     if not name or not email or not password:
@@ -1099,7 +1152,9 @@ def delete_authorized_number(number_id):
     return redirect(url_for('settings'))
 
 @app.route('/webhook/lemonsqueezy', methods=['POST'])
+@csrf.exempt
 def lemonsqueezy_webhook():
+    """Handle LemonSqueezy subscription events."""
     secret = os.getenv('LEMON_SQUEEZY_WEBHOOK_SECRET', '')
     if not secret:
         return "No secret configured", 500

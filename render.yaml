@@ -4,10 +4,17 @@ services:
     name: rapidsite-ai
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: python worker.py & gunicorn app:app --worker-class gthread --threads 4 --workers 2 --timeout 60 --bind 0.0.0.0:$PORT
+    startCommand: rq worker rapidsite-tasks & gunicorn app:app --worker-class gthread --threads 4 --workers 2 --timeout 60 --bind 0.0.0.0:$PORT
     plan: starter
     envVars:
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: rapidsite-redis
+          property: connectionString
       - key: FLASK_SECRET_KEY
+        generateValue: true
+      - key: ENCRYPTION_KEY
         generateValue: true
       - key: DATABASE_URL
         sync: false
@@ -53,3 +60,8 @@ services:
         sync: false
       - key: FLASK_ENV
         value: production
+
+  - type: redis
+    name: rapidsite-redis
+    ipAllowList: []
+    plan: free

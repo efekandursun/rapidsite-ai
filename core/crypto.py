@@ -6,7 +6,11 @@ def get_cipher():
     """Get the Fernet cipher suite based on ENCRYPTION_KEY env var."""
     key = os.getenv('ENCRYPTION_KEY')
     if not key:
-        # Fallback for development, but warns the user
+        if os.getenv("FLASK_ENV") == "production":
+            logging.error("CRITICAL SECURITY ERROR: ENCRYPTION_KEY is missing in production environment!")
+            raise ValueError("ENCRYPTION_KEY must be set in production to prevent data loss on restarts.")
+            
+        # Fallback for development only
         logging.warning("⚠️ ENCRYPTION_KEY not set in environment. Using a temporary key. Tokens will be lost on restart.")
         key = Fernet.generate_key()
         os.environ['ENCRYPTION_KEY'] = key.decode()

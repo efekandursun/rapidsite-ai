@@ -29,7 +29,7 @@ def hash_password(password: str) -> str:
 def verify_password(password: str, password_hash: str) -> bool:
     """
     Verify password against hash.
-    Supports both bcrypt (new) and SHA-256 (legacy) for backward compatibility.
+    Only supports bcrypt. Legacy SHA-256 is deprecated for security reasons.
     """
     password_bytes = password.encode('utf-8')
     
@@ -40,10 +40,11 @@ def verify_password(password: str, password_hash: str) -> bool:
         except Exception:
             return False
     else:
-        # Legacy SHA-256 hash - support for old passwords
-        salt = os.getenv('PASSWORD_SALT', 'rapidsite-default-salt')
-        legacy_hash = hashlib.sha256(f"{password}{salt}".encode()).hexdigest()
-        return legacy_hash == password_hash
+        # CRITICAL: Legacy SHA-256 fallback removed for security reasons.
+        # Users with old hashes MUST reset their passwords.
+        import logging
+        logging.error("Attempted login with legacy SHA-256 hash. Login rejected for security. User must reset password.")
+        return False
 
 
 def login_required(f):
@@ -315,6 +316,17 @@ def forgot_password():
             flash('Please enter your email address.', 'error')
             return redirect(url_for('auth.forgot_password'))
             
+        # Security: Rate limiting to prevent email spam/bombing
+        from datetime import datetime, timedelta
+        last_reset = session.get('last_forgot_time')
+        if last_reset:
+            last_reset_dt = datetime.fromisoformat(last_reset)
+            time_since = (datetime.now() - last_reset_dt).total_seconds()
+            if time_since < 60:
+                remaining = int(60 - time_since)
+                flash(f'Please wait {remaining} seconds before requesting another reset.', 'warning')
+                return redirect(url_for('auth.forgot_password'))
+                
         user = db.get_user_by_email(email)
         if user:
             # Generate token
@@ -328,6 +340,9 @@ def forgot_password():
             reset_link = request.host_url.rstrip('/') + url_for('auth.reset_password', token=token)
             from core.mailer import send_password_reset_email
             send_password_reset_email(email, reset_link)
+            
+        # Update rate limit timestamp
+        session['last_forgot_time'] = datetime.now().isoformat()
             
         # Always show success message to prevent email enumeration attacks
         flash('If an account exists with that email, a password reset link has been sent.', 'success')

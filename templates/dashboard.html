@@ -514,12 +514,14 @@
                                     ✏️ Edit
                                 </button>
                                 <form action="/dashboard/approve/{{ report.id }}" method="POST" style="display:inline;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                     <button class="btn btn-primary" style="padding: 0.35rem 0.7rem; font-size: 0.8rem; background: var(--accent-success); border-color: var(--accent-success);">
                                         ✓ Approve
                                     </button>
                                 </form>
                                 <form action="/dashboard/reject/{{ report.id }}" method="POST" style="display:inline;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                     <button class="btn btn-secondary" style="padding: 0.35rem 0.7rem; font-size: 0.8rem; color: var(--accent-danger);">
                                         ✕ Reject
@@ -527,6 +529,7 @@
                                 </form>
                                 {% elif report.status == 'approved' %}
                                 <form action="/dashboard/sync/{{ report.id }}" method="POST" style="display:inline;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
                                     <button class="btn btn-primary" style="padding: 0.35rem 0.7rem; font-size: 0.8rem;">
                                         🔄 Sync to Procore

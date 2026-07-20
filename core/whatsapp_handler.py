@@ -47,6 +47,10 @@ request_validator = RequestValidator(TWILIO_AUTH_TOKEN) if TWILIO_AUTH_TOKEN els
 def whatsapp_webhook():
     """Twilio WhatsApp webhook handler (fast return + DB Queue)."""
 
+    if not TWILIO_AUTH_TOKEN:
+        logging.error("CRITICAL SECURITY: TWILIO_AUTH_TOKEN is missing. Rejecting webhook request to prevent spoofing.")
+        abort(403)
+        
     # Validate signature if token is configured
     if request_validator:
         signature = request.headers.get('X-Twilio-Signature', '')
@@ -57,6 +61,7 @@ def whatsapp_webhook():
             
         params = request.form.to_dict()  # Twilio signs form params
         if not request_validator.validate(url, params, signature):
+            logging.warning("⚠️ Invalid Twilio Signature! Rejecting request.")
             abort(403)
 
     message_sid = request.values.get('MessageSid')
@@ -74,6 +79,37 @@ def whatsapp_webhook():
         resp = MessagingResponse()
         resp.message("✅ Already received. Processing underway.")
         return Response(str(resp), mimetype='application/xml')
+
+    # Offload heavy work to Redis Queue (RQ) or fallback to threading
+    try:
+        import os
+        from redis import Redis
+        from rq import Queue
+        
+        redis_url = os.getenv('REDIS_URL', 'redis://localhost:6379')
+        redis_conn = Redis.from_url(redis_url)
+        q = Queue('rapidsite-tasks', connection=redis_conn)
+        
+        q.enqueue(
+            handle_message_async, 
+            message_sid, 
+            form_data.get('From', ''), 
+            form_data.get('Body', ''), 
+            int(form_data.get('NumMedia', 0)), 
+            form_data
+        )
+    except Exception as e:
+        # Fallback to threading if Redis is not available locally
+        logging.error(f"❌ Redis queue failed, using threading fallback. Error: {e}")
+        import threading
+        t = threading.Thread(target=handle_message_async, args=(
+            message_sid, 
+            form_data.get('From', ''), 
+            form_data.get('Body', ''), 
+            int(form_data.get('NumMedia', 0)), 
+            form_data
+        ))
+        t.start()
 
     # Quick ACK to Twilio; heavy lifting offloaded to background worker
     ack = MessagingResponse()
@@ -370,6 +406,7 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
                 
                 db.update_incomplete_report(
                     incomplete_report['id'], 
+                    company['id'],
                     combined_transcript, 
                     updated_event, 
                     new_status,

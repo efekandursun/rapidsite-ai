@@ -523,7 +523,7 @@ class Database:
                 return self._row_to_dict(row)
             return None
             
-    def update_incomplete_report(self, report_id: int, new_transcript: str, parsed_data: dict, status: str, extra_media_paths: str = None) -> bool:
+    def update_incomplete_report(self, report_id: int, company_id: int, new_transcript: str, parsed_data: dict, status: str, extra_media_paths: str = None) -> bool:
         """Update an incomplete report with new transcript and data."""
         with self.get_connection() as conn:
             # First fetch existing media_paths if we have extra
@@ -546,8 +546,8 @@ class Database:
                         status = ?,
                         media_paths = ?,
                         updated_at = CURRENT_TIMESTAMP
-                    WHERE id = ?
-                """, (new_transcript, json.dumps(parsed_data), status, extra_media_paths, report_id))
+                    WHERE id = ? AND company_id = ?
+                """, (new_transcript, json.dumps(parsed_data), status, extra_media_paths, report_id, company_id))
             else:
                 cursor = self._execute(conn, """
                     UPDATE site_reports 
@@ -555,8 +555,8 @@ class Database:
                         parsed_data = ?, 
                         status = ?,
                         updated_at = CURRENT_TIMESTAMP
-                    WHERE id = ?
-                """, (new_transcript, json.dumps(parsed_data), status, report_id))
+                    WHERE id = ? AND company_id = ?
+                """, (new_transcript, json.dumps(parsed_data), status, report_id, company_id))
                 
             return cursor.rowcount > 0
     
@@ -614,7 +614,7 @@ class Database:
             row = self._fetchone(cursor)
             return self._row_to_dict(row) if row else None
     
-    def update_report_parsed_data(self, report_id: int, parsed_data: Dict[str, Any]) -> bool:
+    def update_report_parsed_data(self, report_id: int, company_id: int, parsed_data: Dict[str, Any]) -> bool:
         """Update the parsed JSON data of a report, and sync top-level columns."""
         import json
         with self.get_connection() as conn:
@@ -630,11 +630,11 @@ class Database:
                     log_type = ?,
                     cost_code = ?,
                     updated_at = ?
-                WHERE id = ?
-            """, (json.dumps(parsed_data, ensure_ascii=False), log_type, cost_code, now, report_id))
+                WHERE id = ? AND company_id = ?
+            """, (json.dumps(parsed_data, ensure_ascii=False), log_type, cost_code, now, report_id, company_id))
             return cursor.rowcount > 0
     
-    def approve_report(self, report_id: int, approved_by: str = None) -> bool:
+    def approve_report(self, report_id: int, company_id: int, approved_by: str = None) -> bool:
         """Approve a pending report."""
         with self.get_connection() as conn:
             now = datetime.utcnow().isoformat()
@@ -644,22 +644,22 @@ class Database:
                     approved_by = ?,
                     approved_at = ?,
                     updated_at = ?
-                WHERE id = ? AND status = 'pending'
-            """, (approved_by, now, now, report_id))
+                WHERE id = ? AND company_id = ? AND status = 'pending'
+            """, (approved_by, now, now, report_id, company_id))
             return cursor.rowcount > 0
     
-    def reject_report(self, report_id: int, reason: str = None) -> bool:
+    def reject_report(self, report_id: int, company_id: int, reason: str = None) -> bool:
         """Reject a pending report."""
         with self.get_connection() as conn:
             cursor = self._execute(conn, """
                 UPDATE site_reports 
                 SET status = 'rejected',
                     updated_at = ?
-                WHERE id = ? AND status = 'pending'
-            """, (datetime.utcnow().isoformat(), report_id))
+                WHERE id = ? AND company_id = ? AND status = 'pending'
+            """, (datetime.utcnow().isoformat(), report_id, company_id))
             return cursor.rowcount > 0
     
-    def mark_synced(self, report_id: int, erp_sync_id: str = None) -> bool:
+    def mark_synced(self, report_id: int, company_id: int, erp_sync_id: str = None) -> bool:
         """Mark report as synced to ERP."""
         with self.get_connection() as conn:
             cursor = self._execute(conn, """
@@ -668,8 +668,8 @@ class Database:
                     erp_sync_id = ?,
                     status = 'synced',
                     updated_at = ?
-                WHERE id = ?
-            """, (erp_sync_id, datetime.utcnow().isoformat(), report_id))
+                WHERE id = ? AND company_id = ?
+            """, (erp_sync_id, datetime.utcnow().isoformat(), report_id, company_id))
             return cursor.rowcount > 0
     
     def get_stats(self) -> Dict[str, int]:
@@ -732,6 +732,14 @@ class Database:
                     cursor.execute(f"ALTER TABLE companies ADD COLUMN {col} TEXT")
             except Exception:
                 pass # Column likely already exists
+                
+        # Enforce unique slug if missing
+        if self.use_postgres:
+            try:
+                cursor.execute("ALTER TABLE companies ADD CONSTRAINT unique_company_slug UNIQUE (slug)")
+            except Exception:
+                pass # Constraint already exists or duplicate data prevents it
+                
         conn.commit()
 
     def get_company(self, company_id: int) -> Optional[Dict[str, Any]]:
@@ -864,28 +872,28 @@ class Database:
             query += " WHERE id = ?"
             params.append(company_id)
             
-            self._execute(conn, query, tuple(params))
-            return True
+            cursor = self._execute(conn, query, tuple(params))
+            return cursor.rowcount > 0
 
     def update_company_procore_company_id(self, company_id: int, procore_company_id: str) -> bool:
         """Update Procore Company ID."""
         with self.get_connection() as conn:
-            self._execute(conn, """
+            cursor = self._execute(conn, """
                 UPDATE companies 
                 SET procore_company_id = ? 
                 WHERE id = ?
             """, (procore_company_id, company_id))
-            return True
+            return cursor.rowcount > 0
 
     def update_company_procore_project(self, company_id: int, project_id: str) -> bool:
         """Update default Procore project."""
         with self.get_connection() as conn:
-            self._execute(conn, """
+            cursor = self._execute(conn, """
                 UPDATE companies 
                 SET procore_default_project_id = ? 
                 WHERE id = ?
             """, (project_id, company_id))
-            return True
+            return cursor.rowcount > 0
 
     def update_company_procore_lists(self, company_id: int, vendors: str, cost_codes: str, locations: str) -> bool:
         """Update cached Procore lists for a company."""
@@ -1166,11 +1174,11 @@ class Database:
             else:
                 new_end = current_end.replace(tzinfo=None) + timedelta(days=days)
                 
-            self._execute(conn, 
+            cursor = self._execute(conn, 
                 "UPDATE companies SET trial_ends_at = ?, subscription_status = ? WHERE id = ?",
                 (new_end, status, company_id)
             )
-            return True
+            return cursor.rowcount > 0
 
     def _row_to_dict(self, row: Dict[str, Any]) -> Dict[str, Any]:
         """Convert database row to dictionary with parsed JSON."""

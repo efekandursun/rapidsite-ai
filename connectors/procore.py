@@ -83,17 +83,20 @@ class ProcoreConnector(ERPConnector):
             "Content-Type": "application/json"
         }
     
-    def get_auth_url(self) -> str:
+    def get_auth_url(self, state: str = None) -> str:
         """Generate OAuth2 authorization URL."""
         if not self.client_id or not self.redirect_uri:
             raise ERPError("Missing client_id or redirect_uri")
             
-        return (
+        url = (
             f"{self.auth_base_url}/oauth/authorize"
             f"?client_id={self.client_id}"
             f"&response_type=code"
             f"&redirect_uri={self.redirect_uri}"
         )
+        if state:
+            url += f"&state={state}"
+        return url
     
     def exchange_code_for_token(self, code: str) -> Dict[str, Any]:
         """Exchange auth code for access token."""
