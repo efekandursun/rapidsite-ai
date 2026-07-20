@@ -474,26 +474,43 @@ class Database:
     ) -> int:
         """Create a new site report."""
         with self.get_connection() as conn:
-            cursor = self._execute(conn, """
-                INSERT INTO site_reports 
-                (company_id, project_id, raw_transcript, parsed_data, log_type, cost_code, reported_by, media_paths)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                company_id,
-                project_id,
-                raw_transcript,
-                json.dumps(parsed_data),
-                parsed_data.get("log_type"),
-                parsed_data.get("cost_code"),
-                reported_by,
-                media_paths
-            ))
-            
             if self.use_postgres:
-                # Get last inserted ID for PostgreSQL
-                cursor.execute("SELECT lastval()")
-                return cursor.fetchone()['lastval']
-            return cursor.lastrowid
+                cursor = self._execute(conn, """
+                    INSERT INTO site_reports (
+                        company_id, project_id, raw_transcript, parsed_data, 
+                        log_type, cost_code, reported_by, media_paths
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    RETURNING id
+                """, (
+                    company_id,
+                    project_id,
+                    raw_transcript,
+                    json.dumps(parsed_data),
+                    parsed_data.get("log_type"),
+                    parsed_data.get("cost_code"),
+                    reported_by,
+                    media_paths
+                ))
+                return cursor.fetchone()['id']
+            else:
+                cursor = self._execute(conn, """
+                    INSERT INTO site_reports (
+                        company_id, project_id, raw_transcript, parsed_data, 
+                        log_type, cost_code, reported_by, media_paths
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
+                    company_id,
+                    project_id,
+                    raw_transcript,
+                    json.dumps(parsed_data),
+                    parsed_data.get("log_type"),
+                    parsed_data.get("cost_code"),
+                    reported_by,
+                    media_paths
+                ))
+                return cursor.lastrowid
     
     def get_report(self, report_id: int) -> Optional[Dict[str, Any]]:
         """Get a single report by ID."""
@@ -699,15 +716,18 @@ class Database:
             trial_ends_at = trial_ends_at.isoformat()
             
         with self.get_connection() as conn:
-            cursor = self._execute(conn, """
-                INSERT INTO companies (name, slug, whatsapp_numbers, subscription_plan, subscription_status, trial_ends_at)
-                VALUES (?, ?, ?, 'pro', 'trialing', ?)
-            """, (name, slug, whatsapp_numbers, trial_ends_at))
-            
             if self.use_postgres:
-                cursor.execute("SELECT lastval()")
-                company_id = cursor.fetchone()['lastval']
+                cursor = self._execute(conn, """
+                    INSERT INTO companies (name, slug, whatsapp_numbers, subscription_plan, subscription_status, trial_ends_at)
+                    VALUES (?, ?, ?, 'pro', 'trialing', ?)
+                    RETURNING id
+                """, (name, slug, whatsapp_numbers, trial_ends_at))
+                company_id = cursor.fetchone()['id']
             else:
+                cursor = self._execute(conn, """
+                    INSERT INTO companies (name, slug, whatsapp_numbers, subscription_plan, subscription_status, trial_ends_at)
+                    VALUES (?, ?, ?, 'pro', 'trialing', ?)
+                """, (name, slug, whatsapp_numbers, trial_ends_at))
                 company_id = cursor.lastrowid
             
             # Migrate legacy numbers if provided
@@ -716,8 +736,7 @@ class Database:
                     if num.strip():
                         self.add_authorized_number(company_id, num.strip(), "Initial User")
             
-            # Run lightweight migrations for existing databases
-            self._run_migrations(conn, cursor)
+            # (Removed _run_migrations to prevent Postgres transaction abortion on duplicate constraint errors)
             return company_id
 
     def _run_migrations(self, conn, cursor):
@@ -925,15 +944,19 @@ class Database:
                     company_id: int, role: str = 'supervisor', job_title: str = None) -> int:
         """Create a new user."""
         with self.get_connection() as conn:
-            cursor = self._execute(conn, """
-                INSERT INTO users (email, password_hash, name, company_id, role, job_title)
-                VALUES (?, ?, ?, ?, ?, ?)
-            """, (email, password_hash, name, company_id, role, job_title))
-            
             if self.use_postgres:
-                cursor.execute("SELECT lastval()")
-                return cursor.fetchone()['lastval']
-            return cursor.lastrowid
+                cursor = self._execute(conn, """
+                    INSERT INTO users (email, password_hash, name, company_id, role, job_title)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    RETURNING id
+                """, (email, password_hash, name, company_id, role, job_title))
+                return cursor.fetchone()['id']
+            else:
+                cursor = self._execute(conn, """
+                    INSERT INTO users (email, password_hash, name, company_id, role, job_title)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                """, (email, password_hash, name, company_id, role, job_title))
+                return cursor.lastrowid
     
     def get_user_by_email(self, email: str) -> Optional[Dict[str, Any]]:
         """Get user by email."""
