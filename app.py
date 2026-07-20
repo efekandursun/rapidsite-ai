@@ -517,25 +517,38 @@ def dashboard():
         raw_reports = db.get_reports(limit=per_page, offset=offset)
         stats = db.get_stats()
         
-    grouped_reports = []
+    reports_by_type = {
+        'manpower': [],
+        'delivery': [],
+        'equipment': [],
+        'quantity': [],
+        'productivity': [],
+        'safety': [],
+        'notes': []
+    }
+    
     for r in raw_reports:
-        if grouped_reports and grouped_reports[-1]['raw_transcript'] == r['raw_transcript']:
-            grouped_reports[-1]['sub_reports'].append(r)
-            if r['status'] == 'incomplete':
-                grouped_reports[-1]['overall_status'] = 'incomplete'
-            elif r['status'] == 'pending' and grouped_reports[-1]['overall_status'] != 'incomplete':
-                grouped_reports[-1]['overall_status'] = 'pending'
-        else:
-            group = r.copy()
-            group['sub_reports'] = [r]
-            group['overall_status'] = r['status']
-            grouped_reports.append(group)
+        import json
+        try:
+            parsed = json.loads(r['parsed_data']) if isinstance(r['parsed_data'], str) else r['parsed_data']
+        except:
+            parsed = {}
             
+        t = parsed.get('log_type', 'notes').lower()
+        if t == 'materials': t = 'quantity'
+        if t == 'production': t = 'productivity'
+        
+        # fallback for unexpected types
+        if t not in reports_by_type:
+            t = 'notes'
+            
+        reports_by_type[t].append(r)
+        
     total_db_reports = stats.get('total', 0)
     total_pages = (total_db_reports + per_page - 1) // per_page
     
     return render_template('dashboard.html', 
-                           reports=grouped_reports, 
+                           reports_by_type=reports_by_type, 
                            total_reports=total_db_reports, 
                            stats=stats, 
                            user=user, 

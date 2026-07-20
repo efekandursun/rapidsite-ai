@@ -424,199 +424,70 @@
     </a>
 </div>
 
+
+
+<style>
+    .procore-section {
+        background: #ffffff;
+        border: 1px solid var(--border-light);
+        border-radius: var(--radius-md);
+        box-shadow: var(--shadow-sm);
+        overflow: hidden;
+    }
+    .procore-section-title {
+        background: #f8fafc;
+        padding: 1rem 1.5rem;
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        border-bottom: 1px solid var(--border-light);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    .procore-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .procore-table th {
+        text-align: left;
+        padding: 0.75rem 1rem;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        border-bottom: 1px solid var(--border-light);
+        background: #fbfcfd;
+    }
+    .procore-table td {
+        padding: 1rem;
+        font-size: 0.85rem;
+        color: var(--text-primary);
+        border-bottom: 1px solid var(--border-light);
+        vertical-align: top;
+    }
+    .procore-table tr:last-child td {
+        border-bottom: none;
+    }
+    .procore-table tr:hover {
+        background: #f8fafc;
+    }
+    .procore-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+</style>
+
 <!-- Reports -->
 <div class="section-heading">
     Recent Activity
     <span class="section-count">{{ total_reports }}</span>
 </div>
 
-<div id="reportsContainer" style="display: flex; flex-direction: column; gap: 1rem;">
-    {% if reports %}
-        {% for group in reports %}
-        <div class="report-card" data-status="{{ group.overall_status }}" data-search="{{ group.raw_transcript | lower }}" style="position: relative;">
-
-            <!-- Status indicator line -->
-            <div class="status-line status-line-{{ group.overall_status }}"></div>
-
-            <!-- Body -->
-            <div class="report-body">
-                <div class="source-panel">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.5rem;">
-                        <div class="source-label">📱 Source Message</div>
-                        <div style="font-size: 0.85rem; color: var(--text-muted); background: var(--bg-surface); padding: 0.2rem 0.6rem; border-radius: 4px; border: 1px solid var(--border-color);">
-                            👤 
-                            {% if group.reported_by %}
-                                {% set reporter = group.reported_by %}
-                                {% if '(' in reporter %}
-                                    {% set parts = reporter.split('(') %}
-                                    {% set name = parts[0]|trim %}
-                                    {% set number = parts[1]|replace(')', '')|trim %}
-                                    <strong>{{ name }}</strong> <span style="margin-left: 0.3rem;">({{ number }})</span>
-                                {% else %}
-                                    <span>{{ reporter }}</span>
-                                {% endif %}
-                            {% else %}
-                                Unknown Sender
-                            {% endif %}
-                        </div>
-                    </div>
-                    <div class="source-transcript">{{ group.raw_transcript }}</div>
-                    
-                    {% if group.parsed_data.translated_transcript and group.parsed_data.translated_transcript|lower != group.raw_transcript|lower %}
-                    <div class="source-label" style="margin-top: 1rem; color: var(--accent-secondary);">🌐 English Translation</div>
-                    <div class="source-transcript" style="border-left-color: var(--accent-secondary);">{{ group.parsed_data.translated_transcript }}</div>
-                    {% endif %}
-
-                    {% if group.media_paths and group.media_paths | length > 0 %}
-                    <div class="source-label" style="margin-top: 0.75rem;">📎 Attachments ({{ group.media_paths | length }})</div>
-                    <div class="media-grid">
-                        {% for media in group.media_paths %}
-                            {% if media.endswith('.jpg') or media.endswith('.png') or media.endswith('.jpeg') %}
-                            <a href="/{{ media }}" target="_blank" class="media-thumb">
-                                <img src="/{{ media }}" alt="Photo">
-                            </a>
-                            {% elif media.endswith('.mp4') %}
-                            <a href="/{{ media }}" target="_blank" class="media-thumb-video">🎥</a>
-                            {% endif %}
-                        {% endfor %}
-                    </div>
-                    {% endif %}
-                </div>
-
-                <!-- Destination: Procore Target (Multiple possible) -->
-                <div class="dest-panels-wrapper" style="display: flex; flex-direction: column; background: #ffffff;">
-                    {% for report in group.sub_reports %}
-                    <div style="border-bottom: {% if not loop.last %}1px solid var(--border-light){% else %}none{% endif %};">
-                        
-                        <!-- Header -->
-                        <div class="report-header" style="background: transparent; border-bottom: 1px dashed var(--border-light); padding: 0.75rem 1.5rem;">
-                            <div class="report-header-left">
-                                <span class="report-id">#{{ report.id }}</span>
-                                <span class="badge badge-{{ report.status }}">{{ report.status | upper }}</span>
-                                <span class="report-type-badge">
-                                    {% if report.parsed_data.log_type | default('notes', true) == 'production' %}🏗️
-                                    {% elif report.parsed_data.log_type | default('notes', true) == 'materials' %}📦
-                                    {% elif report.parsed_data.log_type | default('notes', true) == 'manpower' %}👷
-                                    {% elif report.parsed_data.log_type | default('notes', true) == 'equipment' %}🚜
-                                    {% elif report.parsed_data.log_type | default('notes', true) == 'safety' %}⚠️
-                                    {% elif report.parsed_data.log_type | default('notes', true) == 'delivery' %}🚚
-                                    {% else %}📝{% endif %}
-                                    {{ report.parsed_data.log_type | default('notes', true) | title }}
-                                </span>
-                                <span class="report-date">
-                                    {% if report.created_at is string %}{{ report.created_at[:16] }}{% else %}{{ report.created_at.strftime('%Y-%m-%d %H:%M') }}{% endif %}
-                                </span>
-                            </div>
-                            <div class="report-actions">
-                                {% if report.status == 'pending' %}
-                                <button type="button" class="btn btn-secondary" style="padding: 0.35rem 0.7rem; font-size: 0.8rem;"
-                                    onclick="openEditModal('{{ report.id }}', '{{ report.parsed_data | tojson | forceescape }}')">
-                                    ✏️ Edit
-                                </button>
-                                <form action="/dashboard/approve/{{ report.id }}" method="POST" style="display:inline;">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                    <button class="btn btn-primary" style="padding: 0.35rem 0.7rem; font-size: 0.8rem; background: var(--accent-success); border-color: var(--accent-success);">
-                                        ✓ Approve
-                                    </button>
-                                </form>
-                                <form action="/dashboard/reject/{{ report.id }}" method="POST" style="display:inline;">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                    <button class="btn btn-secondary" style="padding: 0.35rem 0.7rem; font-size: 0.8rem; color: var(--accent-danger);">
-                                        ✕ Reject
-                                    </button>
-                                </form>
-                                {% elif report.status == 'approved' %}
-                                <form action="/dashboard/sync/{{ report.id }}" method="POST" style="display:inline;">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                                    <button class="btn btn-primary" style="padding: 0.35rem 0.7rem; font-size: 0.8rem;">
-                                        🔄 Sync to Procore
-                                    </button>
-                                </form>
-                                {% elif report.status == 'synced' %}
-                                <span style="font-size: 0.8rem; color: var(--accent-success); font-weight: 600;">✓ Synced</span>
-                                {% endif %}
-                            </div>
-                        </div>
-
-                        <!-- Dest Panel -->
-                        <div class="dest-panel">
-                            <div class="dest-label">
-                                <span>🎯 Procore Destination</span>
-                                <span class="dest-log-badge">{{ report.parsed_data.log_type | default('NOTES', true) | upper }} LOG</span>
-                            </div>
-                            <div class="dest-grid">
-                                <div>
-                                    <div class="dest-field-label">Project</div>
-                                    <div class="dest-field-value" style="font-weight: 600; color: var(--accent-primary);">
-                                        🏢 {{ report.parsed_data.project_name | default('Default Project', true) }}
-                                    </div>
-                                </div>
-                                {% if report.parsed_data.item | default(none, true) %}
-                                <div>
-                                    <div class="dest-field-label">Item / Vendor</div>
-                                    <div class="dest-field-value">{{ report.parsed_data.item }}</div>
-                                </div>
-                                {% endif %}
-
-                                {% if report.cost_code %}
-                                <div>
-                                    <div class="dest-field-label">Cost Code</div>
-                                    <div><span class="dest-code">{{ report.cost_code }}</span></div>
-                                </div>
-                                {% endif %}
-
-                                {% if report.parsed_data.quantity | default(none, true) %}
-                                <div>
-                                    <div class="dest-field-label">Quantity</div>
-                                    <div class="dest-field-value">{{ report.parsed_data.quantity }} {{ report.parsed_data.unit | default('', true) }}</div>
-                                </div>
-                                {% endif %}
-
-                                {% if report.parsed_data.location | default(none, true) %}
-                                <div>
-                                    <div class="dest-field-label">Location</div>
-                                    <div class="dest-field-value">
-                                        {% if report.parsed_data.location is mapping %}
-                                            {{ report.parsed_data.location.name | default('—', true) }}
-                                        {% else %}
-                                            {{ report.parsed_data.location }}
-                                        {% endif %}
-                                    </div>
-                                </div>
-                                {% endif %}
-
-                                {% if report.parsed_data.equipment_details | default(none, true) %}
-                                <div>
-                                    <div class="dest-field-label">Hours (Op / Idle)</div>
-                                    <div class="dest-field-value">{{ report.parsed_data.equipment_details.hours_operating | default('0', true) }}h / {{ report.parsed_data.equipment_details.hours_idle | default('0', true) }}h</div>
-                                </div>
-                                {% endif %}
-
-                                {% if report.parsed_data.crew | default(none, true) %}
-                                <div>
-                                    <div class="dest-field-label">Crew</div>
-                                    <div class="dest-field-value">{{ report.parsed_data.crew.count | default('?', true) }} workers, {{ report.parsed_data.crew.hours | default('8', true) }}h</div>
-                                </div>
-                                {% endif %}
-
-                                {% if report.parsed_data.description | default(none, true) %}
-                                <div class="dest-description">
-                                    <div class="dest-field-label">Description</div>
-                                    <p>{{ report.parsed_data.description }}</p>
-                                </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
-                </div>
-            </div>
-        </div>
-        {% endfor %}
-    {% else %}
+<div id="reportsContainer" style="display: flex; flex-direction: column; gap: 2rem;">
+    {% if not total_reports %}
     <div class="empty-state">
         <div class="empty-state-icon">📭</div>
         <h3>No reports yet</h3>
@@ -624,6 +495,257 @@
     </div>
     {% endif %}
 
+    <!-- MANPOWER -->
+    {% if reports_by_type.get('manpower') %}
+    <div class="procore-section">
+        <h3 class="procore-section-title">👷 Manpower</h3>
+        <table class="procore-table">
+            <thead>
+                <tr>
+                    <th>ID / Status</th>
+                    <th>Date</th>
+                    <th>Company</th>
+                    <th>Workers</th>
+                    <th>Hours</th>
+                    <th>Total Hours</th>
+                    <th>Location</th>
+                    <th>Comments</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in reports_by_type['manpower'] %}
+                {% set p = r.parsed_data if r.parsed_data is mapping else {} %}
+                {% set c = p.crew if p.crew is mapping else {} %}
+                <tr>
+                    <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
+                    <td>{{ r.created_at[:16] if r.created_at is string else r.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td><strong>{{ c.company_name | default('—', true) }}</strong><br><span style="color:#64748b; font-size:0.75rem;">{{ c.trade | default('', true) }}</span></td>
+                    <td>{{ c.count | default(p.quantity, true) | default('—', true) }}</td>
+                    <td>{{ c.hours | default('—', true) }}</td>
+                    <td>
+                        {% if c.count and c.hours %}
+                            {{ (c.count|float * c.hours|float) }}
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                    <td>{{ p.location.name if p.location is mapping else p.location | default('—', true) }}</td>
+                    <td>{{ p.description | default('—', true) }}</td>
+                    <td>
+                        <div class="procore-actions">
+                            {% if r.status == 'pending' %}
+                            <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="openEditModal('{{ r.id }}', '{{ r.parsed_data | tojson | forceescape }}', 'manpower')">✏️ Edit</button>
+                            <form action="/dashboard/approve/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: var(--accent-success); border-color: var(--accent-success);">✓ Approve</button></form>
+                            {% elif r.status == 'approved' %}
+                            <form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
+                            {% elif r.status == 'synced' %}
+                            <span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- EQUIPMENT -->
+    {% if reports_by_type.get('equipment') %}
+    <div class="procore-section">
+        <h3 class="procore-section-title">🚜 Equipment</h3>
+        <table class="procore-table">
+            <thead>
+                <tr>
+                    <th>ID / Status</th>
+                    <th>Date</th>
+                    <th>Equipment Name</th>
+                    <th>Hours Operating</th>
+                    <th>Hours Idle</th>
+                    <th>Cost Code</th>
+                    <th>Location</th>
+                    <th>Inspected</th>
+                    <th>Comments</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in reports_by_type['equipment'] %}
+                {% set p = r.parsed_data if r.parsed_data is mapping else {} %}
+                {% set e = p.equipment_details if p.equipment_details is mapping else {} %}
+                <tr>
+                    <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
+                    <td>{{ r.created_at[:16] if r.created_at is string else r.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td><strong>{{ p.item | default('—', true) }}</strong></td>
+                    <td>{{ e.hours_operating | default('—', true) }}</td>
+                    <td>{{ e.hours_idle | default('—', true) }}</td>
+                    <td>{{ p.cost_code | default('—', true) }}</td>
+                    <td>{{ p.location.name if p.location is mapping else p.location | default('—', true) }}</td>
+                    <td>{{ 'Yes' if e.inspected else 'No' }}</td>
+                    <td>{{ p.description | default('—', true) }}</td>
+                    <td>
+                        <div class="procore-actions">
+                            {% if r.status == 'pending' %}
+                            <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="openEditModal('{{ r.id }}', '{{ r.parsed_data | tojson | forceescape }}', 'equipment')">✏️ Edit</button>
+                            <form action="/dashboard/approve/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: var(--accent-success); border-color: var(--accent-success);">✓ Approve</button></form>
+                            {% elif r.status == 'approved' %}
+                            <form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
+                            {% elif r.status == 'synced' %}
+                            <span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- DELIVERIES -->
+    {% if reports_by_type.get('delivery') %}
+    <div class="procore-section">
+        <h3 class="procore-section-title">🚚 Deliveries</h3>
+        <table class="procore-table">
+            <thead>
+                <tr>
+                    <th>ID / Status</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Delivery From</th>
+                    <th>Tracking Number</th>
+                    <th>Contents</th>
+                    <th>Comments</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in reports_by_type['delivery'] %}
+                {% set p = r.parsed_data if r.parsed_data is mapping else {} %}
+                {% set d = p.delivery_details if p.delivery_details is mapping else {} %}
+                <tr>
+                    <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
+                    <td>{{ r.created_at[:16] if r.created_at is string else r.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td>{{ d.time | default('—', true) }}</td>
+                    <td><strong>{{ d.delivery_from | default('—', true) }}</strong></td>
+                    <td>{{ d.tracking_number | default('—', true) }}</td>
+                    <td>{{ p.quantity | default('', true) }} {{ p.unit | default('', true) }} {{ p.item | default('', true) }}</td>
+                    <td>{{ p.description | default('—', true) }}</td>
+                    <td>
+                        <div class="procore-actions">
+                            {% if r.status == 'pending' %}
+                            <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="openEditModal('{{ r.id }}', '{{ r.parsed_data | tojson | forceescape }}', 'delivery')">✏️ Edit</button>
+                            <form action="/dashboard/approve/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: var(--accent-success); border-color: var(--accent-success);">✓ Approve</button></form>
+                            {% elif r.status == 'approved' %}
+                            <form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
+                            {% elif r.status == 'synced' %}
+                            <span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- QUANTITIES / PRODUCTIVITY -->
+    {% if reports_by_type.get('quantity') or reports_by_type.get('productivity') %}
+    <div class="procore-section">
+        <h3 class="procore-section-title">📈 Quantities & Productivity</h3>
+        <table class="procore-table">
+            <thead>
+                <tr>
+                    <th>ID / Status</th>
+                    <th>Date</th>
+                    <th>Item / Description</th>
+                    <th>Cost Code</th>
+                    <th>Quantity</th>
+                    <th>Location</th>
+                    <th>Comments</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% set q_reports = (reports_by_type.get('quantity') or []) + (reports_by_type.get('productivity') or []) %}
+                {% for r in q_reports %}
+                {% set p = r.parsed_data if r.parsed_data is mapping else {} %}
+                <tr>
+                    <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
+                    <td>{{ r.created_at[:16] if r.created_at is string else r.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td><strong>{{ p.item | default('—', true) }}</strong></td>
+                    <td>{{ p.cost_code | default('—', true) }}</td>
+                    <td>{{ p.quantity | default('—', true) }} {{ p.unit | default('', true) }}</td>
+                    <td>{{ p.location.name if p.location is mapping else p.location | default('—', true) }}</td>
+                    <td>{{ p.description | default('—', true) }}</td>
+                    <td>
+                        <div class="procore-actions">
+                            {% if r.status == 'pending' %}
+                            <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="openEditModal('{{ r.id }}', '{{ r.parsed_data | tojson | forceescape }}', 'quantity')">✏️ Edit</button>
+                            <form action="/dashboard/approve/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: var(--accent-success); border-color: var(--accent-success);">✓ Approve</button></form>
+                            {% elif r.status == 'approved' %}
+                            <form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
+                            {% elif r.status == 'synced' %}
+                            <span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- SAFETY & NOTES -->
+    {% if reports_by_type.get('safety') or reports_by_type.get('notes') %}
+    <div class="procore-section">
+        <h3 class="procore-section-title">📝 Safety & Notes</h3>
+        <table class="procore-table">
+            <thead>
+                <tr>
+                    <th>ID / Status</th>
+                    <th>Date</th>
+                    <th>Type</th>
+                    <th>Subject / Item</th>
+                    <th>Location</th>
+                    <th>Comments / Details</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% set s_reports = (reports_by_type.get('safety') or []) + (reports_by_type.get('notes') or []) %}
+                {% for r in s_reports %}
+                {% set p = r.parsed_data if r.parsed_data is mapping else {} %}
+                <tr>
+                    <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
+                    <td>{{ r.created_at[:16] if r.created_at is string else r.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+                    <td><span style="text-transform:uppercase; font-size:0.75rem; font-weight:700; color:var(--text-muted);">{{ p.log_type | default('NOTES') }}</span></td>
+                    <td><strong>{{ p.item | default('—', true) }}</strong></td>
+                    <td>{{ p.location.name if p.location is mapping else p.location | default('—', true) }}</td>
+                    <td>{{ p.description | default('—', true) }}</td>
+                    <td>
+                        <div class="procore-actions">
+                            {% if r.status == 'pending' %}
+                            <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="openEditModal('{{ r.id }}', '{{ r.parsed_data | tojson | forceescape }}', 'notes')">✏️ Edit</button>
+                            <form action="/dashboard/approve/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: var(--accent-success); border-color: var(--accent-success);">✓ Approve</button></form>
+                            {% elif r.status == 'approved' %}
+                            <form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
+                            {% elif r.status == 'synced' %}
+                            <span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <!-- PAGINATION -->
     {% if total_pages > 1 %}
     <div style="display: flex; justify-content: center; align-items: center; margin-top: 2rem; padding-bottom: 2rem; gap: 0.5rem; flex-wrap: wrap;">
         {% if page > 1 %}
@@ -637,75 +759,98 @@
         {% endif %}
     </div>
     {% endif %}
+
 </div>
 
-<!-- Edit Modal -->
+<!-- Clean Edit Modal (No raw JSON) -->
 <div id="editModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
-    <div style="background:white; width:90%; max-width:640px; max-height: 90vh; overflow-y: auto; border-radius:var(--radius-md); box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); padding:2rem; position:relative;">
+    <div style="background:white; width:90%; max-width:500px; max-height: 90vh; overflow-y: auto; border-radius:var(--radius-md); box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); padding:2rem; position:relative;">
         <button onclick="closeEditModal()" style="position: absolute; top: 1.5rem; right: 1.5rem; background: none; border: none; font-size: 1.5rem; color: var(--text-muted); cursor: pointer; line-height: 1; transition: color 0.2s;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-muted)'">&times;</button>
-        <h3 style="margin-bottom:0.5rem; color:var(--text-primary); font-size:1.1rem;">Edit Report Data</h3>
-        <p style="color:var(--text-muted); font-size:0.85rem; margin-bottom:1rem;">
-            Update the log details before approving.
-        </p>
+        <h3 style="margin-bottom:0.5rem; color:var(--text-primary); font-size:1.1rem;">Edit Report</h3>
         
-        <div id="dynamicFormContainer" style="margin-bottom: 1.5rem;"></div>
+        <div id="dynamicFormContainer" style="margin-bottom: 1.5rem; margin-top: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
+            <!-- Fields generated dynamically in JS based on type -->
+        </div>
         
-        <div style="display:flex; justify-content:flex-end; gap:0.75rem;">
+        <div style="display:flex; justify-content:flex-end; gap:0.75rem; padding-top:1rem; border-top:1px solid var(--border-light);">
             <button class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
             <button class="btn btn-primary" onclick="saveEditedData()">Save Changes</button>
         </div>
     </div>
 </div>
 
+
+
 <script>
     let currentEditReportId = null;
     let currentEditData = {};
 
-    function buildDynamicForm(dataObj, parentKey = '') {
-        let html = '';
-        for (const key in dataObj) {
-            const val = dataObj[key];
-            const fieldName = parentKey ? `${parentKey}.${key}` : key;
-            
-            // Skip status here since it's managed by backend/approve button
-            if (fieldName === 'status' || fieldName === 'follow_up_question') continue;
-            
-            if (val !== null && typeof val === 'object' && !Array.isArray(val)) {
-                html += `<div style="margin-top: 1rem; padding-left: 1rem; border-left: 2px solid var(--border-light); margin-bottom: 1rem;">`;
-                html += `<strong style="text-transform: capitalize; color: var(--text-primary); font-size: 0.9rem; margin-bottom: 0.5rem; display: block;">${key.replace('_', ' ')}</strong>`;
-                html += buildDynamicForm(val, fieldName);
-                html += `</div>`;
-            } else {
-                html += `<div style="margin-bottom: 0.75rem;">`;
-                html += `<label style="display: block; font-size: 0.8rem; font-weight: 500; color: var(--text-secondary); margin-bottom: 0.25rem; text-transform: capitalize;">${key.replace('_', ' ')}</label>`;
-                
-                if (typeof val === 'boolean') {
-                     html += `<select class="dynamic-input" data-key="${fieldName}" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-light); border-radius: var(--radius-sm); font-size: 0.9rem; outline: none;">
-                         <option value="true" ${val ? 'selected' : ''}>True</option>
-                         <option value="false" ${!val ? 'selected' : ''}>False</option>
-                     </select>`;
-                } else if (key === 'description' || key === 'comments') {
-                     html += `<textarea class="dynamic-input" data-key="${fieldName}" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-light); border-radius: var(--radius-sm); font-size: 0.9rem; resize: vertical; outline: none;" rows="3">${val || ''}</textarea>`;
-                } else {
-                     let inputType = 'text';
-                     if (key === 'quantity' || key === 'count' || key === 'hours' || key === 'hours_operating' || key === 'hours_idle') {
-                         inputType = 'number';
-                     }
-                     html += `<input type="${inputType}" class="dynamic-input" data-key="${fieldName}" value="${val || ''}" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-light); border-radius: var(--radius-sm); font-size: 0.9rem; outline: none;">`;
-                }
-                html += `</div>`;
-            }
-        }
-        return html;
-    }
-
-    function openEditModal(reportId, parsedDataStr) {
+    function openEditModal(reportId, parsedDataStr, type) {
         currentEditReportId = reportId;
         try {
             currentEditData = JSON.parse(parsedDataStr);
-            document.getElementById('dynamicFormContainer').innerHTML = buildDynamicForm(currentEditData);
+            
+            const c = document.getElementById('dynamicFormContainer');
+            c.innerHTML = '';
+            
+            function addField(label, path, value, inputType='text') {
+                const id = 'edit_f_' + Math.random().toString(36).substr(2, 9);
+                let html = `<div>
+                    <label style="display:block; font-size:0.8rem; font-weight:600; color:var(--text-secondary); margin-bottom:0.25rem;">${label}</label>`;
+                
+                if (inputType === 'textarea') {
+                    html += `<textarea class="edit-input" data-path="${path}" style="width:100%; padding:0.5rem; border:1px solid var(--border-light); border-radius:4px; font-family:inherit;">${value || ''}</textarea>`;
+                } else {
+                    html += `<input type="${inputType}" class="edit-input" data-path="${path}" value="${value || ''}" style="width:100%; padding:0.5rem; border:1px solid var(--border-light); border-radius:4px; font-family:inherit;">`;
+                }
+                html += `</div>`;
+                c.innerHTML += html;
+            }
+            
+            if (currentEditData.location && typeof currentEditData.location === 'object') {
+                addField('Location', 'location.name', currentEditData.location.name);
+            } else {
+                addField('Location', 'location', currentEditData.location);
+            }
+            
+            if (type === 'manpower') {
+                const cw = currentEditData.crew || {};
+                addField('Company', 'crew.company_name', cw.company_name);
+                addField('Trade', 'crew.trade', cw.trade);
+                addField('Workers Count', 'crew.count', cw.count || currentEditData.quantity, 'number');
+                addField('Hours', 'crew.hours', cw.hours, 'number');
+            }
+            else if (type === 'equipment') {
+                const eq = currentEditData.equipment_details || {};
+                addField('Equipment Name', 'item', currentEditData.item);
+                addField('Cost Code', 'cost_code', currentEditData.cost_code);
+                addField('Hours Operating', 'equipment_details.hours_operating', eq.hours_operating, 'number');
+                addField('Hours Idle', 'equipment_details.hours_idle', eq.hours_idle, 'number');
+            }
+            else if (type === 'delivery') {
+                const dd = currentEditData.delivery_details || {};
+                addField('Delivery From', 'delivery_details.delivery_from', dd.delivery_from);
+                addField('Tracking Number', 'delivery_details.tracking_number', dd.tracking_number);
+                addField('Time', 'delivery_details.time', dd.time);
+                addField('Item', 'item', currentEditData.item);
+                addField('Quantity', 'quantity', currentEditData.quantity, 'number');
+                addField('Unit', 'unit', currentEditData.unit);
+            }
+            else if (type === 'quantity' || type === 'productivity') {
+                addField('Item / Description', 'item', currentEditData.item);
+                addField('Cost Code', 'cost_code', currentEditData.cost_code);
+                addField('Quantity', 'quantity', currentEditData.quantity, 'number');
+                addField('Unit', 'unit', currentEditData.unit);
+            }
+            else {
+                addField('Subject / Item', 'item', currentEditData.item);
+            }
+            
+            addField('Comments / Description', 'description', currentEditData.description, 'textarea');
+
             document.getElementById('editModal').style.display = 'flex';
         } catch (e) {
+            console.error(e);
             alert('Failed to parse report data.');
         }
     }
@@ -723,20 +868,16 @@
             current = current[keys[i]];
         }
         const lastKey = keys[keys.length - 1];
-        
-        if (value === 'true') value = true;
-        else if (value === 'false') value = false;
-        else if (value === '' && typeof current[lastKey] !== 'string') value = null; // empty number to null
-        
+        if (value === '' && typeof current[lastKey] !== 'string') value = null;
         current[lastKey] = value;
     }
 
     async function saveEditedData() {
         if (!currentEditReportId) return;
         
-        const inputs = document.querySelectorAll('.dynamic-input');
+        const inputs = document.querySelectorAll('.edit-input');
         inputs.forEach(input => {
-            setNestedValue(currentEditData, input.getAttribute('data-key'), input.value);
+            setNestedValue(currentEditData, input.getAttribute('data-path'), input.value);
         });
 
         try {
@@ -757,36 +898,6 @@
         } catch (e) {
             alert('Network error while saving.');
         }
-    }
-
-    // Client-side filtering
-    function filterReports() {
-        const search = document.getElementById('searchInput').value.toLowerCase();
-        const status = document.getElementById('statusFilter').value;
-        const type = document.getElementById('typeFilter').value;
-
-        const cards = document.querySelectorAll('.report-card');
-        let visible = 0;
-
-        cards.forEach(card => {
-            const cardStatus = card.dataset.status;
-            const cardType = card.dataset.type;
-            const cardSearch = card.dataset.search;
-
-            const matchStatus = !status || cardStatus === status;
-            const matchType = !type || cardType === type;
-            const matchSearch = !search || cardSearch.includes(search);
-
-            if (matchStatus && matchType && matchSearch) {
-                card.style.display = '';
-                visible++;
-            } else {
-                card.style.display = 'none';
-            }
-        });
-
-        // Update count
-        document.querySelector('.section-count').textContent = visible;
     }
 
     // Real-time polling and audio notification
