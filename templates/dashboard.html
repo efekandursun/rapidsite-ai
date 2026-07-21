@@ -782,6 +782,10 @@
 
 
 <script>
+    const procoreVendors = JSON.parse('{{ company.procore_vendors | default("[]", true) | safe }}');
+    const procoreCostCodes = JSON.parse('{{ company.procore_cost_codes | default("[]", true) | safe }}');
+    const procoreLocations = JSON.parse('{{ company.procore_locations | default("[]", true) | safe }}');
+
     let currentEditReportId = null;
     let currentEditData = {};
 
@@ -793,12 +797,23 @@
             const c = document.getElementById('dynamicFormContainer');
             c.innerHTML = '';
             
-            function addField(label, path, value, inputType='text') {
+            function addField(label, path, value, inputType='text', options=null) {
                 const id = 'edit_f_' + Math.random().toString(36).substr(2, 9);
                 let html = `<div>
                     <label style="display:block; font-size:0.8rem; font-weight:600; color:var(--text-secondary); margin-bottom:0.25rem;">${label}</label>`;
                 
-                if (inputType === 'textarea') {
+                if (options && Array.isArray(options) && options.length > 0) {
+                    html += `<select class="edit-input" data-path="${path}" style="width:100%; padding:0.5rem; border:1px solid var(--border-light); border-radius:4px; font-family:inherit;">`;
+                    html += `<option value="">-- Select --</option>`;
+                    options.forEach(opt => {
+                        const selected = (value && value === opt) ? 'selected' : '';
+                        html += `<option value="${opt}" ${selected}>${opt}</option>`;
+                    });
+                    if (value && !options.includes(value)) {
+                        html += `<option value="${value}" selected>${value} (Custom)</option>`;
+                    }
+                    html += `</select>`;
+                } else if (inputType === 'textarea') {
                     html += `<textarea class="edit-input" data-path="${path}" style="width:100%; padding:0.5rem; border:1px solid var(--border-light); border-radius:4px; font-family:inherit;">${value || ''}</textarea>`;
                 } else {
                     html += `<input type="${inputType}" class="edit-input" data-path="${path}" value="${value || ''}" style="width:100%; padding:0.5rem; border:1px solid var(--border-light); border-radius:4px; font-family:inherit;">`;
@@ -808,14 +823,14 @@
             }
             
             if (currentEditData.location && typeof currentEditData.location === 'object') {
-                addField('Location', 'location.name', currentEditData.location.name);
+                addField('Location', 'location.name', currentEditData.location.name, 'text', procoreLocations);
             } else {
-                addField('Location', 'location', currentEditData.location);
+                addField('Location', 'location', currentEditData.location, 'text', procoreLocations);
             }
             
             if (type === 'manpower') {
                 const cw = currentEditData.crew || {};
-                addField('Company', 'crew.company_name', cw.company_name);
+                addField('Company', 'crew.company_name', cw.company_name, 'text', procoreVendors);
                 addField('Trade', 'crew.trade', cw.trade);
                 addField('Workers Count', 'crew.count', cw.count || currentEditData.quantity, 'number');
                 addField('Hours', 'crew.hours', cw.hours, 'number');
@@ -823,13 +838,13 @@
             else if (type === 'equipment') {
                 const eq = currentEditData.equipment_details || {};
                 addField('Equipment Name', 'item', currentEditData.item);
-                addField('Cost Code', 'cost_code', currentEditData.cost_code);
+                addField('Cost Code', 'cost_code', currentEditData.cost_code, 'text', procoreCostCodes);
                 addField('Hours Operating', 'equipment_details.hours_operating', eq.hours_operating, 'number');
                 addField('Hours Idle', 'equipment_details.hours_idle', eq.hours_idle, 'number');
             }
             else if (type === 'delivery') {
                 const dd = currentEditData.delivery_details || {};
-                addField('Delivery From', 'delivery_details.delivery_from', dd.delivery_from);
+                addField('Delivery From', 'delivery_details.delivery_from', dd.delivery_from, 'text', procoreVendors);
                 addField('Tracking Number', 'delivery_details.tracking_number', dd.tracking_number);
                 addField('Time', 'delivery_details.time', dd.time);
                 addField('Item', 'item', currentEditData.item);
@@ -838,7 +853,7 @@
             }
             else if (type === 'quantity' || type === 'productivity') {
                 addField('Item / Description', 'item', currentEditData.item);
-                addField('Cost Code', 'cost_code', currentEditData.cost_code);
+                addField('Cost Code', 'cost_code', currentEditData.cost_code, 'text', procoreCostCodes);
                 addField('Quantity', 'quantity', currentEditData.quantity, 'number');
                 addField('Unit', 'unit', currentEditData.unit);
             }
