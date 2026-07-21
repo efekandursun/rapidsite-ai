@@ -541,7 +541,11 @@ def dashboard():
     pending_reports = []
     
     for r in raw_reports:
-        if r.get('status') not in ['approved', 'staged']:
+        status = r.get('status')
+        if status in ['staged', 'incomplete']:
+            continue
+            
+        if status != 'approved':
             pending_reports.append(r)
             continue
             
