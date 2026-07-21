@@ -541,6 +541,10 @@ def dashboard():
     pending_reports = []
     
     for r in raw_reports:
+        status = r.get('status')
+        if status in ['staged', 'incomplete']:
+            continue
+            
             
         import json
         try:

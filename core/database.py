@@ -489,7 +489,7 @@ class Database:
                         company_id, project_id, raw_transcript, parsed_data, 
                         log_type, cost_code, reported_by, media_paths, status
                     )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'staged')
                     RETURNING id
                 """, (
                     company_id,
@@ -508,7 +508,7 @@ class Database:
                         company_id, project_id, raw_transcript, parsed_data, 
                         log_type, cost_code, reported_by, media_paths, status
                     )
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'staged')
                 """, (
                     company_id,
                     project_id,
@@ -622,7 +622,7 @@ class Database:
         with self.get_connection() as conn:
             cursor = self._execute(conn, """
                 SELECT * FROM site_reports 
-                WHERE reported_by = ? AND status = 'pending' 
+                WHERE reported_by = ? AND status IN ('pending', 'staged') 
                 ORDER BY created_at DESC 
             """, (reported_by,))
             rows = self._fetchall(cursor)
