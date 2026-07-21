@@ -662,7 +662,8 @@ def format_confirmation(result: dict) -> str:
                 details = parsed.get('equipment_details', {})
                 msg += f"- Equipment Name: {val(parsed.get('item'))}\n"
                 msg += f"- Hours Operating: {val(details.get('hours_operating'))}\n"
-                msg += f"- Hours Idle: {val(details.get('hours_idle'))}\n"
+                idle_val = val(details.get('hours_idle'))
+                msg += f"- Hours Idle: {idle_val if idle_val != 'Empty' else '0'}\n"
                 
             elif log_type == "visitors":
                 v = parsed.get('visitor_details', {})

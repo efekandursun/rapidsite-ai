@@ -199,8 +199,11 @@ You MUST return a JSON OBJECT containing an "events" array. Separate distinct ev
 1. EXHAUSTIVE EXTRACTION (CRITICAL): Extract EVERY SINGLE distinct event. The system now supports 17 log types. Differentiate carefully!
 2. PRECISE QUANTITIES: Pay close attention to numbers.
 3. OUTPUT: ONLY a valid JSON ARRAY.
-4. MISSING FIELDS: Do NOT aggressively ask for missing fields if the user skipped them. Use null if they are not explicitly mentioned, unless it is impossible to understand the log without them.
-5. TRANSLATE TO ENGLISH: ALL output text fields MUST be translated into Professional US Construction English.
+4. MISSING FIELDS & INCOMPLETE LOGS: 
+   - For general fields, use null if not explicitly mentioned. Do NOT aggressively ask for missing fields.
+   - MANDATORY FIELDS (CRITICAL): If 'cost_code' or 'project_id' are NOT explicitly mentioned or cannot be inferred from the company master data, you MUST set status to 'incomplete' and ask for them in 'follow_up_question' (e.g. "What is the Project ID and Cost Code for this work?").
+5. CONCISE SUMMARIES: Do NOT repeat information across fields. For example, in Safety logs, do not repeat the "Notice" in the "description" or "comments". Keep descriptions concise and strictly additional.
+6. TRANSLATE TO ENGLISH: ALL output text fields MUST be translated into Professional US Construction English.
 """
         if company:
             projects = company.get('procore_projects')
