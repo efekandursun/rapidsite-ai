@@ -19,7 +19,7 @@ def run_worker():
     
     try:
         from redis import Redis
-        from rq import Worker, Connection
+        from rq import Worker
         
         redis_conn = Redis.from_url(redis_url)
         # Test connection
@@ -27,9 +27,8 @@ def run_worker():
         
         logger.info(f"👷 RQ Worker started. Connected to Redis at {redis_url}")
         
-        with Connection(redis_conn):
-            worker = Worker(['rapidsite-tasks'])
-            worker.work()
+        worker = Worker(['rapidsite-tasks'], connection=redis_conn)
+        worker.work()
             
     except Exception as e:
         logger.error(f"❌ Could not connect to Redis: {e}")
