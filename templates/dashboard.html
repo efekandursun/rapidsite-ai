@@ -480,6 +480,19 @@
     }
 </style>
 
+
+
+<style>
+    .procore-section { background: #ffffff; border: 1px solid var(--border-light); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); overflow: hidden; }
+    .procore-section-title { background: #f8fafc; padding: 1rem 1.5rem; margin: 0; font-size: 1.1rem; font-weight: 700; color: var(--text-primary); border-bottom: 1px solid var(--border-light); display: flex; align-items: center; gap: 0.5rem; }
+    .procore-table { width: 100%; border-collapse: collapse; }
+    .procore-table th { text-align: left; padding: 0.75rem 1rem; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: var(--text-muted); border-bottom: 1px solid var(--border-light); background: #fbfcfd; }
+    .procore-table td { padding: 1rem; font-size: 0.85rem; color: var(--text-primary); border-bottom: 1px solid var(--border-light); vertical-align: top; }
+    .procore-table tr:last-child td { border-bottom: none; }
+    .procore-table tr:hover { background: #f8fafc; }
+    .procore-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+</style>
+
 <!-- Reports -->
 <div class="section-heading">
     Recent Activity
@@ -495,283 +508,396 @@
     </div>
     {% endif %}
 
-    <!-- MANPOWER -->
+    <!-- 1. WEATHER -->
+    {% if reports_by_type.get('weather') %}
+    <div class="procore-section"><h3 class="procore-section-title">☀️ Weather</h3><table class="procore-table">
+        <thead><tr><th>ID/Status</th><th>Time</th><th>Sky</th><th>Temp</th><th>Precipitation</th><th>Wind</th><th>Ground</th><th>Delay/Calamity</th><th>Actions</th></tr></thead>
+        <tbody>
+            {% for r in reports_by_type['weather'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set w = p.weather_details if p.weather_details is mapping else {} %}
+            <tr>
+                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
+                <td>{{ w.time_observed | default('—', true) }}</td>
+                <td>{{ w.sky | default('—', true) }}</td>
+                <td>{{ w.temperature | default('—', true) }}</td>
+                <td>{{ w.precipitation | default('—', true) }}</td>
+                <td>{{ w.wind | default('—', true) }}</td>
+                <td>{{ w.ground_sea | default('—', true) }}</td>
+                <td>Delay: {{ w.delay | default('—', true) }}<br>Calamity: {{ w.calamity | default('—', true) }}</td>
+                <td><div class="procore-actions">
+                    {% if r.status == 'pending' %}<button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="openEditModal('{{ r.id }}', '{{ r.parsed_data | tojson | forceescape }}', 'weather')">✏️ Edit</button>
+                    <form action="/dashboard/approve/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: var(--accent-success); border-color: var(--accent-success);">✓ Approve</button></form>
+                    {% elif r.status == 'approved' %}<form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
+                    {% elif r.status == 'synced' %}<span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>{% endif %}
+                </div></td>
+            </tr>{% endfor %}
+        </tbody></table></div>{% endif %}
+
+    <!-- 2. MANPOWER -->
     {% if reports_by_type.get('manpower') %}
-    <div class="procore-section">
-        <h3 class="procore-section-title">👷 Manpower</h3>
-        <table class="procore-table">
-            <thead>
-                <tr>
-                    <th>ID / Status</th>
-                    <th>Date</th>
-                    <th>Company</th>
-                    <th>Workers</th>
-                    <th>Hours</th>
-                    <th>Total Hours</th>
-                    <th>Location</th>
-                    <th>Comments</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for r in reports_by_type['manpower'] %}
-                {% set p = r.parsed_data if r.parsed_data is mapping else {} %}
-                {% set c = p.crew if p.crew is mapping else {} %}
-                <tr>
-                    <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
-                    <td>{{ r.created_at[:16] if r.created_at is string else r.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                    <td><strong>{{ c.company_name | default('—', true) }}</strong><br><span style="color:#64748b; font-size:0.75rem;">{{ c.trade | default('', true) }}</span></td>
-                    <td>{{ c.count | default(p.quantity, true) | default('—', true) }}</td>
-                    <td>{{ c.hours | default('—', true) }}</td>
-                    <td>
-                        {% if c.count and c.hours %}
-                            {{ (c.count|float * c.hours|float) }}
-                        {% else %}
-                            —
-                        {% endif %}
-                    </td>
-                    <td>{{ p.location.name if p.location is mapping else p.location | default('—', true) }}</td>
-                    <td>{{ p.description | default('—', true) }}</td>
-                    <td>
-                        <div class="procore-actions">
-                            {% if r.status == 'pending' %}
-                            <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="openEditModal('{{ r.id }}', '{{ r.parsed_data | tojson | forceescape }}', 'manpower')">✏️ Edit</button>
-                            <form action="/dashboard/approve/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: var(--accent-success); border-color: var(--accent-success);">✓ Approve</button></form>
-                            {% elif r.status == 'approved' %}
-                            <form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
-                            {% elif r.status == 'synced' %}
-                            <span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>
-                            {% endif %}
-                        </div>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% endif %}
+    <div class="procore-section"><h3 class="procore-section-title">👷 Manpower</h3><table class="procore-table">
+        <thead><tr><th>ID/Status</th><th>Company</th><th>Workers</th><th>Hours</th><th>Location</th><th>Comments</th><th>Actions</th></tr></thead>
+        <tbody>
+            {% for r in reports_by_type['manpower'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set c = p.crew if p.crew is mapping else {} %}
+            <tr>
+                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
+                <td><strong>{{ c.company_name | default('—', true) }}</strong><br><span style="color:#64748b; font-size:0.75rem;">{{ c.trade | default('', true) }}</span></td>
+                <td>{{ c.count | default(p.quantity, true) | default('—', true) }}</td>
+                <td>{{ c.hours | default('—', true) }}</td>
+                <td>{{ p.location.name if p.location is mapping else p.location | default('—', true) }}</td>
+                <td>{{ p.description | default('—', true) }}</td>
+                <td><div class="procore-actions">
+                    {% if r.status == 'pending' %}<button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="openEditModal('{{ r.id }}', '{{ r.parsed_data | tojson | forceescape }}', 'manpower')">✏️ Edit</button>
+                    <form action="/dashboard/approve/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: var(--accent-success); border-color: var(--accent-success);">✓ Approve</button></form>
+                    {% elif r.status == 'approved' %}<form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
+                    {% elif r.status == 'synced' %}<span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>{% endif %}
+                </div></td>
+            </tr>{% endfor %}
+        </tbody></table></div>{% endif %}
 
-    <!-- EQUIPMENT -->
+    <!-- 3. NOTES -->
+    {% if reports_by_type.get('notes') %}
+    <div class="procore-section"><h3 class="procore-section-title">📝 Notes</h3><table class="procore-table">
+        <thead><tr><th>ID/Status</th><th>Item</th><th>Location</th><th>Issue?</th><th>Comments</th><th>Actions</th></tr></thead>
+        <tbody>
+            {% for r in reports_by_type['notes'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}
+            <tr>
+                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
+                <td><strong>{{ p.item | default('—', true) }}</strong></td>
+                <td>{{ p.location.name if p.location is mapping else p.location | default('—', true) }}</td>
+                <td>{{ 'Yes' if p.issue else 'No' }}</td>
+                <td>{{ p.description | default('—', true) }}</td>
+                <td><div class="procore-actions">
+                    {% if r.status == 'pending' %}<button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="openEditModal('{{ r.id }}', '{{ r.parsed_data | tojson | forceescape }}', 'notes')">✏️ Edit</button>
+                    <form action="/dashboard/approve/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: var(--accent-success); border-color: var(--accent-success);">✓ Approve</button></form>
+                    {% elif r.status == 'approved' %}<form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
+                    {% elif r.status == 'synced' %}<span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>{% endif %}
+                </div></td>
+            </tr>{% endfor %}
+        </tbody></table></div>{% endif %}
+
+    <!-- 4. TIMECARDS -->
+    {% if reports_by_type.get('timecards') %}
+    <div class="procore-section"><h3 class="procore-section-title">⏱️ Timecards</h3><table class="procore-table">
+        <thead><tr><th>ID/Status</th><th>Employee</th><th>Cost Code</th><th>Type</th><th>Billable?</th><th>Hours</th><th>Actions</th></tr></thead>
+        <tbody>
+            {% for r in reports_by_type['timecards'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set t = p.timecard_details if p.timecard_details is mapping else {} %}
+            <tr>
+                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
+                <td><strong>{{ t.employee | default('—', true) }}</strong></td>
+                <td>{{ p.cost_code | default('—', true) }}</td>
+                <td>{{ t.type | default('—', true) }}</td>
+                <td>{{ t.billable | default('—', true) }}</td>
+                <td>{{ t.hours | default('—', true) }}</td>
+                <td><div class="procore-actions">
+                    {% if r.status == 'pending' %}<button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="openEditModal('{{ r.id }}', '{{ r.parsed_data | tojson | forceescape }}', 'timecards')">✏️ Edit</button>
+                    <form action="/dashboard/approve/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: var(--accent-success); border-color: var(--accent-success);">✓ Approve</button></form>
+                    {% elif r.status == 'approved' %}<form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
+                    {% elif r.status == 'synced' %}<span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>{% endif %}
+                </div></td>
+            </tr>{% endfor %}
+        </tbody></table></div>{% endif %}
+
+    <!-- 5. EQUIPMENT -->
     {% if reports_by_type.get('equipment') %}
-    <div class="procore-section">
-        <h3 class="procore-section-title">🚜 Equipment</h3>
-        <table class="procore-table">
-            <thead>
-                <tr>
-                    <th>ID / Status</th>
-                    <th>Date</th>
-                    <th>Equipment Name</th>
-                    <th>Hours Operating</th>
-                    <th>Hours Idle</th>
-                    <th>Cost Code</th>
-                    <th>Location</th>
-                    <th>Inspected</th>
-                    <th>Comments</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for r in reports_by_type['equipment'] %}
-                {% set p = r.parsed_data if r.parsed_data is mapping else {} %}
-                {% set e = p.equipment_details if p.equipment_details is mapping else {} %}
-                <tr>
-                    <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
-                    <td>{{ r.created_at[:16] if r.created_at is string else r.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                    <td><strong>{{ p.item | default('—', true) }}</strong></td>
-                    <td>{{ e.hours_operating | default('—', true) }}</td>
-                    <td>{{ e.hours_idle | default('—', true) }}</td>
-                    <td>{{ p.cost_code | default('—', true) }}</td>
-                    <td>{{ p.location.name if p.location is mapping else p.location | default('—', true) }}</td>
-                    <td>{{ 'Yes' if e.inspected else 'No' }}</td>
-                    <td>{{ p.description | default('—', true) }}</td>
-                    <td>
-                        <div class="procore-actions">
-                            {% if r.status == 'pending' %}
-                            <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="openEditModal('{{ r.id }}', '{{ r.parsed_data | tojson | forceescape }}', 'equipment')">✏️ Edit</button>
-                            <form action="/dashboard/approve/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: var(--accent-success); border-color: var(--accent-success);">✓ Approve</button></form>
-                            {% elif r.status == 'approved' %}
-                            <form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
-                            {% elif r.status == 'synced' %}
-                            <span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>
-                            {% endif %}
-                        </div>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% endif %}
+    <div class="procore-section"><h3 class="procore-section-title">🚜 Equipment</h3><table class="procore-table">
+        <thead><tr><th>ID/Status</th><th>Equipment</th><th>Op. Hours</th><th>Idle Hours</th><th>Cost Code</th><th>Location</th><th>Inspected</th><th>Actions</th></tr></thead>
+        <tbody>
+            {% for r in reports_by_type['equipment'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set e = p.equipment_details if p.equipment_details is mapping else {} %}
+            <tr>
+                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
+                <td><strong>{{ p.item | default('—', true) }}</strong></td>
+                <td>{{ e.hours_operating | default('—', true) }}</td>
+                <td>{{ e.hours_idle | default('—', true) }}</td>
+                <td>{{ p.cost_code | default('—', true) }}</td>
+                <td>{{ p.location.name if p.location is mapping else p.location | default('—', true) }}</td>
+                <td>{{ 'Yes' if e.inspected else 'No' }} ({{ e.inspection_time | default('--:--', true) }})</td>
+                <td><div class="procore-actions">
+                    {% if r.status == 'pending' %}<button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="openEditModal('{{ r.id }}', '{{ r.parsed_data | tojson | forceescape }}', 'equipment')">✏️ Edit</button>
+                    <form action="/dashboard/approve/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: var(--accent-success); border-color: var(--accent-success);">✓ Approve</button></form>
+                    {% elif r.status == 'approved' %}<form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
+                    {% elif r.status == 'synced' %}<span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>{% endif %}
+                </div></td>
+            </tr>{% endfor %}
+        </tbody></table></div>{% endif %}
 
-    <!-- DELIVERIES -->
+    <!-- 6. VISITORS -->
+    {% if reports_by_type.get('visitors') %}
+    <div class="procore-section"><h3 class="procore-section-title">👤 Visitors</h3><table class="procore-table">
+        <thead><tr><th>ID/Status</th><th>Visitor</th><th>Start</th><th>End</th><th>Comments</th><th>Actions</th></tr></thead>
+        <tbody>
+            {% for r in reports_by_type['visitors'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set v = p.visitor_details if p.visitor_details is mapping else {} %}
+            <tr>
+                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
+                <td><strong>{{ v.visitor | default('—', true) }}</strong></td>
+                <td>{{ v.start | default('—', true) }}</td>
+                <td>{{ v.end | default('—', true) }}</td>
+                <td>{{ p.description | default('—', true) }}</td>
+                <td><div class="procore-actions">
+                    {% if r.status == 'pending' %}<button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="openEditModal('{{ r.id }}', '{{ r.parsed_data | tojson | forceescape }}', 'visitors')">✏️ Edit</button>
+                    <form action="/dashboard/approve/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: var(--accent-success); border-color: var(--accent-success);">✓ Approve</button></form>
+                    {% elif r.status == 'approved' %}<form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
+                    {% elif r.status == 'synced' %}<span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>{% endif %}
+                </div></td>
+            </tr>{% endfor %}
+        </tbody></table></div>{% endif %}
+
+    <!-- 7. PHONE CALLS -->
+    {% if reports_by_type.get('phone_calls') %}
+    <div class="procore-section"><h3 class="procore-section-title">📞 Phone Calls</h3><table class="procore-table">
+        <thead><tr><th>ID/Status</th><th>Call From</th><th>Call To</th><th>Start</th><th>End</th><th>Comments</th><th>Actions</th></tr></thead>
+        <tbody>
+            {% for r in reports_by_type['phone_calls'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set c = p.call_details if p.call_details is mapping else {} %}
+            <tr>
+                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
+                <td><strong>{{ c.call_from | default('—', true) }}</strong></td>
+                <td>{{ c.call_to | default('—', true) }}</td>
+                <td>{{ c.start | default('—', true) }}</td>
+                <td>{{ c.end | default('—', true) }}</td>
+                <td>{{ p.description | default('—', true) }}</td>
+                <td><div class="procore-actions">
+                    {% if r.status == 'pending' %}<button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="openEditModal('{{ r.id }}', '{{ r.parsed_data | tojson | forceescape }}', 'phone_calls')">✏️ Edit</button>
+                    <form action="/dashboard/approve/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: var(--accent-success); border-color: var(--accent-success);">✓ Approve</button></form>
+                    {% elif r.status == 'approved' %}<form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
+                    {% elif r.status == 'synced' %}<span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>{% endif %}
+                </div></td>
+            </tr>{% endfor %}
+        </tbody></table></div>{% endif %}
+
+    <!-- 8. INSPECTIONS -->
+    {% if reports_by_type.get('inspections') %}
+    <div class="procore-section"><h3 class="procore-section-title">🔍 Inspections</h3><table class="procore-table">
+        <thead><tr><th>ID/Status</th><th>Start/End</th><th>Type</th><th>Entity</th><th>Inspector</th><th>Location</th><th>Area</th><th>Actions</th></tr></thead>
+        <tbody>
+            {% for r in reports_by_type['inspections'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set i = p.inspection_details if p.inspection_details is mapping else {} %}
+            <tr>
+                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
+                <td>{{ i.start | default('--', true) }} - {{ i.end | default('--', true) }}</td>
+                <td>{{ i.inspection_type | default('—', true) }}</td>
+                <td>{{ i.inspecting_entity | default('—', true) }}</td>
+                <td>{{ i.inspector_name | default('—', true) }}</td>
+                <td>{{ p.location.name if p.location is mapping else p.location | default('—', true) }}</td>
+                <td>{{ i.inspection_area | default('—', true) }}</td>
+                <td><div class="procore-actions">
+                    {% if r.status == 'pending' %}<button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="openEditModal('{{ r.id }}', '{{ r.parsed_data | tojson | forceescape }}', 'inspections')">✏️ Edit</button>
+                    <form action="/dashboard/approve/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: var(--accent-success); border-color: var(--accent-success);">✓ Approve</button></form>
+                    {% elif r.status == 'approved' %}<form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
+                    {% elif r.status == 'synced' %}<span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>{% endif %}
+                </div></td>
+            </tr>{% endfor %}
+        </tbody></table></div>{% endif %}
+
+    <!-- 9. DELIVERIES -->
     {% if reports_by_type.get('delivery') %}
-    <div class="procore-section">
-        <h3 class="procore-section-title">🚚 Deliveries</h3>
-        <table class="procore-table">
-            <thead>
-                <tr>
-                    <th>ID / Status</th>
-                    <th>Date</th>
-                    <th>Time</th>
-                    <th>Delivery From</th>
-                    <th>Tracking Number</th>
-                    <th>Contents</th>
-                    <th>Comments</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for r in reports_by_type['delivery'] %}
-                {% set p = r.parsed_data if r.parsed_data is mapping else {} %}
-                {% set d = p.delivery_details if p.delivery_details is mapping else {} %}
-                <tr>
-                    <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
-                    <td>{{ r.created_at[:16] if r.created_at is string else r.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                    <td>{{ d.time | default('—', true) }}</td>
-                    <td><strong>{{ d.delivery_from | default('—', true) }}</strong></td>
-                    <td>{{ d.tracking_number | default('—', true) }}</td>
-                    <td>{{ p.quantity | default('', true) }} {{ p.unit | default('', true) }} {{ p.item | default('', true) }}</td>
-                    <td>{{ p.description | default('—', true) }}</td>
-                    <td>
-                        <div class="procore-actions">
-                            {% if r.status == 'pending' %}
-                            <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="openEditModal('{{ r.id }}', '{{ r.parsed_data | tojson | forceescape }}', 'delivery')">✏️ Edit</button>
-                            <form action="/dashboard/approve/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: var(--accent-success); border-color: var(--accent-success);">✓ Approve</button></form>
-                            {% elif r.status == 'approved' %}
-                            <form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
-                            {% elif r.status == 'synced' %}
-                            <span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>
-                            {% endif %}
-                        </div>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% endif %}
+    <div class="procore-section"><h3 class="procore-section-title">🚚 Deliveries</h3><table class="procore-table">
+        <thead><tr><th>ID/Status</th><th>Time</th><th>Delivery From</th><th>Tracking No</th><th>Contents</th><th>Comments</th><th>Actions</th></tr></thead>
+        <tbody>
+            {% for r in reports_by_type['delivery'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set d = p.delivery_details if p.delivery_details is mapping else {} %}
+            <tr>
+                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
+                <td>{{ d.time | default('—', true) }}</td>
+                <td><strong>{{ d.delivery_from | default('—', true) }}</strong></td>
+                <td>{{ d.tracking_number | default('—', true) }}</td>
+                <td>{{ d.contents | default('—', true) }}</td>
+                <td>{{ p.description | default('—', true) }}</td>
+                <td><div class="procore-actions">
+                    {% if r.status == 'pending' %}<button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="openEditModal('{{ r.id }}', '{{ r.parsed_data | tojson | forceescape }}', 'delivery')">✏️ Edit</button>
+                    <form action="/dashboard/approve/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: var(--accent-success); border-color: var(--accent-success);">✓ Approve</button></form>
+                    {% elif r.status == 'approved' %}<form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
+                    {% elif r.status == 'synced' %}<span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>{% endif %}
+                </div></td>
+            </tr>{% endfor %}
+        </tbody></table></div>{% endif %}
 
-    <!-- QUANTITIES / PRODUCTIVITY -->
-    {% if reports_by_type.get('quantity') or reports_by_type.get('productivity') %}
-    <div class="procore-section">
-        <h3 class="procore-section-title">📈 Quantities & Productivity</h3>
-        <table class="procore-table">
-            <thead>
-                <tr>
-                    <th>ID / Status</th>
-                    <th>Date</th>
-                    <th>Item / Description</th>
-                    <th>Cost Code</th>
-                    <th>Quantity</th>
-                    <th>Location</th>
-                    <th>Comments</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% set q_reports = (reports_by_type.get('quantity') or []) + (reports_by_type.get('productivity') or []) %}
-                {% for r in q_reports %}
-                {% set p = r.parsed_data if r.parsed_data is mapping else {} %}
-                <tr>
-                    <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
-                    <td>{{ r.created_at[:16] if r.created_at is string else r.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                    <td><strong>{{ p.item | default('—', true) }}</strong></td>
-                    <td>{{ p.cost_code | default('—', true) }}</td>
-                    <td>{{ p.quantity | default('—', true) }} {{ p.unit | default('', true) }}</td>
-                    <td>{{ p.location.name if p.location is mapping else p.location | default('—', true) }}</td>
-                    <td>{{ p.description | default('—', true) }}</td>
-                    <td>
-                        <div class="procore-actions">
-                            {% if r.status == 'pending' %}
-                            <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="openEditModal('{{ r.id }}', '{{ r.parsed_data | tojson | forceescape }}', 'quantity')">✏️ Edit</button>
-                            <form action="/dashboard/approve/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: var(--accent-success); border-color: var(--accent-success);">✓ Approve</button></form>
-                            {% elif r.status == 'approved' %}
-                            <form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
-                            {% elif r.status == 'synced' %}
-                            <span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>
-                            {% endif %}
-                        </div>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% endif %}
+    <!-- 10. SAFETY VIOLATIONS -->
+    {% if reports_by_type.get('safety') %}
+    <div class="procore-section"><h3 class="procore-section-title">⚠️ Safety Violations</h3><table class="procore-table">
+        <thead><tr><th>ID/Status</th><th>Time</th><th>Subject</th><th>Notice</th><th>Issued To</th><th>Compliance Due</th><th>Actions</th></tr></thead>
+        <tbody>
+            {% for r in reports_by_type['safety'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set s = p.safety_details if p.safety_details is mapping else {} %}
+            <tr>
+                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
+                <td>{{ s.time | default('—', true) }}</td>
+                <td><strong>{{ p.item | default('—', true) }}</strong></td>
+                <td>{{ s.safety_notice | default('—', true) }}</td>
+                <td>{{ s.issued_to | default('—', true) }}</td>
+                <td>{{ s.compliance_due | default('—', true) }}</td>
+                <td><div class="procore-actions">
+                    {% if r.status == 'pending' %}<button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="openEditModal('{{ r.id }}', '{{ r.parsed_data | tojson | forceescape }}', 'safety')">✏️ Edit</button>
+                    <form action="/dashboard/approve/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: var(--accent-success); border-color: var(--accent-success);">✓ Approve</button></form>
+                    {% elif r.status == 'approved' %}<form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
+                    {% elif r.status == 'synced' %}<span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>{% endif %}
+                </div></td>
+            </tr>{% endfor %}
+        </tbody></table></div>{% endif %}
 
-    <!-- SAFETY & NOTES -->
-    {% if reports_by_type.get('safety') or reports_by_type.get('notes') %}
-    <div class="procore-section">
-        <h3 class="procore-section-title">📝 Safety & Notes</h3>
-        <table class="procore-table">
-            <thead>
-                <tr>
-                    <th>ID / Status</th>
-                    <th>Date</th>
-                    <th>Type</th>
-                    <th>Subject / Item</th>
-                    <th>Location</th>
-                    <th>Comments / Details</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% set s_reports = (reports_by_type.get('safety') or []) + (reports_by_type.get('notes') or []) %}
-                {% for r in s_reports %}
-                {% set p = r.parsed_data if r.parsed_data is mapping else {} %}
-                <tr>
-                    <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
-                    <td>{{ r.created_at[:16] if r.created_at is string else r.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-                    <td><span style="text-transform:uppercase; font-size:0.75rem; font-weight:700; color:var(--text-muted);">{{ p.log_type | default('NOTES') }}</span></td>
-                    <td><strong>{{ p.item | default('—', true) }}</strong></td>
-                    <td>{{ p.location.name if p.location is mapping else p.location | default('—', true) }}</td>
-                    <td>{{ p.description | default('—', true) }}</td>
-                    <td>
-                        <div class="procore-actions">
-                            {% if r.status == 'pending' %}
-                            <button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="openEditModal('{{ r.id }}', '{{ r.parsed_data | tojson | forceescape }}', 'notes')">✏️ Edit</button>
-                            <form action="/dashboard/approve/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: var(--accent-success); border-color: var(--accent-success);">✓ Approve</button></form>
-                            {% elif r.status == 'approved' %}
-                            <form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
-                            {% elif r.status == 'synced' %}
-                            <span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>
-                            {% endif %}
-                        </div>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% endif %}
+    <!-- 11. ACCIDENTS -->
+    {% if reports_by_type.get('accidents') %}
+    <div class="procore-section"><h3 class="procore-section-title">🚑 Accidents</h3><table class="procore-table">
+        <thead><tr><th>ID/Status</th><th>Time</th><th>Party Involved</th><th>Company Involved</th><th>Comments</th><th>Actions</th></tr></thead>
+        <tbody>
+            {% for r in reports_by_type['accidents'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set a = p.accident_details if p.accident_details is mapping else {} %}
+            <tr>
+                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
+                <td>{{ a.time | default('—', true) }}</td>
+                <td>{{ a.party_involved | default('—', true) }}</td>
+                <td><strong>{{ a.company_involved | default('—', true) }}</strong></td>
+                <td>{{ p.description | default('—', true) }}</td>
+                <td><div class="procore-actions">
+                    {% if r.status == 'pending' %}<button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="openEditModal('{{ r.id }}', '{{ r.parsed_data | tojson | forceescape }}', 'accidents')">✏️ Edit</button>
+                    <form action="/dashboard/approve/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: var(--accent-success); border-color: var(--accent-success);">✓ Approve</button></form>
+                    {% elif r.status == 'approved' %}<form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
+                    {% elif r.status == 'synced' %}<span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>{% endif %}
+                </div></td>
+            </tr>{% endfor %}
+        </tbody></table></div>{% endif %}
+
+    <!-- 12. QUANTITIES -->
+    {% if reports_by_type.get('quantity') %}
+    <div class="procore-section"><h3 class="procore-section-title">📉 Quantities</h3><table class="procore-table">
+        <thead><tr><th>ID/Status</th><th>Cost Code</th><th>Quantity</th><th>Units</th><th>Location</th><th>Comments</th><th>Actions</th></tr></thead>
+        <tbody>
+            {% for r in reports_by_type['quantity'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}
+            <tr>
+                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
+                <td>{{ p.cost_code | default('—', true) }}</td>
+                <td>{{ p.quantity | default('—', true) }}</td>
+                <td>{{ p.unit | default('—', true) }}</td>
+                <td>{{ p.location.name if p.location is mapping else p.location | default('—', true) }}</td>
+                <td>{{ p.description | default('—', true) }}</td>
+                <td><div class="procore-actions">
+                    {% if r.status == 'pending' %}<button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="openEditModal('{{ r.id }}', '{{ r.parsed_data | tojson | forceescape }}', 'quantity')">✏️ Edit</button>
+                    <form action="/dashboard/approve/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: var(--accent-success); border-color: var(--accent-success);">✓ Approve</button></form>
+                    {% elif r.status == 'approved' %}<form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
+                    {% elif r.status == 'synced' %}<span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>{% endif %}
+                </div></td>
+            </tr>{% endfor %}
+        </tbody></table></div>{% endif %}
+
+    <!-- 13. PRODUCTIVITY -->
+    {% if reports_by_type.get('productivity') %}
+    <div class="procore-section"><h3 class="procore-section-title">📊 Productivity</h3><table class="procore-table">
+        <thead><tr><th>ID/Status</th><th>Company</th><th>Contract / Line Item</th><th>Delivered</th><th>Put in Place</th><th>Actions</th></tr></thead>
+        <tbody>
+            {% for r in reports_by_type['productivity'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set pd = p.productivity_details if p.productivity_details is mapping else {} %}
+            <tr>
+                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
+                <td><strong>{{ pd.company | default('—', true) }}</strong></td>
+                <td>{{ pd.contract | default('—', true) }}<br><span style="color:#64748b; font-size:0.75rem;">{{ pd.line_item | default('', true) }}</span></td>
+                <td>{{ pd.quantity_delivered | default('—', true) }}</td>
+                <td>{{ pd.quantity_put_in_place | default('—', true) }}</td>
+                <td><div class="procore-actions">
+                    {% if r.status == 'pending' %}<button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="openEditModal('{{ r.id }}', '{{ r.parsed_data | tojson | forceescape }}', 'productivity')">✏️ Edit</button>
+                    <form action="/dashboard/approve/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: var(--accent-success); border-color: var(--accent-success);">✓ Approve</button></form>
+                    {% elif r.status == 'approved' %}<form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
+                    {% elif r.status == 'synced' %}<span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>{% endif %}
+                </div></td>
+            </tr>{% endfor %}
+        </tbody></table></div>{% endif %}
+
+    <!-- 14. DUMPSTER -->
+    {% if reports_by_type.get('dumpster') %}
+    <div class="procore-section"><h3 class="procore-section-title">🗑️ Dumpster</h3><table class="procore-table">
+        <thead><tr><th>ID/Status</th><th>Company</th><th>Delivered</th><th>Removed</th><th>Comments</th><th>Actions</th></tr></thead>
+        <tbody>
+            {% for r in reports_by_type['dumpster'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set d = p.dumpster_details if p.dumpster_details is mapping else {} %}
+            <tr>
+                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
+                <td><strong>{{ d.company | default('—', true) }}</strong></td>
+                <td>{{ d.delivered | default('—', true) }}</td>
+                <td>{{ d.removed | default('—', true) }}</td>
+                <td>{{ p.description | default('—', true) }}</td>
+                <td><div class="procore-actions">
+                    {% if r.status == 'pending' %}<button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="openEditModal('{{ r.id }}', '{{ r.parsed_data | tojson | forceescape }}', 'dumpster')">✏️ Edit</button>
+                    <form action="/dashboard/approve/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: var(--accent-success); border-color: var(--accent-success);">✓ Approve</button></form>
+                    {% elif r.status == 'approved' %}<form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
+                    {% elif r.status == 'synced' %}<span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>{% endif %}
+                </div></td>
+            </tr>{% endfor %}
+        </tbody></table></div>{% endif %}
+
+    <!-- 15. WASTE -->
+    {% if reports_by_type.get('waste') %}
+    <div class="procore-section"><h3 class="procore-section-title">♻️ Waste</h3><table class="procore-table">
+        <thead><tr><th>ID/Status</th><th>Time</th><th>Material</th><th>Disposed By</th><th>Method</th><th>Quantity</th><th>Actions</th></tr></thead>
+        <tbody>
+            {% for r in reports_by_type['waste'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set w = p.waste_details if p.waste_details is mapping else {} %}
+            <tr>
+                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
+                <td>{{ w.time | default('—', true) }}</td>
+                <td>{{ w.material | default('—', true) }}</td>
+                <td>{{ w.disposed_by | default('—', true) }}</td>
+                <td>{{ w.method_of_disposal | default('—', true) }}</td>
+                <td>{{ w.approximate_quantity | default('—', true) }}</td>
+                <td><div class="procore-actions">
+                    {% if r.status == 'pending' %}<button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="openEditModal('{{ r.id }}', '{{ r.parsed_data | tojson | forceescape }}', 'waste')">✏️ Edit</button>
+                    <form action="/dashboard/approve/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: var(--accent-success); border-color: var(--accent-success);">✓ Approve</button></form>
+                    {% elif r.status == 'approved' %}<form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
+                    {% elif r.status == 'synced' %}<span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>{% endif %}
+                </div></td>
+            </tr>{% endfor %}
+        </tbody></table></div>{% endif %}
+
+    <!-- 16. SCHEDULED WORK -->
+    {% if reports_by_type.get('scheduled_work') %}
+    <div class="procore-section"><h3 class="procore-section-title">📅 Scheduled Work</h3><table class="procore-table">
+        <thead><tr><th>ID/Status</th><th>Resource</th><th>Tasks</th><th>Showed?</th><th>Workers</th><th>Hours</th><th>Actions</th></tr></thead>
+        <tbody>
+            {% for r in reports_by_type['scheduled_work'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set s = p.scheduled_work_details if p.scheduled_work_details is mapping else {} %}
+            <tr>
+                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
+                <td>{{ s.resource | default('—', true) }}</td>
+                <td>{{ s.scheduled_tasks | default('—', true) }}</td>
+                <td>{{ s.showed | default('—', true) }}</td>
+                <td>{{ s.workers | default('—', true) }}</td>
+                <td>{{ s.hours | default('—', true) }}</td>
+                <td><div class="procore-actions">
+                    {% if r.status == 'pending' %}<button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="openEditModal('{{ r.id }}', '{{ r.parsed_data | tojson | forceescape }}', 'scheduled_work')">✏️ Edit</button>
+                    <form action="/dashboard/approve/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: var(--accent-success); border-color: var(--accent-success);">✓ Approve</button></form>
+                    {% elif r.status == 'approved' %}<form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
+                    {% elif r.status == 'synced' %}<span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>{% endif %}
+                </div></td>
+            </tr>{% endfor %}
+        </tbody></table></div>{% endif %}
+
+    <!-- 17. DELAYS -->
+    {% if reports_by_type.get('delays') %}
+    <div class="procore-section"><h3 class="procore-section-title">🚧 Delays</h3><table class="procore-table">
+        <thead><tr><th>ID/Status</th><th>Delay Type</th><th>Start</th><th>End</th><th>Duration</th><th>Location</th><th>Actions</th></tr></thead>
+        <tbody>
+            {% for r in reports_by_type['delays'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set d = p.delay_details if p.delay_details is mapping else {} %}
+            <tr>
+                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
+                <td><strong>{{ d.delay_type | default('—', true) }}</strong></td>
+                <td>{{ d.start_time | default('—', true) }}</td>
+                <td>{{ d.end_time | default('—', true) }}</td>
+                <td>{{ d.duration_hours | default('—', true) }}</td>
+                <td>{{ p.location.name if p.location is mapping else p.location | default('—', true) }}</td>
+                <td><div class="procore-actions">
+                    {% if r.status == 'pending' %}<button class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;" onclick="openEditModal('{{ r.id }}', '{{ r.parsed_data | tojson | forceescape }}', 'delays')">✏️ Edit</button>
+                    <form action="/dashboard/approve/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem; background: var(--accent-success); border-color: var(--accent-success);">✓ Approve</button></form>
+                    {% elif r.status == 'approved' %}<form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
+                    {% elif r.status == 'synced' %}<span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>{% endif %}
+                </div></td>
+            </tr>{% endfor %}
+        </tbody></table></div>{% endif %}
 
     <!-- PAGINATION -->
     {% if total_pages > 1 %}
     <div style="display: flex; justify-content: center; align-items: center; margin-top: 2rem; padding-bottom: 2rem; gap: 0.5rem; flex-wrap: wrap;">
-        {% if page > 1 %}
-        <a href="?page={{ page - 1 }}" class="btn btn-secondary" style="text-decoration: none;">&laquo; Previous</a>
-        {% endif %}
-        
+        {% if page > 1 %}<a href="?page={{ page - 1 }}" class="btn btn-secondary" style="text-decoration: none;">&laquo; Previous</a>{% endif %}
         <span style="font-size: 0.9rem; color: var(--text-muted); margin: 0 1rem; font-weight: 500;">Page {{ page }} of {{ total_pages }}</span>
-        
-        {% if page < total_pages %}
-        <a href="?page={{ page + 1 }}" class="btn btn-secondary" style="text-decoration: none;">Next &raquo;</a>
-        {% endif %}
+        {% if page < total_pages %}<a href="?page={{ page + 1 }}" class="btn btn-secondary" style="text-decoration: none;">Next &raquo;</a>{% endif %}
     </div>
     {% endif %}
 
 </div>
 
-<!-- Clean Edit Modal (No raw JSON) -->
+<!-- Edit Modal -->
 <div id="editModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
     <div style="background:white; width:90%; max-width:500px; max-height: 90vh; overflow-y: auto; border-radius:var(--radius-md); box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); padding:2rem; position:relative;">
-        <button onclick="closeEditModal()" style="position: absolute; top: 1.5rem; right: 1.5rem; background: none; border: none; font-size: 1.5rem; color: var(--text-muted); cursor: pointer; line-height: 1; transition: color 0.2s;" onmouseover="this.style.color='var(--text-primary)'" onmouseout="this.style.color='var(--text-muted)'">&times;</button>
+        <button onclick="closeEditModal()" style="position: absolute; top: 1.5rem; right: 1.5rem; background: none; border: none; font-size: 1.5rem; color: var(--text-muted); cursor: pointer; line-height: 1;">&times;</button>
         <h3 style="margin-bottom:0.5rem; color:var(--text-primary); font-size:1.1rem;">Edit Report</h3>
-        
-        <div id="dynamicFormContainer" style="margin-bottom: 1.5rem; margin-top: 1.5rem; display: flex; flex-direction: column; gap: 1rem;">
-            <!-- Fields generated dynamically in JS based on type -->
-        </div>
-        
+        <div id="dynamicFormContainer" style="margin-bottom: 1.5rem; margin-top: 1.5rem; display: flex; flex-direction: column; gap: 1rem;"></div>
         <div style="display:flex; justify-content:flex-end; gap:0.75rem; padding-top:1rem; border-top:1px solid var(--border-light);">
             <button class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
             <button class="btn btn-primary" onclick="saveEditedData()">Save Changes</button>
@@ -780,88 +906,183 @@
 </div>
 
 
-
 <script>
+    // Data Sync Arrays
     const procoreVendors = JSON.parse('{{ company.procore_vendors | default("[]", true) | safe }}');
     const procoreCostCodes = JSON.parse('{{ company.procore_cost_codes | default("[]", true) | safe }}');
     const procoreLocations = JSON.parse('{{ company.procore_locations | default("[]", true) | safe }}');
 
+    // Fixed Dropdown Arrays
+    const yesNoOptions = ['Yes', 'No'];
+    const weatherSkyOptions = ['Clear', 'Cloudy', 'Overcast', 'Rain', 'Snow'];
+    const weatherPrecipOptions = ['None', 'Light', 'Moderate', 'Heavy'];
+    const weatherWindOptions = ['Calm', 'Light', 'Moderate', 'High', 'Severe'];
+    const weatherGroundOptions = ['Dry', 'Wet', 'Muddy', 'Frozen'];
+    const timecardTypeOptions = ['Regular Time', 'Overtime', 'Double Time'];
+    const unitsOptions = ['EA', 'CY', 'LF', 'SF', 'Tons'];
+    const wasteMethodOptions = ['Recycle', 'Landfill', 'Salvage'];
+    const delayTypeOptions = ['Weather', 'Equipment', 'Material', 'Manpower'];
+
     let currentEditReportId = null;
     let currentEditData = {};
+
+    function addField(c, label, path, value, inputType='text', options=null) {
+        const id = 'edit_f_' + Math.random().toString(36).substr(2, 9);
+        let html = `<div><label style="display:block; font-size:0.8rem; font-weight:600; color:var(--text-secondary); margin-bottom:0.25rem;">${label}</label>`;
+        
+        if (options && Array.isArray(options) && options.length > 0) {
+            html += `<select class="edit-input" data-path="${path}" style="width:100%; padding:0.5rem; border:1px solid var(--border-light); border-radius:4px; font-family:inherit;">`;
+            html += `<option value="">-- Select --</option>`;
+            options.forEach(opt => {
+                const selected = (value && value === opt) ? 'selected' : '';
+                html += `<option value="${opt}" ${selected}>${opt}</option>`;
+            });
+            if (value && !options.includes(value)) {
+                html += `<option value="${value}" selected>${value} (Custom)</option>`;
+            }
+            html += `</select>`;
+        } else if (inputType === 'textarea') {
+            html += `<textarea class="edit-input" data-path="${path}" style="width:100%; padding:0.5rem; border:1px solid var(--border-light); border-radius:4px; font-family:inherit;">${value || ''}</textarea>`;
+        } else {
+            html += `<input type="${inputType}" class="edit-input" data-path="${path}" value="${value || ''}" style="width:100%; padding:0.5rem; border:1px solid var(--border-light); border-radius:4px; font-family:inherit;">`;
+        }
+        html += `</div>`;
+        c.innerHTML += html;
+    }
 
     function openEditModal(reportId, parsedDataStr, type) {
         currentEditReportId = reportId;
         try {
             currentEditData = JSON.parse(parsedDataStr);
-            
             const c = document.getElementById('dynamicFormContainer');
             c.innerHTML = '';
             
-            function addField(label, path, value, inputType='text', options=null) {
-                const id = 'edit_f_' + Math.random().toString(36).substr(2, 9);
-                let html = `<div>
-                    <label style="display:block; font-size:0.8rem; font-weight:600; color:var(--text-secondary); margin-bottom:0.25rem;">${label}</label>`;
-                
-                if (options && Array.isArray(options) && options.length > 0) {
-                    html += `<select class="edit-input" data-path="${path}" style="width:100%; padding:0.5rem; border:1px solid var(--border-light); border-radius:4px; font-family:inherit;">`;
-                    html += `<option value="">-- Select --</option>`;
-                    options.forEach(opt => {
-                        const selected = (value && value === opt) ? 'selected' : '';
-                        html += `<option value="${opt}" ${selected}>${opt}</option>`;
-                    });
-                    if (value && !options.includes(value)) {
-                        html += `<option value="${value}" selected>${value} (Custom)</option>`;
-                    }
-                    html += `</select>`;
-                } else if (inputType === 'textarea') {
-                    html += `<textarea class="edit-input" data-path="${path}" style="width:100%; padding:0.5rem; border:1px solid var(--border-light); border-radius:4px; font-family:inherit;">${value || ''}</textarea>`;
-                } else {
-                    html += `<input type="${inputType}" class="edit-input" data-path="${path}" value="${value || ''}" style="width:100%; padding:0.5rem; border:1px solid var(--border-light); border-radius:4px; font-family:inherit;">`;
-                }
-                html += `</div>`;
-                c.innerHTML += html;
+            // Common Location
+            if (type !== 'weather' && type !== 'timecards' && type !== 'visitors' && type !== 'phone_calls' && type !== 'safety' && type !== 'accidents' && type !== 'productivity' && type !== 'dumpster' && type !== 'scheduled_work') {
+                let locVal = (currentEditData.location && typeof currentEditData.location === 'object') ? currentEditData.location.name : currentEditData.location;
+                let path = (currentEditData.location && typeof currentEditData.location === 'object') ? 'location.name' : 'location';
+                addField(c, 'Location', path, locVal, 'text', procoreLocations);
             }
-            
-            if (currentEditData.location && typeof currentEditData.location === 'object') {
-                addField('Location', 'location.name', currentEditData.location.name, 'text', procoreLocations);
-            } else {
-                addField('Location', 'location', currentEditData.location, 'text', procoreLocations);
+
+            if (type === 'weather') {
+                const w = currentEditData.weather_details || {};
+                addField(c, 'Time Observed', 'weather_details.time_observed', w.time_observed);
+                addField(c, 'Delay', 'weather_details.delay', w.delay, 'text', yesNoOptions);
+                addField(c, 'Sky', 'weather_details.sky', w.sky, 'text', weatherSkyOptions);
+                addField(c, 'Temperature', 'weather_details.temperature', w.temperature);
+                addField(c, 'Calamity', 'weather_details.calamity', w.calamity, 'text', yesNoOptions);
+                addField(c, 'Precipitation', 'weather_details.precipitation', w.precipitation, 'text', weatherPrecipOptions);
+                addField(c, 'Wind', 'weather_details.wind', w.wind, 'text', weatherWindOptions);
+                addField(c, 'Ground/Sea', 'weather_details.ground_sea', w.ground_sea, 'text', weatherGroundOptions);
             }
-            
-            if (type === 'manpower') {
+            else if (type === 'manpower') {
                 const cw = currentEditData.crew || {};
-                addField('Company', 'crew.company_name', cw.company_name, 'text', procoreVendors);
-                addField('Trade', 'crew.trade', cw.trade);
-                addField('Workers Count', 'crew.count', cw.count || currentEditData.quantity, 'number');
-                addField('Hours', 'crew.hours', cw.hours, 'number');
+                addField(c, 'Company', 'crew.company_name', cw.company_name, 'text', procoreVendors);
+                addField(c, 'Trade', 'crew.trade', cw.trade);
+                addField(c, 'Workers Count', 'crew.count', cw.count || currentEditData.quantity, 'number');
+                addField(c, 'Hours', 'crew.hours', cw.hours, 'number');
+            }
+            else if (type === 'notes') {
+                addField(c, 'Item / Issue Name', 'item', currentEditData.item);
+                addField(c, 'Issue?', 'issue', currentEditData.issue ? 'Yes' : 'No', 'text', yesNoOptions);
+            }
+            else if (type === 'timecards') {
+                const t = currentEditData.timecard_details || {};
+                addField(c, 'Employee', 'timecard_details.employee', t.employee);
+                addField(c, 'Cost Code', 'cost_code', currentEditData.cost_code, 'text', procoreCostCodes);
+                addField(c, 'Type', 'timecard_details.type', t.type, 'text', timecardTypeOptions);
+                addField(c, 'Billable?', 'timecard_details.billable', t.billable, 'text', yesNoOptions);
+                addField(c, 'Hours', 'timecard_details.hours', t.hours, 'number');
             }
             else if (type === 'equipment') {
                 const eq = currentEditData.equipment_details || {};
-                addField('Equipment Name', 'item', currentEditData.item);
-                addField('Cost Code', 'cost_code', currentEditData.cost_code, 'text', procoreCostCodes);
-                addField('Hours Operating', 'equipment_details.hours_operating', eq.hours_operating, 'number');
-                addField('Hours Idle', 'equipment_details.hours_idle', eq.hours_idle, 'number');
+                addField(c, 'Equipment Name', 'item', currentEditData.item);
+                addField(c, 'Cost Code', 'cost_code', currentEditData.cost_code, 'text', procoreCostCodes);
+                addField(c, 'Hours Operating', 'equipment_details.hours_operating', eq.hours_operating, 'number');
+                addField(c, 'Hours Idle', 'equipment_details.hours_idle', eq.hours_idle, 'number');
+                addField(c, 'Inspected', 'equipment_details.inspected', eq.inspected ? 'Yes' : 'No', 'text', yesNoOptions);
+            }
+            else if (type === 'visitors') {
+                const v = currentEditData.visitor_details || {};
+                addField(c, 'Visitor Name', 'visitor_details.visitor', v.visitor);
+                addField(c, 'Start Time', 'visitor_details.start', v.start);
+                addField(c, 'End Time', 'visitor_details.end', v.end);
+            }
+            else if (type === 'phone_calls') {
+                const pc = currentEditData.call_details || {};
+                addField(c, 'Call From', 'call_details.call_from', pc.call_from);
+                addField(c, 'Call To', 'call_details.call_to', pc.call_to);
+                addField(c, 'Start', 'call_details.start', pc.start);
+                addField(c, 'End', 'call_details.end', pc.end);
+            }
+            else if (type === 'inspections') {
+                const i = currentEditData.inspection_details || {};
+                addField(c, 'Type', 'inspection_details.inspection_type', i.inspection_type);
+                addField(c, 'Entity', 'inspection_details.inspecting_entity', i.inspecting_entity);
+                addField(c, 'Inspector Name', 'inspection_details.inspector_name', i.inspector_name);
+                addField(c, 'Area', 'inspection_details.inspection_area', i.inspection_area);
             }
             else if (type === 'delivery') {
                 const dd = currentEditData.delivery_details || {};
-                addField('Delivery From', 'delivery_details.delivery_from', dd.delivery_from, 'text', procoreVendors);
-                addField('Tracking Number', 'delivery_details.tracking_number', dd.tracking_number);
-                addField('Time', 'delivery_details.time', dd.time);
-                addField('Item', 'item', currentEditData.item);
-                addField('Quantity', 'quantity', currentEditData.quantity, 'number');
-                addField('Unit', 'unit', currentEditData.unit);
+                addField(c, 'Delivery From', 'delivery_details.delivery_from', dd.delivery_from, 'text', procoreVendors);
+                addField(c, 'Tracking Number', 'delivery_details.tracking_number', dd.tracking_number);
+                addField(c, 'Contents', 'delivery_details.contents', dd.contents);
             }
-            else if (type === 'quantity' || type === 'productivity') {
-                addField('Item / Description', 'item', currentEditData.item);
-                addField('Cost Code', 'cost_code', currentEditData.cost_code, 'text', procoreCostCodes);
-                addField('Quantity', 'quantity', currentEditData.quantity, 'number');
-                addField('Unit', 'unit', currentEditData.unit);
+            else if (type === 'safety') {
+                const s = currentEditData.safety_details || {};
+                addField(c, 'Subject', 'item', currentEditData.item);
+                addField(c, 'Notice', 'safety_details.safety_notice', s.safety_notice);
+                addField(c, 'Issued To', 'safety_details.issued_to', s.issued_to);
             }
-            else {
-                addField('Subject / Item', 'item', currentEditData.item);
+            else if (type === 'accidents') {
+                const a = currentEditData.accident_details || {};
+                addField(c, 'Party Involved', 'accident_details.party_involved', a.party_involved);
+                addField(c, 'Company Involved', 'accident_details.company_involved', a.company_involved, 'text', procoreVendors);
+            }
+            else if (type === 'quantity') {
+                addField(c, 'Item', 'item', currentEditData.item);
+                addField(c, 'Cost Code', 'cost_code', currentEditData.cost_code, 'text', procoreCostCodes);
+                addField(c, 'Quantity', 'quantity', currentEditData.quantity, 'number');
+                addField(c, 'Units', 'unit', currentEditData.unit, 'text', unitsOptions);
+            }
+            else if (type === 'productivity') {
+                const pd = currentEditData.productivity_details || {};
+                addField(c, 'Company', 'productivity_details.company', pd.company, 'text', procoreVendors);
+                addField(c, 'Contract', 'productivity_details.contract', pd.contract);
+                addField(c, 'Line Item', 'productivity_details.line_item', pd.line_item);
+                addField(c, 'Quantity Delivered', 'productivity_details.quantity_delivered', pd.quantity_delivered, 'number');
+                addField(c, 'Put in Place', 'productivity_details.quantity_put_in_place', pd.quantity_put_in_place, 'number');
+            }
+            else if (type === 'dumpster') {
+                const d = currentEditData.dumpster_details || {};
+                addField(c, 'Company', 'dumpster_details.company', d.company, 'text', procoreVendors);
+                addField(c, 'Delivered', 'dumpster_details.delivered', d.delivered, 'number');
+                addField(c, 'Removed', 'dumpster_details.removed', d.removed, 'number');
+            }
+            else if (type === 'waste') {
+                const w = currentEditData.waste_details || {};
+                addField(c, 'Material', 'waste_details.material', w.material);
+                addField(c, 'Disposed By', 'waste_details.disposed_by', w.disposed_by);
+                addField(c, 'Method', 'waste_details.method_of_disposal', w.method_of_disposal, 'text', wasteMethodOptions);
+                addField(c, 'Approx Quantity', 'waste_details.approximate_quantity', w.approximate_quantity, 'number');
+            }
+            else if (type === 'scheduled_work') {
+                const sw = currentEditData.scheduled_work_details || {};
+                addField(c, 'Resource', 'scheduled_work_details.resource', sw.resource);
+                addField(c, 'Tasks', 'scheduled_work_details.scheduled_tasks', sw.scheduled_tasks);
+                addField(c, 'Showed?', 'scheduled_work_details.showed', sw.showed, 'text', yesNoOptions);
+                addField(c, 'Workers', 'scheduled_work_details.workers', sw.workers, 'number');
+                addField(c, 'Hours', 'scheduled_work_details.hours', sw.hours, 'number');
+            }
+            else if (type === 'delays') {
+                const dl = currentEditData.delay_details || {};
+                addField(c, 'Delay Type', 'delay_details.delay_type', dl.delay_type, 'text', delayTypeOptions);
+                addField(c, 'Start', 'delay_details.start_time', dl.start_time);
+                addField(c, 'End', 'delay_details.end_time', dl.end_time);
+                addField(c, 'Duration (Hrs)', 'delay_details.duration_hours', dl.duration_hours, 'number');
             }
             
-            addField('Comments / Description', 'description', currentEditData.description, 'textarea');
+            addField(c, 'Comments / Description', 'description', currentEditData.description, 'textarea');
 
             document.getElementById('editModal').style.display = 'flex';
         } catch (e) {
@@ -876,6 +1097,8 @@
     }
 
     function setNestedValue(obj, path, value) {
+        if(value === "Yes") value = true;
+        if(value === "No") value = false;
         const keys = path.split('.');
         let current = obj;
         for (let i = 0; i < keys.length - 1; i++) {
@@ -889,27 +1112,19 @@
 
     async function saveEditedData() {
         if (!currentEditReportId) return;
-        
         const inputs = document.querySelectorAll('.edit-input');
         inputs.forEach(input => {
             setNestedValue(currentEditData, input.getAttribute('data-path'), input.value);
         });
-
         try {
             const response = await fetch(`/dashboard/edit/${currentEditReportId}`, {
                 method: 'POST',
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token() }}'
-                },
+                headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token() }}' },
                 body: JSON.stringify(currentEditData)
             });
             const result = await response.json();
-            if (result.success) {
-                location.reload();
-            } else {
-                alert('Error saving: ' + (result.error || 'Unknown error'));
-            }
+            if (result.success) location.reload();
+            else alert('Error saving: ' + (result.error || 'Unknown error'));
         } catch (e) {
             alert('Network error while saving.');
         }
@@ -1008,3 +1223,4 @@
     <button style="background: white; color: var(--accent-primary); border: none; padding: 0.4rem 1rem; border-radius: var(--radius-full); font-weight: 600; font-size: 0.8rem; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">Refresh</button>
 </div>
 {% endblock %}
+</script>
