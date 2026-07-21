@@ -508,42 +508,6 @@
     </div>
     {% endif %}
 
-    <!-- PENDING REVIEW SECTION -->
-    {% if pending_reports %}
-    <div class="procore-section" style="border: 2px solid var(--procore-orange); background-color: #fffaf5;">
-        <h3 class="procore-section-title" style="color: var(--procore-orange);">⚠️ Pending Review ({{ pending_reports|length }})</h3>
-        <table class="procore-table">
-            <thead>
-                <tr>
-                    <th>Time</th>
-                    <th>Message</th>
-                    <th>Extracted Type</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for r in pending_reports %}
-                <tr>
-                    <td>{{ (r.created_at|string).split('.')[0] if r.created_at else 'N/A' }}</td>
-                    <td>{{ r.raw_transcript[:80] if r.raw_transcript else '' }}{% if r.raw_transcript and r.raw_transcript|length > 80 %}...{% endif %}</td>
-                    <td>
-                        <span class="procore-badge badge-pending">{{ r.log_type | default('Unknown', true) | capitalize }}</span>
-                    </td>
-                    <td><span class="procore-badge badge-pending">{{ r.status }}</span></td>
-                    <td>
-                        <button class="btn btn-secondary" onclick='openEditModal({{ r.id }}, {{ r.parsed_data | tojson | forceescape }}, "{{ r.log_type | default("notes", true) }}")'>✏️ Review & Edit</button>
-                        <form action="/dashboard/approve/{{ r.id }}" method="POST" style="display:inline; margin:0;">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
-                            <button class="btn btn-primary" style="background: var(--accent-success); border-color: var(--accent-success);">✓ Approve</button>
-                        </form>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% endif %}
 
     <!-- 1. WEATHER -->
     {% if reports_by_type.get('weather') %}

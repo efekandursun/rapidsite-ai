@@ -450,8 +450,7 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
                 for rep, parsed in unlocked_reports:
                     parsed['locked'] = True
                     db.update_report_parsed_data(rep['id'], company['id'], parsed)
-                    with db.get_connection() as conn:
-                        db._execute(conn, "UPDATE site_reports SET status='pending' WHERE id=?", (rep['id'],))
+                
                 
                 count = len(unlocked_reports)
                 return {'company_name': company['name'], 'direct_reply': f"✅ {count} report(s) successfully sent to the Dashboard."}

@@ -541,13 +541,6 @@ def dashboard():
     pending_reports = []
     
     for r in raw_reports:
-        status = r.get('status')
-        if status in ['staged', 'incomplete']:
-            continue
-            
-        if status != 'approved':
-            pending_reports.append(r)
-            continue
             
         import json
         try:
@@ -569,7 +562,6 @@ def dashboard():
     total_pages = (total_db_reports + per_page - 1) // per_page
     
     return render_template('dashboard.html', 
-                           pending_reports=pending_reports,
                            reports_by_type=reports_by_type, 
                            total_reports=total_db_reports, 
                            stats=stats, 
