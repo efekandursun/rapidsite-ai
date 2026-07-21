@@ -518,13 +518,24 @@ def dashboard():
         stats = db.get_stats()
         
     reports_by_type = {
+        'weather': [],
         'manpower': [],
-        'delivery': [],
+        'notes': [],
+        'timecards': [],
         'equipment': [],
+        'visitors': [],
+        'phone_calls': [],
+        'inspections': [],
+        'delivery': [],
+        'safety': [],
+        'accidents': [],
         'quantity': [],
         'productivity': [],
-        'safety': [],
-        'notes': []
+        'dumpster': [],
+        'waste': [],
+        'scheduled_work': [],
+        'delays': [],
+        'photos': []
     }
     
     for r in raw_reports:
