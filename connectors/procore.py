@@ -311,7 +311,34 @@ class ProcoreConnector(ERPConnector):
             print(f"⚠️ No location match found for '{search_str}'")
         return None
 
+
+    def get_users(self, project_id: str) -> List[Dict[str, Any]]:
+        """Fetch project users/contacts."""
+        if not self._authenticated: self.authenticate()
+        try:
+            url = f"{self.base_url}/rest/v1.0/projects/{project_id}/users"
+            response = requests.get(url, headers=self.headers, params={"company_id": self.company_id}, timeout=10)
+            if response.status_code == 200:
+                return response.json()
+        except Exception as e:
+            print(f"⚠️ Failed to fetch users: {e}")
+        return []
+
+    def get_trades(self) -> List[Dict[str, Any]]:
+        """Fetch company trades."""
+        if not self._authenticated: self.authenticate()
+        if not self.company_id: return []
+        try:
+            url = f"{self.base_url}/rest/v1.0/companies/{self.company_id}/trades"
+            response = requests.get(url, headers=self.headers, timeout=10)
+            if response.status_code == 200:
+                return response.json()
+        except Exception as e:
+            print(f"⚠️ Failed to fetch trades: {e}")
+        return []
+
     def get_uoms(self) -> List[Dict[str, Any]]:
+
         """Fetch company Units of Measure from Procore."""
         if not self._authenticated:
             self.authenticate()

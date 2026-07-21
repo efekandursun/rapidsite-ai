@@ -538,7 +538,13 @@ def dashboard():
         'photos': []
     }
     
+    pending_reports = []
+    
     for r in raw_reports:
+        if r.get('status') != 'approved':
+            pending_reports.append(r)
+            continue
+            
         import json
         try:
             parsed = json.loads(r['parsed_data']) if isinstance(r['parsed_data'], str) else r['parsed_data']
@@ -559,6 +565,7 @@ def dashboard():
     total_pages = (total_db_reports + per_page - 1) // per_page
     
     return render_template('dashboard.html', 
+                           pending_reports=pending_reports,
                            reports_by_type=reports_by_type, 
                            total_reports=total_db_reports, 
                            stats=stats, 
@@ -1064,22 +1071,31 @@ def sync_master_data():
         cost_codes = connector.get_cost_codes(project_id)
         locations = connector.get_locations(project_id)
         projects = connector.get_projects() # Defaults to current company_id in connector
+        users = connector.get_users(project_id)
+        trades = connector.get_trades()
+        uoms = connector.get_uoms()
         
         # We only need minimal info to feed the LLM
         v_list = [{"id": v.get("id"), "name": v.get("name")} for v in vendors if v.get("name")]
         cc_list = [{"id": c.get("id"), "full_code": c.get("full_code"), "name": c.get("name")} for c in cost_codes if c.get("full_code")]
         loc_list = [{"id": l.get("id"), "name": l.get("name")} for l in locations if l.get("name")]
         proj_list = [{"id": p.get("id"), "name": p.get("name")} for p in projects if p.get("name")]
+        user_list = [{"id": u.get("id"), "name": u.get("name")} for u in users if u.get("name")]
+        trade_list = [{"id": t.get("id"), "name": t.get("name")} for t in trades if t.get("name")]
+        uom_list = [{"id": u.get("id"), "name": u.get("name")} for u in uoms if u.get("name")]
         
         import json
         db.update_company_procore_lists(
             company['id'],
             json.dumps(v_list, ensure_ascii=False),
             json.dumps(cc_list, ensure_ascii=False),
-            json.dumps(loc_list, ensure_ascii=False)
+            json.dumps(loc_list, ensure_ascii=False),
+            json.dumps(user_list, ensure_ascii=False),
+            json.dumps(trade_list, ensure_ascii=False),
+            json.dumps(uom_list, ensure_ascii=False)
         )
         db.update_company_procore_projects(company['id'], json.dumps(proj_list, ensure_ascii=False))
-        flash(f"✅ Successfully synced {len(proj_list)} projects, {len(v_list)} vendors, {len(cc_list)} cost codes, and {len(loc_list)} locations.", "success")
+        flash(f"✅ Successfully synced {len(proj_list)} projects, {len(v_list)} vendors, {len(cc_list)} cost codes, {len(loc_list)} locations, {len(user_list)} users, {len(trade_list)} trades, and {len(uom_list)} UOMs.", "success")
     except Exception as e:
         flash(f"❌ Failed to sync master data: {e}", "error")
         

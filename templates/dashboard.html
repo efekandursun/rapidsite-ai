@@ -510,7 +510,7 @@
 
     <!-- 1. WEATHER -->
     {% if reports_by_type.get('weather') %}
-    <div class="procore-section"><h3 class="procore-section-title">☀️ Weather</h3><table class="procore-table">
+    <div class="procore-section"><h3 class="procore-section-title">Weather</h3><table class="procore-table">
         <thead><tr><th>ID/Status</th><th>Time</th><th>Sky</th><th>Temp</th><th>Precipitation</th><th>Wind</th><th>Ground</th><th>Delay/Calamity</th><th>Actions</th></tr></thead>
         <tbody>
             {% for r in reports_by_type['weather'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set w = p.weather_details if p.weather_details is mapping else {} %}
@@ -534,7 +534,7 @@
 
     <!-- 2. MANPOWER -->
     {% if reports_by_type.get('manpower') %}
-    <div class="procore-section"><h3 class="procore-section-title">👷 Manpower</h3><table class="procore-table">
+    <div class="procore-section"><h3 class="procore-section-title">Manpower</h3><table class="procore-table">
         <thead><tr><th>ID/Status</th><th>Company</th><th>Workers</th><th>Hours</th><th>Location</th><th>Comments</th><th>Actions</th></tr></thead>
         <tbody>
             {% for r in reports_by_type['manpower'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set c = p.crew if p.crew is mapping else {} %}
@@ -556,7 +556,7 @@
 
     <!-- 3. NOTES -->
     {% if reports_by_type.get('notes') %}
-    <div class="procore-section"><h3 class="procore-section-title">📝 Notes</h3><table class="procore-table">
+    <div class="procore-section"><h3 class="procore-section-title">Notes</h3><table class="procore-table">
         <thead><tr><th>ID/Status</th><th>Item</th><th>Location</th><th>Issue?</th><th>Comments</th><th>Actions</th></tr></thead>
         <tbody>
             {% for r in reports_by_type['notes'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}
@@ -577,7 +577,7 @@
 
     <!-- 4. TIMECARDS -->
     {% if reports_by_type.get('timecards') %}
-    <div class="procore-section"><h3 class="procore-section-title">⏱️ Timecards</h3><table class="procore-table">
+    <div class="procore-section"><h3 class="procore-section-title">Timecards</h3><table class="procore-table">
         <thead><tr><th>ID/Status</th><th>Employee</th><th>Cost Code</th><th>Type</th><th>Billable?</th><th>Hours</th><th>Actions</th></tr></thead>
         <tbody>
             {% for r in reports_by_type['timecards'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set t = p.timecard_details if p.timecard_details is mapping else {} %}
@@ -599,7 +599,7 @@
 
     <!-- 5. EQUIPMENT -->
     {% if reports_by_type.get('equipment') %}
-    <div class="procore-section"><h3 class="procore-section-title">🚜 Equipment</h3><table class="procore-table">
+    <div class="procore-section"><h3 class="procore-section-title">Equipment</h3><table class="procore-table">
         <thead><tr><th>ID/Status</th><th>Equipment</th><th>Op. Hours</th><th>Idle Hours</th><th>Cost Code</th><th>Location</th><th>Inspected</th><th>Actions</th></tr></thead>
         <tbody>
             {% for r in reports_by_type['equipment'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set e = p.equipment_details if p.equipment_details is mapping else {} %}
@@ -622,7 +622,7 @@
 
     <!-- 6. VISITORS -->
     {% if reports_by_type.get('visitors') %}
-    <div class="procore-section"><h3 class="procore-section-title">👤 Visitors</h3><table class="procore-table">
+    <div class="procore-section"><h3 class="procore-section-title">Visitors</h3><table class="procore-table">
         <thead><tr><th>ID/Status</th><th>Visitor</th><th>Start</th><th>End</th><th>Comments</th><th>Actions</th></tr></thead>
         <tbody>
             {% for r in reports_by_type['visitors'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set v = p.visitor_details if p.visitor_details is mapping else {} %}
@@ -643,7 +643,7 @@
 
     <!-- 7. PHONE CALLS -->
     {% if reports_by_type.get('phone_calls') %}
-    <div class="procore-section"><h3 class="procore-section-title">📞 Phone Calls</h3><table class="procore-table">
+    <div class="procore-section"><h3 class="procore-section-title">Phone Calls</h3><table class="procore-table">
         <thead><tr><th>ID/Status</th><th>Call From</th><th>Call To</th><th>Start</th><th>End</th><th>Comments</th><th>Actions</th></tr></thead>
         <tbody>
             {% for r in reports_by_type['phone_calls'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set c = p.call_details if p.call_details is mapping else {} %}
@@ -665,7 +665,7 @@
 
     <!-- 8. INSPECTIONS -->
     {% if reports_by_type.get('inspections') %}
-    <div class="procore-section"><h3 class="procore-section-title">🔍 Inspections</h3><table class="procore-table">
+    <div class="procore-section"><h3 class="procore-section-title">Inspections</h3><table class="procore-table">
         <thead><tr><th>ID/Status</th><th>Start/End</th><th>Type</th><th>Entity</th><th>Inspector</th><th>Location</th><th>Area</th><th>Actions</th></tr></thead>
         <tbody>
             {% for r in reports_by_type['inspections'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set i = p.inspection_details if p.inspection_details is mapping else {} %}
@@ -688,7 +688,7 @@
 
     <!-- 9. DELIVERIES -->
     {% if reports_by_type.get('delivery') %}
-    <div class="procore-section"><h3 class="procore-section-title">🚚 Deliveries</h3><table class="procore-table">
+    <div class="procore-section"><h3 class="procore-section-title">Deliveries</h3><table class="procore-table">
         <thead><tr><th>ID/Status</th><th>Time</th><th>Delivery From</th><th>Tracking No</th><th>Contents</th><th>Comments</th><th>Actions</th></tr></thead>
         <tbody>
             {% for r in reports_by_type['delivery'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set d = p.delivery_details if p.delivery_details is mapping else {} %}
@@ -710,7 +710,7 @@
 
     <!-- 10. SAFETY VIOLATIONS -->
     {% if reports_by_type.get('safety') %}
-    <div class="procore-section"><h3 class="procore-section-title">⚠️ Safety Violations</h3><table class="procore-table">
+    <div class="procore-section"><h3 class="procore-section-title">Safety Violations</h3><table class="procore-table">
         <thead><tr><th>ID/Status</th><th>Time</th><th>Subject</th><th>Notice</th><th>Issued To</th><th>Compliance Due</th><th>Actions</th></tr></thead>
         <tbody>
             {% for r in reports_by_type['safety'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set s = p.safety_details if p.safety_details is mapping else {} %}
@@ -732,7 +732,7 @@
 
     <!-- 11. ACCIDENTS -->
     {% if reports_by_type.get('accidents') %}
-    <div class="procore-section"><h3 class="procore-section-title">🚑 Accidents</h3><table class="procore-table">
+    <div class="procore-section"><h3 class="procore-section-title">Accidents</h3><table class="procore-table">
         <thead><tr><th>ID/Status</th><th>Time</th><th>Party Involved</th><th>Company Involved</th><th>Comments</th><th>Actions</th></tr></thead>
         <tbody>
             {% for r in reports_by_type['accidents'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set a = p.accident_details if p.accident_details is mapping else {} %}
@@ -753,7 +753,7 @@
 
     <!-- 12. QUANTITIES -->
     {% if reports_by_type.get('quantity') %}
-    <div class="procore-section"><h3 class="procore-section-title">📉 Quantities</h3><table class="procore-table">
+    <div class="procore-section"><h3 class="procore-section-title">Quantities</h3><table class="procore-table">
         <thead><tr><th>ID/Status</th><th>Cost Code</th><th>Quantity</th><th>Units</th><th>Location</th><th>Comments</th><th>Actions</th></tr></thead>
         <tbody>
             {% for r in reports_by_type['quantity'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}
@@ -775,7 +775,7 @@
 
     <!-- 13. PRODUCTIVITY -->
     {% if reports_by_type.get('productivity') %}
-    <div class="procore-section"><h3 class="procore-section-title">📊 Productivity</h3><table class="procore-table">
+    <div class="procore-section"><h3 class="procore-section-title">Productivity</h3><table class="procore-table">
         <thead><tr><th>ID/Status</th><th>Company</th><th>Contract / Line Item</th><th>Delivered</th><th>Put in Place</th><th>Actions</th></tr></thead>
         <tbody>
             {% for r in reports_by_type['productivity'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set pd = p.productivity_details if p.productivity_details is mapping else {} %}
@@ -796,7 +796,7 @@
 
     <!-- 14. DUMPSTER -->
     {% if reports_by_type.get('dumpster') %}
-    <div class="procore-section"><h3 class="procore-section-title">🗑️ Dumpster</h3><table class="procore-table">
+    <div class="procore-section"><h3 class="procore-section-title">Dumpster</h3><table class="procore-table">
         <thead><tr><th>ID/Status</th><th>Company</th><th>Delivered</th><th>Removed</th><th>Comments</th><th>Actions</th></tr></thead>
         <tbody>
             {% for r in reports_by_type['dumpster'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set d = p.dumpster_details if p.dumpster_details is mapping else {} %}
@@ -817,7 +817,7 @@
 
     <!-- 15. WASTE -->
     {% if reports_by_type.get('waste') %}
-    <div class="procore-section"><h3 class="procore-section-title">♻️ Waste</h3><table class="procore-table">
+    <div class="procore-section"><h3 class="procore-section-title">Waste</h3><table class="procore-table">
         <thead><tr><th>ID/Status</th><th>Time</th><th>Material</th><th>Disposed By</th><th>Method</th><th>Quantity</th><th>Actions</th></tr></thead>
         <tbody>
             {% for r in reports_by_type['waste'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set w = p.waste_details if p.waste_details is mapping else {} %}
@@ -839,7 +839,7 @@
 
     <!-- 16. SCHEDULED WORK -->
     {% if reports_by_type.get('scheduled_work') %}
-    <div class="procore-section"><h3 class="procore-section-title">📅 Scheduled Work</h3><table class="procore-table">
+    <div class="procore-section"><h3 class="procore-section-title">Scheduled Work</h3><table class="procore-table">
         <thead><tr><th>ID/Status</th><th>Resource</th><th>Tasks</th><th>Showed?</th><th>Workers</th><th>Hours</th><th>Actions</th></tr></thead>
         <tbody>
             {% for r in reports_by_type['scheduled_work'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set s = p.scheduled_work_details if p.scheduled_work_details is mapping else {} %}
@@ -861,7 +861,7 @@
 
     <!-- 17. DELAYS -->
     {% if reports_by_type.get('delays') %}
-    <div class="procore-section"><h3 class="procore-section-title">🚧 Delays</h3><table class="procore-table">
+    <div class="procore-section"><h3 class="procore-section-title">Delays</h3><table class="procore-table">
         <thead><tr><th>ID/Status</th><th>Delay Type</th><th>Start</th><th>End</th><th>Duration</th><th>Location</th><th>Actions</th></tr></thead>
         <tbody>
             {% for r in reports_by_type['delays'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set d = p.delay_details if p.delay_details is mapping else {} %}
@@ -939,7 +939,15 @@
                 let optLabel = opt;
                 if (typeof opt === 'object' && opt !== null) {
                     optValue = opt.name || opt.id;
-                    optLabel = opt.name || opt.id;
+                    let rawName = opt.name || opt.id;
+                    if (typeof rawName === 'string' && rawName.includes('>')) {
+                        let parts = rawName.split('>');
+                        let depth = parts.length - 1;
+                        let indent = '&nbsp;&nbsp;&nbsp;&nbsp;'.repeat(depth);
+                        optLabel = indent + '↳ ' + parts[parts.length - 1].trim();
+                    } else {
+                        optLabel = rawName;
+                    }
                 }
                 const selected = (value && value === optValue) ? 'selected' : '';
                 if (selected) valMatches = true;
@@ -985,7 +993,7 @@
             }
             else if (type === 'manpower') {
                 const cw = currentEditData.crew || {};
-                addField(c, 'Company', 'crew.company_name', cw.company_name, 'text', procoreVendors);
+                addField(c, 'Company', 'crew.company_name', cw.company_name, 'text', {'Companies': procoreVendors, 'People': procoreUsers});
                 addField(c, 'Trade', 'crew.trade', cw.trade);
                 addField(c, 'Workers Count', 'crew.count', cw.count || currentEditData.quantity, 'number');
                 addField(c, 'Hours', 'crew.hours', cw.hours, 'number');
@@ -1032,7 +1040,7 @@
             }
             else if (type === 'delivery') {
                 const dd = currentEditData.delivery_details || {};
-                addField(c, 'Delivery From', 'delivery_details.delivery_from', dd.delivery_from, 'text', procoreVendors);
+                addField(c, 'Delivery From', 'delivery_details.delivery_from', dd.delivery_from, 'text', {'Companies': procoreVendors, 'People': procoreUsers});
                 addField(c, 'Tracking Number', 'delivery_details.tracking_number', dd.tracking_number);
                 addField(c, 'Contents', 'delivery_details.contents', dd.contents);
             }
@@ -1045,7 +1053,7 @@
             else if (type === 'accidents') {
                 const a = currentEditData.accident_details || {};
                 addField(c, 'Party Involved', 'accident_details.party_involved', a.party_involved);
-                addField(c, 'Company Involved', 'accident_details.company_involved', a.company_involved, 'text', procoreVendors);
+                addField(c, 'Company Involved', 'accident_details.company_involved', a.company_involved, 'text', {'Companies': procoreVendors, 'People': procoreUsers});
             }
             else if (type === 'quantity') {
                 addField(c, 'Item', 'item', currentEditData.item);
@@ -1055,7 +1063,7 @@
             }
             else if (type === 'productivity') {
                 const pd = currentEditData.productivity_details || {};
-                addField(c, 'Company', 'productivity_details.company', pd.company, 'text', procoreVendors);
+                addField(c, 'Company', 'productivity_details.company', pd.company, 'text', {'Companies': procoreVendors, 'People': procoreUsers});
                 addField(c, 'Contract', 'productivity_details.contract', pd.contract);
                 addField(c, 'Line Item', 'productivity_details.line_item', pd.line_item);
                 addField(c, 'Quantity Delivered', 'productivity_details.quantity_delivered', pd.quantity_delivered, 'number');
@@ -1063,7 +1071,7 @@
             }
             else if (type === 'dumpster') {
                 const d = currentEditData.dumpster_details || {};
-                addField(c, 'Company', 'dumpster_details.company', d.company, 'text', procoreVendors);
+                addField(c, 'Company', 'dumpster_details.company', d.company, 'text', {'Companies': procoreVendors, 'People': procoreUsers});
                 addField(c, 'Delivered', 'dumpster_details.delivered', d.delivered, 'number');
                 addField(c, 'Removed', 'dumpster_details.removed', d.removed, 'number');
             }

@@ -153,6 +153,9 @@ class Database:
                     procore_cost_codes TEXT,
                     procore_locations TEXT,
                     procore_projects TEXT,
+                    procore_users TEXT,
+                    procore_trades TEXT,
+                    procore_uoms TEXT,
                     subscription_plan TEXT DEFAULT 'pro',
                     subscription_status TEXT DEFAULT 'trialing',
                     trial_ends_at TIMESTAMP,
@@ -245,6 +248,12 @@ class Database:
                     procore_company_id TEXT,
                     procore_default_project_id TEXT,
                     procore_projects TEXT,
+                    procore_vendors TEXT,
+                    procore_cost_codes TEXT,
+                    procore_locations TEXT,
+                    procore_users TEXT,
+                    procore_trades TEXT,
+                    procore_uoms TEXT,
                     subscription_plan TEXT DEFAULT 'pro',
                     subscription_status TEXT DEFAULT 'trialing',
                     trial_ends_at TEXT,
@@ -914,16 +923,19 @@ class Database:
             """, (project_id, company_id))
             return cursor.rowcount > 0
 
-    def update_company_procore_lists(self, company_id: int, vendors: str, cost_codes: str, locations: str) -> bool:
+    def update_company_procore_lists(self, company_id: int, vendors: str, cost_codes: str, locations: str, users: str = '[]', trades: str = '[]', uoms: str = '[]') -> bool:
         """Update cached Procore lists for a company."""
         with self.get_connection() as conn:
             cursor = self._execute(conn, """
                 UPDATE companies 
                 SET procore_vendors = ?,
                     procore_cost_codes = ?,
-                    procore_locations = ?
+                    procore_locations = ?,
+                    procore_users = ?,
+                    procore_trades = ?,
+                    procore_uoms = ?
                 WHERE id = ?
-            """, (vendors, cost_codes, locations, company_id))
+            """, (vendors, cost_codes, locations, users, trades, uoms, company_id))
             return cursor.rowcount > 0
 
     def update_company_procore_projects(self, company_id: int, projects_json: str) -> bool:
