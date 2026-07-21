@@ -447,9 +447,11 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
                 return {'company_name': company['name'], 'direct_reply': "[LOCKED] Your recent reports have already been sent to the Dashboard and cannot be edited. Please send a new message for a new report."}
 
             if is_approve:
-                for rep, parsed in unlocked_reports:
-                    parsed['locked'] = True
-                    db.update_report_parsed_data(rep['id'], company['id'], parsed)
+                with db.get_connection() as conn:
+                    for rep, parsed in unlocked_reports:
+                        parsed['locked'] = True
+                        db.update_report_parsed_data(rep['id'], company['id'], parsed)
+                        db._execute(conn, "UPDATE site_reports SET status='pending' WHERE id=?", (rep['id'],))
                 
                 count = len(unlocked_reports)
                 return {'company_name': company['name'], 'direct_reply': f"✅ {count} report(s) successfully sent to the Dashboard."}
