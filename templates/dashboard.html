@@ -525,7 +525,7 @@
             <tbody>
                 {% for r in pending_reports %}
                 <tr>
-                    <td>{{ r.created_at.split('.')[0] if r.created_at else 'N/A' }}</td>
+                    <td>{{ (r.created_at|string).split('.')[0] if r.created_at else 'N/A' }}</td>
                     <td>{{ r.raw_transcript[:80] if r.raw_transcript else '' }}{% if r.raw_transcript and r.raw_transcript|length > 80 %}...{% endif %}</td>
                     <td>
                         <span class="procore-badge badge-pending">{{ r.log_type | default('Unknown', true) | capitalize }}</span>
