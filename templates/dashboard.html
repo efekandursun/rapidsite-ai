@@ -933,11 +933,19 @@
         if (options && Array.isArray(options) && options.length > 0) {
             html += `<select class="edit-input" data-path="${path}" style="width:100%; padding:0.5rem; border:1px solid var(--border-light); border-radius:4px; font-family:inherit;">`;
             html += `<option value="">-- Select --</option>`;
+            let valMatches = false;
             options.forEach(opt => {
-                const selected = (value && value === opt) ? 'selected' : '';
-                html += `<option value="${opt}" ${selected}>${opt}</option>`;
+                let optValue = opt;
+                let optLabel = opt;
+                if (typeof opt === 'object' && opt !== null) {
+                    optValue = opt.name || opt.id;
+                    optLabel = opt.name || opt.id;
+                }
+                const selected = (value && value === optValue) ? 'selected' : '';
+                if (selected) valMatches = true;
+                html += `<option value="${optValue}" ${selected}>${optLabel}</option>`;
             });
-            if (value && !options.includes(value)) {
+            if (value && !valMatches) {
                 html += `<option value="${value}" selected>${value} (Custom)</option>`;
             }
             html += `</select>`;
