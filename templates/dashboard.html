@@ -530,6 +530,18 @@
                     {% elif r.status == 'approved' %}<form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
                     {% elif r.status == 'synced' %}<span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>{% endif %}
                 </div></td>
+            </tr>
+            <tr class="details-row" style="background-color: #f8fafc;">
+                <td colspan="10" style="padding: 1rem; border-top: 1px dashed #e2e8f0;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>📩 Original Message:</strong><br>
+                        <span style="font-size: 1.1rem; color: #334155;">"{{ r.raw_transcript }}"</span>
+                    </div>
+                    <details>
+                        <summary style="cursor: pointer; color: var(--accent-primary); font-size: 0.85rem; font-weight: 600;">👀 View Parsed JSON</summary>
+                        <pre style="background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 6px; font-size: 0.8rem; overflow-x: auto; margin-top: 0.5rem; white-space: pre-wrap;">{{ r.parsed_data | forceescape }}</pre>
+                    </details>
+                </td>
             </tr>{% endfor %}
         </tbody></table></div>{% endif %}
 
@@ -552,6 +564,18 @@
                     {% elif r.status == 'approved' %}<form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
                     {% elif r.status == 'synced' %}<span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>{% endif %}
                 </div></td>
+            </tr>
+            <tr class="details-row" style="background-color: #f8fafc;">
+                <td colspan="10" style="padding: 1rem; border-top: 1px dashed #e2e8f0;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>📩 Original Message:</strong><br>
+                        <span style="font-size: 1.1rem; color: #334155;">"{{ r.raw_transcript }}"</span>
+                    </div>
+                    <details>
+                        <summary style="cursor: pointer; color: var(--accent-primary); font-size: 0.85rem; font-weight: 600;">👀 View Parsed JSON</summary>
+                        <pre style="background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 6px; font-size: 0.8rem; overflow-x: auto; margin-top: 0.5rem; white-space: pre-wrap;">{{ r.parsed_data | forceescape }}</pre>
+                    </details>
+                </td>
             </tr>{% endfor %}
         </tbody></table></div>{% endif %}
 
@@ -573,6 +597,18 @@
                     {% elif r.status == 'approved' %}<form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
                     {% elif r.status == 'synced' %}<span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>{% endif %}
                 </div></td>
+            </tr>
+            <tr class="details-row" style="background-color: #f8fafc;">
+                <td colspan="10" style="padding: 1rem; border-top: 1px dashed #e2e8f0;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>📩 Original Message:</strong><br>
+                        <span style="font-size: 1.1rem; color: #334155;">"{{ r.raw_transcript }}"</span>
+                    </div>
+                    <details>
+                        <summary style="cursor: pointer; color: var(--accent-primary); font-size: 0.85rem; font-weight: 600;">👀 View Parsed JSON</summary>
+                        <pre style="background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 6px; font-size: 0.8rem; overflow-x: auto; margin-top: 0.5rem; white-space: pre-wrap;">{{ r.parsed_data | forceescape }}</pre>
+                    </details>
+                </td>
             </tr>{% endfor %}
         </tbody></table></div>{% endif %}
 
@@ -595,6 +631,18 @@
                     {% elif r.status == 'approved' %}<form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
                     {% elif r.status == 'synced' %}<span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>{% endif %}
                 </div></td>
+            </tr>
+            <tr class="details-row" style="background-color: #f8fafc;">
+                <td colspan="10" style="padding: 1rem; border-top: 1px dashed #e2e8f0;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>📩 Original Message:</strong><br>
+                        <span style="font-size: 1.1rem; color: #334155;">"{{ r.raw_transcript }}"</span>
+                    </div>
+                    <details>
+                        <summary style="cursor: pointer; color: var(--accent-primary); font-size: 0.85rem; font-weight: 600;">👀 View Parsed JSON</summary>
+                        <pre style="background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 6px; font-size: 0.8rem; overflow-x: auto; margin-top: 0.5rem; white-space: pre-wrap;">{{ r.parsed_data | forceescape }}</pre>
+                    </details>
+                </td>
             </tr>{% endfor %}
         </tbody></table></div>{% endif %}
 
@@ -618,6 +666,18 @@
                     {% elif r.status == 'approved' %}<form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
                     {% elif r.status == 'synced' %}<span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>{% endif %}
                 </div></td>
+            </tr>
+            <tr class="details-row" style="background-color: #f8fafc;">
+                <td colspan="10" style="padding: 1rem; border-top: 1px dashed #e2e8f0;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>📩 Original Message:</strong><br>
+                        <span style="font-size: 1.1rem; color: #334155;">"{{ r.raw_transcript }}"</span>
+                    </div>
+                    <details>
+                        <summary style="cursor: pointer; color: var(--accent-primary); font-size: 0.85rem; font-weight: 600;">👀 View Parsed JSON</summary>
+                        <pre style="background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 6px; font-size: 0.8rem; overflow-x: auto; margin-top: 0.5rem; white-space: pre-wrap;">{{ r.parsed_data | forceescape }}</pre>
+                    </details>
+                </td>
             </tr>{% endfor %}
         </tbody></table></div>{% endif %}
 
@@ -639,6 +699,18 @@
                     {% elif r.status == 'approved' %}<form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
                     {% elif r.status == 'synced' %}<span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>{% endif %}
                 </div></td>
+            </tr>
+            <tr class="details-row" style="background-color: #f8fafc;">
+                <td colspan="10" style="padding: 1rem; border-top: 1px dashed #e2e8f0;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>📩 Original Message:</strong><br>
+                        <span style="font-size: 1.1rem; color: #334155;">"{{ r.raw_transcript }}"</span>
+                    </div>
+                    <details>
+                        <summary style="cursor: pointer; color: var(--accent-primary); font-size: 0.85rem; font-weight: 600;">👀 View Parsed JSON</summary>
+                        <pre style="background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 6px; font-size: 0.8rem; overflow-x: auto; margin-top: 0.5rem; white-space: pre-wrap;">{{ r.parsed_data | forceescape }}</pre>
+                    </details>
+                </td>
             </tr>{% endfor %}
         </tbody></table></div>{% endif %}
 
@@ -661,6 +733,18 @@
                     {% elif r.status == 'approved' %}<form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
                     {% elif r.status == 'synced' %}<span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>{% endif %}
                 </div></td>
+            </tr>
+            <tr class="details-row" style="background-color: #f8fafc;">
+                <td colspan="10" style="padding: 1rem; border-top: 1px dashed #e2e8f0;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>📩 Original Message:</strong><br>
+                        <span style="font-size: 1.1rem; color: #334155;">"{{ r.raw_transcript }}"</span>
+                    </div>
+                    <details>
+                        <summary style="cursor: pointer; color: var(--accent-primary); font-size: 0.85rem; font-weight: 600;">👀 View Parsed JSON</summary>
+                        <pre style="background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 6px; font-size: 0.8rem; overflow-x: auto; margin-top: 0.5rem; white-space: pre-wrap;">{{ r.parsed_data | forceescape }}</pre>
+                    </details>
+                </td>
             </tr>{% endfor %}
         </tbody></table></div>{% endif %}
 
@@ -684,6 +768,18 @@
                     {% elif r.status == 'approved' %}<form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
                     {% elif r.status == 'synced' %}<span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>{% endif %}
                 </div></td>
+            </tr>
+            <tr class="details-row" style="background-color: #f8fafc;">
+                <td colspan="10" style="padding: 1rem; border-top: 1px dashed #e2e8f0;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>📩 Original Message:</strong><br>
+                        <span style="font-size: 1.1rem; color: #334155;">"{{ r.raw_transcript }}"</span>
+                    </div>
+                    <details>
+                        <summary style="cursor: pointer; color: var(--accent-primary); font-size: 0.85rem; font-weight: 600;">👀 View Parsed JSON</summary>
+                        <pre style="background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 6px; font-size: 0.8rem; overflow-x: auto; margin-top: 0.5rem; white-space: pre-wrap;">{{ r.parsed_data | forceescape }}</pre>
+                    </details>
+                </td>
             </tr>{% endfor %}
         </tbody></table></div>{% endif %}
 
@@ -706,6 +802,18 @@
                     {% elif r.status == 'approved' %}<form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
                     {% elif r.status == 'synced' %}<span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>{% endif %}
                 </div></td>
+            </tr>
+            <tr class="details-row" style="background-color: #f8fafc;">
+                <td colspan="10" style="padding: 1rem; border-top: 1px dashed #e2e8f0;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>📩 Original Message:</strong><br>
+                        <span style="font-size: 1.1rem; color: #334155;">"{{ r.raw_transcript }}"</span>
+                    </div>
+                    <details>
+                        <summary style="cursor: pointer; color: var(--accent-primary); font-size: 0.85rem; font-weight: 600;">👀 View Parsed JSON</summary>
+                        <pre style="background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 6px; font-size: 0.8rem; overflow-x: auto; margin-top: 0.5rem; white-space: pre-wrap;">{{ r.parsed_data | forceescape }}</pre>
+                    </details>
+                </td>
             </tr>{% endfor %}
         </tbody></table></div>{% endif %}
 
@@ -728,6 +836,18 @@
                     {% elif r.status == 'approved' %}<form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
                     {% elif r.status == 'synced' %}<span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>{% endif %}
                 </div></td>
+            </tr>
+            <tr class="details-row" style="background-color: #f8fafc;">
+                <td colspan="10" style="padding: 1rem; border-top: 1px dashed #e2e8f0;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>📩 Original Message:</strong><br>
+                        <span style="font-size: 1.1rem; color: #334155;">"{{ r.raw_transcript }}"</span>
+                    </div>
+                    <details>
+                        <summary style="cursor: pointer; color: var(--accent-primary); font-size: 0.85rem; font-weight: 600;">👀 View Parsed JSON</summary>
+                        <pre style="background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 6px; font-size: 0.8rem; overflow-x: auto; margin-top: 0.5rem; white-space: pre-wrap;">{{ r.parsed_data | forceescape }}</pre>
+                    </details>
+                </td>
             </tr>{% endfor %}
         </tbody></table></div>{% endif %}
 
@@ -749,6 +869,18 @@
                     {% elif r.status == 'approved' %}<form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
                     {% elif r.status == 'synced' %}<span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>{% endif %}
                 </div></td>
+            </tr>
+            <tr class="details-row" style="background-color: #f8fafc;">
+                <td colspan="10" style="padding: 1rem; border-top: 1px dashed #e2e8f0;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>📩 Original Message:</strong><br>
+                        <span style="font-size: 1.1rem; color: #334155;">"{{ r.raw_transcript }}"</span>
+                    </div>
+                    <details>
+                        <summary style="cursor: pointer; color: var(--accent-primary); font-size: 0.85rem; font-weight: 600;">👀 View Parsed JSON</summary>
+                        <pre style="background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 6px; font-size: 0.8rem; overflow-x: auto; margin-top: 0.5rem; white-space: pre-wrap;">{{ r.parsed_data | forceescape }}</pre>
+                    </details>
+                </td>
             </tr>{% endfor %}
         </tbody></table></div>{% endif %}
 
@@ -771,6 +903,18 @@
                     {% elif r.status == 'approved' %}<form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
                     {% elif r.status == 'synced' %}<span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>{% endif %}
                 </div></td>
+            </tr>
+            <tr class="details-row" style="background-color: #f8fafc;">
+                <td colspan="10" style="padding: 1rem; border-top: 1px dashed #e2e8f0;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>📩 Original Message:</strong><br>
+                        <span style="font-size: 1.1rem; color: #334155;">"{{ r.raw_transcript }}"</span>
+                    </div>
+                    <details>
+                        <summary style="cursor: pointer; color: var(--accent-primary); font-size: 0.85rem; font-weight: 600;">👀 View Parsed JSON</summary>
+                        <pre style="background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 6px; font-size: 0.8rem; overflow-x: auto; margin-top: 0.5rem; white-space: pre-wrap;">{{ r.parsed_data | forceescape }}</pre>
+                    </details>
+                </td>
             </tr>{% endfor %}
         </tbody></table></div>{% endif %}
 
@@ -792,6 +936,18 @@
                     {% elif r.status == 'approved' %}<form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
                     {% elif r.status == 'synced' %}<span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>{% endif %}
                 </div></td>
+            </tr>
+            <tr class="details-row" style="background-color: #f8fafc;">
+                <td colspan="10" style="padding: 1rem; border-top: 1px dashed #e2e8f0;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>📩 Original Message:</strong><br>
+                        <span style="font-size: 1.1rem; color: #334155;">"{{ r.raw_transcript }}"</span>
+                    </div>
+                    <details>
+                        <summary style="cursor: pointer; color: var(--accent-primary); font-size: 0.85rem; font-weight: 600;">👀 View Parsed JSON</summary>
+                        <pre style="background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 6px; font-size: 0.8rem; overflow-x: auto; margin-top: 0.5rem; white-space: pre-wrap;">{{ r.parsed_data | forceescape }}</pre>
+                    </details>
+                </td>
             </tr>{% endfor %}
         </tbody></table></div>{% endif %}
 
@@ -813,6 +969,18 @@
                     {% elif r.status == 'approved' %}<form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
                     {% elif r.status == 'synced' %}<span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>{% endif %}
                 </div></td>
+            </tr>
+            <tr class="details-row" style="background-color: #f8fafc;">
+                <td colspan="10" style="padding: 1rem; border-top: 1px dashed #e2e8f0;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>📩 Original Message:</strong><br>
+                        <span style="font-size: 1.1rem; color: #334155;">"{{ r.raw_transcript }}"</span>
+                    </div>
+                    <details>
+                        <summary style="cursor: pointer; color: var(--accent-primary); font-size: 0.85rem; font-weight: 600;">👀 View Parsed JSON</summary>
+                        <pre style="background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 6px; font-size: 0.8rem; overflow-x: auto; margin-top: 0.5rem; white-space: pre-wrap;">{{ r.parsed_data | forceescape }}</pre>
+                    </details>
+                </td>
             </tr>{% endfor %}
         </tbody></table></div>{% endif %}
 
@@ -835,6 +1003,18 @@
                     {% elif r.status == 'approved' %}<form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
                     {% elif r.status == 'synced' %}<span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>{% endif %}
                 </div></td>
+            </tr>
+            <tr class="details-row" style="background-color: #f8fafc;">
+                <td colspan="10" style="padding: 1rem; border-top: 1px dashed #e2e8f0;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>📩 Original Message:</strong><br>
+                        <span style="font-size: 1.1rem; color: #334155;">"{{ r.raw_transcript }}"</span>
+                    </div>
+                    <details>
+                        <summary style="cursor: pointer; color: var(--accent-primary); font-size: 0.85rem; font-weight: 600;">👀 View Parsed JSON</summary>
+                        <pre style="background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 6px; font-size: 0.8rem; overflow-x: auto; margin-top: 0.5rem; white-space: pre-wrap;">{{ r.parsed_data | forceescape }}</pre>
+                    </details>
+                </td>
             </tr>{% endfor %}
         </tbody></table></div>{% endif %}
 
@@ -857,6 +1037,18 @@
                     {% elif r.status == 'approved' %}<form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
                     {% elif r.status == 'synced' %}<span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>{% endif %}
                 </div></td>
+            </tr>
+            <tr class="details-row" style="background-color: #f8fafc;">
+                <td colspan="10" style="padding: 1rem; border-top: 1px dashed #e2e8f0;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>📩 Original Message:</strong><br>
+                        <span style="font-size: 1.1rem; color: #334155;">"{{ r.raw_transcript }}"</span>
+                    </div>
+                    <details>
+                        <summary style="cursor: pointer; color: var(--accent-primary); font-size: 0.85rem; font-weight: 600;">👀 View Parsed JSON</summary>
+                        <pre style="background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 6px; font-size: 0.8rem; overflow-x: auto; margin-top: 0.5rem; white-space: pre-wrap;">{{ r.parsed_data | forceescape }}</pre>
+                    </details>
+                </td>
             </tr>{% endfor %}
         </tbody></table></div>{% endif %}
 
@@ -879,6 +1071,18 @@
                     {% elif r.status == 'approved' %}<form action="/dashboard/sync/{{ r.id }}" method="POST" style="margin:0;"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/><button class="btn btn-primary" style="padding: 0.25rem 0.5rem; font-size: 0.75rem;">🔄 Sync</button></form>
                     {% elif r.status == 'synced' %}<span style="color:var(--accent-success); font-weight:600; font-size:0.8rem;">✓ Synced</span>{% endif %}
                 </div></td>
+            </tr>
+            <tr class="details-row" style="background-color: #f8fafc;">
+                <td colspan="10" style="padding: 1rem; border-top: 1px dashed #e2e8f0;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>📩 Original Message:</strong><br>
+                        <span style="font-size: 1.1rem; color: #334155;">"{{ r.raw_transcript }}"</span>
+                    </div>
+                    <details>
+                        <summary style="cursor: pointer; color: var(--accent-primary); font-size: 0.85rem; font-weight: 600;">👀 View Parsed JSON</summary>
+                        <pre style="background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 6px; font-size: 0.8rem; overflow-x: auto; margin-top: 0.5rem; white-space: pre-wrap;">{{ r.parsed_data | forceescape }}</pre>
+                    </details>
+                </td>
             </tr>{% endfor %}
         </tbody></table></div>{% endif %}
 
