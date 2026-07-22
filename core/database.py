@@ -622,7 +622,7 @@ class Database:
         with self.get_connection() as conn:
             cursor = self._execute(conn, """
                 SELECT * FROM site_reports 
-                WHERE reported_by = ? AND status IN ('pending', 'staged') 
+                WHERE reported_by = ? AND status IN ('pending', 'staged', 'incomplete') 
                 ORDER BY created_at DESC 
             """, (reported_by,))
             rows = self._fetchall(cursor)

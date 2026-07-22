@@ -281,6 +281,7 @@ You MUST return a JSON OBJECT containing an "events" array. Separate distinct ev
                 
                 master_data_prompt = "\n\n## MASTER DATA (CRITICAL STRICT MATCHING):\n"
                 master_data_prompt += "Map any identified company, cost code, and location to ONE of the exact names/codes provided below. If there is absolutely no reasonable match, use null.\n"
+                master_data_prompt += "\nCRITICAL: 'log_type' MUST be exactly one of these 17 types: weather, manpower, notes, timecards, equipment, visitors, phone_calls, inspections, delivery, safety, accidents, quantity, productivity, dumpster, waste, scheduled_work, delays, photos. DO NOT invent new types (e.g., no 'WASTE_MANAGEMENT', use 'waste').\n"
                 
                 if vendors and vendors != "[]":
                     master_data_prompt += f"- VALID VENDORS: {vendors}\n"
@@ -289,7 +290,7 @@ You MUST return a JSON OBJECT containing an "events" array. Separate distinct ev
                 if locations and locations != "[]":
                     master_data_prompt += f"- VALID LOCATIONS: {locations}\n"
                     
-                if "- VALID" not in master_data_prompt:
+                if "- VALID" not in master_data_prompt and "CRITICAL" not in master_data_prompt:
                     master_data_prompt = ""
             
             system_prompt = f"""You are an expert US construction site data parser.
