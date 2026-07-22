@@ -20,19 +20,21 @@
 
     <!-- Sidebar Navigation -->
     <aside class="sidebar">
-        <div class="logo-container" style="display: flex; flex-direction: row; justify-content: center; align-items: center; padding: 2rem 1.5rem 1.5rem 1.5rem; gap: 0.5rem;">
-            <img src="{{ url_for('static', filename='images/logo_web.png') }}" alt="RapidSite AI" style="width: 42px; height: 42px; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));">
-            <div style="font-weight: 800; font-size: 1.4rem; letter-spacing: -0.5px; color: var(--text-primary);"><span style="color: var(--accent-primary);">Rapid</span>Site <span style="font-size: 0.8em; color: var(--text-muted); font-weight: 600;">AI</span></div>
+        <div class="logo-container" style="display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 2rem 1.5rem 1rem 1.5rem; gap: 0.5rem;">
+            <img src="{{ url_for('static', filename='images/logo_web.png') }}" alt="RapidSite AI" style="width: 110px; height: auto; object-fit: contain; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));">
+            <div style="font-weight: 800; font-size: 1.4rem; letter-spacing: -0.5px; color: var(--text-primary); margin-top: 0.25rem;"><span style="color: var(--accent-primary);">Rapid</span>Site <span style="font-size: 0.8em; color: var(--text-muted); font-weight: 600;">AI</span></div>
         </div>
 
-        <nav class="nav-menu" style="margin-top: 0.5rem; margin-bottom: auto;">
+        <nav class="nav-menu" style="margin-top: 0.5rem; margin-bottom: auto; padding: 0 1rem;">
             <a href="{{ url_for('dashboard') }}"
-                class="nav-item {% if request.endpoint == 'dashboard' %}active{% endif %}">
+                class="nav-item {% if request.endpoint == 'dashboard' %}active{% endif %}"
+                style="{% if request.endpoint != 'dashboard' %}background-color: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; font-weight: 600;{% endif %} margin-bottom: 0.5rem; border-radius: 8px;">
                 <span class="nav-icon">📊</span>
                 Dashboard
             </a>
             <a href="{{ url_for('settings') }}"
-                class="nav-item {% if request.endpoint == 'settings' or request.endpoint == 'update_settings' %}active{% endif %}">
+                class="nav-item {% if request.endpoint == 'settings' or request.endpoint == 'update_settings' %}active{% endif %}"
+                style="{% if request.endpoint != 'settings' and request.endpoint != 'update_settings' %}background-color: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; font-weight: 600;{% endif %} border-radius: 8px;">
                 <span class="nav-icon">⚙️</span>
                 Settings
             </a>
