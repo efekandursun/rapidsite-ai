@@ -367,9 +367,9 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
         else:
             return {'company_name': company['name'], 'direct_reply': "[LOCKED] Your recent reports have already been sent to the Dashboard and cannot be edited."}
 
-    # Matches: Pure number when multiple reports exist
+    # Matches: Pure number or 'ID 51', '#51', 'report 51'
     import re
-    is_standalone_number = re.match(r'^(\d+)$', cleaned_text)
+    is_standalone_number = re.match(r'^(?:id|#|report|rapor)?\s*(\d+)$', cleaned_text)
     
     if is_standalone_number and all_pending:
         report_id = int(is_standalone_number.group(1))
