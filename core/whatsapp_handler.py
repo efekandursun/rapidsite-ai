@@ -352,13 +352,13 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
         # Filter to only unlocked reports
         import json
         unlocked_reports = []
-            for r in all_pending:
-                if isinstance(r['parsed_data'], str):
-                    try: p = json.loads(r['parsed_data'])
-                    except: p = {}
-                else:
-                    p = r['parsed_data'] or {}
-                if not p.get('locked'): unlocked_reports.append(r)
+        for r in all_pending:
+            if isinstance(r['parsed_data'], str):
+                try: p = json.loads(r['parsed_data'])
+                except: p = {}
+            else:
+                p = r['parsed_data'] or {}
+            if not p.get('locked'): unlocked_reports.append(r)
                 
         if len(unlocked_reports) == 1:
             rep = unlocked_reports[0]
