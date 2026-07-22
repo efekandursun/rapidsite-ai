@@ -301,8 +301,9 @@ The user just sent a NEW MESSAGE: "{new_text}"
 
 YOUR TASK:
 1. Update the report JSON based on the user's message.
-2. If the user says "I don't know" or "skip", leave that field as null, change "status" to "complete".
-3. Keep the rest of the valid data intact.
+2. IMPORTANT: You MUST preserve the EXACT nested schema of the original JSON. If you are updating a manpower report, the company name MUST go inside the "crew" object (e.g. "crew": {{"company_name": "Apex"}}), NOT at the root level. Look at how the current JSON is structured and put the new info in the exact right nested object!
+3. If the user says "I don't know" or "skip", leave that field as null, change "status" to "complete".
+4. Keep the rest of the valid data intact.
 4. If the new message ALSO contains completely new and unrelated construction events, parse those into a separate list using the 17 log types schemas.
 
 {master_data_prompt}

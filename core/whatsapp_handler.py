@@ -476,7 +476,13 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
     
     if incomplete_report:
         try:
-            resolution = brain.resolve_incomplete(incomplete_report['parsed_data'], text, company)
+            import json
+            try:
+                parsed_dict = json.loads(incomplete_report['parsed_data']) if isinstance(incomplete_report['parsed_data'], str) else incomplete_report['parsed_data']
+            except:
+                parsed_dict = {}
+                
+            resolution = brain.resolve_incomplete(parsed_dict, text, company)
             updated_event = resolution.get('updated_incomplete_event')
             new_events = resolution.get('new_events', [])
             
