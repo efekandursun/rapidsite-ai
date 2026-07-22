@@ -739,6 +739,9 @@ def format_confirmation(result: dict) -> str:
             completed_msgs.append(msg)
             
     final_msg = ""
+    # Deduplicate incomplete messages
+    incomplete_msgs = list(dict.fromkeys(incomplete_msgs))
+
     if completed_msgs:
         final_msg += "*REPORT READY*\n\n" + "\n\n".join(completed_msgs)
         
