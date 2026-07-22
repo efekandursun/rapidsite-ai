@@ -487,6 +487,11 @@ def terms():
     """Terms of service page."""
     return render_template('terms.html')
 
+@app.route('/refund')
+def refund():
+    """Refund policy page."""
+    return render_template('refund.html')
+
 
 @app.route('/dashboard')
 @login_required

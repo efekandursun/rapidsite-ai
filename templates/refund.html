@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fieldflow AI | Refund Policy</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/landing.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        .legal-page {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 6rem 1.5rem 4rem;
+            color: #1e293b;
+        }
+        .legal-page h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 2rem;
+        }
+        .legal-page h2 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+        }
+        .legal-page p {
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+        .legal-page ul {
+            margin-bottom: 1.5rem;
+            padding-left: 1.5rem;
+        }
+        .legal-page li {
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="landing-nav">
+        <a href="/" class="nav-brand">
+            <img src="{{ url_for('static', filename='images/logo_web.png') }}" alt="Fieldflow AI" class="nav-logo">
+        </a>
+        <div class="nav-links">
+            <a href="/" class="nav-link">Home</a>
+            <a href="/pricing" class="nav-link">Pricing</a>
+            <a href="{{ url_for('auth.login') }}" class="nav-link btn-login">Sign In</a>
+        </div>
+    </nav>
+
+    <div class="legal-page">
+        <h1>Refund Policy</h1>
+        <p><strong>Last Updated:</strong> July 2026</p>
+
+        <p>At Fieldflow AI, we want you to be completely satisfied with your purchase. If you are not satisfied with our services, this Refund Policy outlines your rights and how you can request a refund.</p>
+
+        <h2>1. Subscription Plans</h2>
+        <p>Our monthly and annual subscription plans come with a <strong>14-day money-back guarantee</strong>. If you are not completely satisfied with our service within the first 14 days of your initial purchase, you are eligible for a full refund, no questions asked.</p>
+        
+        <h2>2. Renewals</h2>
+        <p>Subscription renewals (whether monthly or annual) are generally non-refundable. However, if you forget to cancel your subscription and contact us within 48 hours of the renewal charge, we will evaluate your refund request on a case-by-case basis.</p>
+
+        <h2>3. How to Request a Refund</h2>
+        <p>To request a refund, please contact us at <strong>support@fieldflow.ai</strong> using the email address associated with your Fieldflow AI account. Please include your order details and the reason for your refund request.</p>
+        <p>Once your request is received and approved, your refund will be processed and a credit will automatically be applied to your original method of payment within 5-10 business days.</p>
+
+        <h2>4. Contact Us</h2>
+        <p>If you have any questions about this Refund Policy, please contact us at:</p>
+        <p><strong>Email:</strong> support@fieldflow.ai</p>
+    </div>
+</body>
+</html>

@@ -352,10 +352,13 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
         # Filter to only unlocked reports
         import json
         unlocked_reports = []
-        for r in all_pending:
-            try: p = json.loads(r['parsed_data'])
-            except: p = {}
-            if not p.get('locked'): unlocked_reports.append(r)
+            for r in all_pending:
+                if isinstance(r['parsed_data'], str):
+                    try: p = json.loads(r['parsed_data'])
+                    except: p = {}
+                else:
+                    p = r['parsed_data'] or {}
+                if not p.get('locked'): unlocked_reports.append(r)
                 
         if len(unlocked_reports) == 1:
             rep = unlocked_reports[0]
@@ -371,15 +374,18 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
     import re
     is_standalone_number = re.match(r'^(?:id|#|report|rapor)?\s*(\d+)$', cleaned_text)
     
-    if is_standalone_number and all_pending:
+    if is_standalone_number and all_pending and not is_approve and not is_reject:
         report_id = int(is_standalone_number.group(1))
         # Find if this ID is in unlocked reports
         import json
         target_report = None
         for r in all_pending:
             if r['id'] == report_id:
-                try: p = json.loads(r['parsed_data'])
-                except: p = {}
+                if isinstance(r['parsed_data'], str):
+                    try: p = json.loads(r['parsed_data'])
+                    except: p = {}
+                else:
+                    p = r['parsed_data'] or {}
                 if not p.get('locked'): target_report = r
                 break
         
@@ -387,6 +393,8 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
             with db.get_connection() as conn:
                 db._execute(conn, "UPDATE site_reports SET status='incomplete' WHERE id=?", (target_report['id'],))
             return {'company_name': company['name'], 'direct_reply': f"✏️ Report #{report_id} is in Edit mode. What would you like to change or add?"}
+        else:
+            return {'company_name': company['name'], 'direct_reply': f"❌ Report #{report_id} not found in your editable reports. Please check the ID and try again."}
     
     # --- SPECIFIC REPORT EDIT COMMAND ---
     # Matches: "edit 9: change quantity to 5" or "edit #9 change quantity"
@@ -436,10 +444,14 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
             # Filter to only unlocked reports
             unlocked_reports = []
             for r in all_pending:
-                try:
-                    p = json.loads(r['parsed_data'])
-                except:
-                    p = {}
+                if isinstance(r['parsed_data'], str):
+                    try:
+                        p = json.loads(r['parsed_data'])
+                    except:
+                        p = {}
+                else:
+                    p = r['parsed_data'] or {}
+                    
                 if not p.get('locked'):
                     unlocked_reports.append((r, p))
                     
@@ -572,10 +584,30 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
             report_ids.append(rid)
             parsed_data_list.append(item)
             
+    # At the end, instead of just returning the new/updated events, 
+    # fetch all pending reports for this user so they see the FULL state of their pending queue!
+    final_pending = db.get_all_pending_reports_for_user(reporter_str) or db.get_all_pending_reports_for_user(from_number) or []
+    
+    # Filter to only return unlocked reports to show in the preview
+    final_parsed_data_list = []
+    final_report_ids = []
+    
+    import json
+    for r in final_pending:
+        if isinstance(r['parsed_data'], str):
+            try: p = json.loads(r['parsed_data'])
+            except: p = {}
+        else:
+            p = r['parsed_data'] or {}
+            
+        if not p.get('locked'):
+            final_report_ids.append(r['id'])
+            final_parsed_data_list.append(p)
+
     return {
         'transcript': final_transcript,
-        'parsed_data_list': parsed_data_list,
-        'report_ids': report_ids,
+        'parsed_data_list': final_parsed_data_list,
+        'report_ids': final_report_ids,
         'company_name': company['name']
     }
 
