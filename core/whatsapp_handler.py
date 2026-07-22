@@ -626,13 +626,13 @@ def format_confirmation(result: dict) -> str:
     for i, parsed in enumerate(parsed_list):
         r_id = report_ids[i] if i < len(report_ids) else 'N/A'
         
-        if parsed.get('status') == 'incomplete' and parsed.get('follow_up_question'):
-            incomplete_msgs.append(f"[MISSING INFO] {parsed.get('follow_up_question')}")
+        if False:
+            pass
         else:
             log_type = parsed.get('log_type', 'unknown').lower()
             msg = f"[ID: #{r_id} | TYPE: {log_type.upper()}]\n"
             
-            def val(v): return str(v) if v not in (None, "", "null", "Boş", "Empty") else "Empty"
+            def val(v): return str(v) if v not in (None, "", "null", "Boş", "Empty") else "There is no information"
             
             loc = parsed.get('location', {})
             loc_name = loc.get('name') if isinstance(loc, dict) else loc
@@ -663,7 +663,7 @@ def format_confirmation(result: dict) -> str:
                 msg += f"- Equipment Name: {val(parsed.get('item'))}\n"
                 msg += f"- Hours Operating: {val(details.get('hours_operating'))}\n"
                 idle_val = val(details.get('hours_idle'))
-                msg += f"- Hours Idle: {idle_val if idle_val != 'Empty' else '0'}\n"
+                msg += f"- Hours Idle: {idle_val if idle_val != 'There is no information' else '0'}\n"
                 
             elif log_type == "visitors":
                 v = parsed.get('visitor_details', {})
@@ -736,6 +736,7 @@ def format_confirmation(result: dict) -> str:
                     msg += f"- Location: {val(loc_name)}\n"
                     
             msg += f"- Comments: {val(parsed.get('description'))}"
+            msg = msg.replace('- ', '•  ')
             completed_msgs.append(msg)
             
     final_msg = ""
