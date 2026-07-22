@@ -197,12 +197,12 @@ You MUST return a JSON OBJECT containing an "events" array. Separate distinct ev
 
 ## RULES:
 1. EXHAUSTIVE EXTRACTION (CRITICAL): Extract EVERY SINGLE distinct event. The system now supports 17 log types. Differentiate carefully!
-2. PRECISE QUANTITIES: Pay close attention to numbers.
+2. PRECISE QUANTITIES & NESTED OBJECTS (CRITICAL): Pay close attention to numbers. You MUST populate the specific nested objects (e.g., `waste_details`, `dumpster_details`, `crew`, `weather_details`). DO NOT lazily shove structured data (like companies, materials, quantities) into the "description" field. The "description" field is ONLY for brief comments that don't fit into the structured fields.
 3. OUTPUT: ONLY a valid JSON ARRAY.
 4. MISSING FIELDS & INCOMPLETE LOGS: 
    - For general fields, use null if not explicitly mentioned. Do NOT aggressively ask for missing fields.
    - MANDATORY FIELDS (CRITICAL): If 'cost_code' or 'project_id' are NOT explicitly mentioned or cannot be inferred from the company master data, you MUST set status to 'incomplete' and ask for them in 'follow_up_question' (e.g. "What is the Project ID and Cost Code for this work?").
-5. CONCISE SUMMARIES: Do NOT repeat information across fields. For example, in Safety logs, do not repeat the "Notice" in the "description" or "comments". Keep descriptions concise and strictly additional.
+5. CONCISE SUMMARIES: Keep descriptions extremely concise and strictly additional.
 6. TRANSLATE TO ENGLISH: ALL output text fields MUST be translated into Professional US Construction English.
 """
         if company:
@@ -212,7 +212,7 @@ You MUST return a JSON OBJECT containing an "events" array. Separate distinct ev
             locations = company.get('procore_locations')
             
             master_data_prompt = "\n\n## MASTER DATA (CRITICAL STRICT MATCHING):\n"
-            master_data_prompt += "If the input mentions a project, vendor, cost code, or location, you MUST fuzzy match it against the following lists and output the EXACT ID/Name. If no match is found, output null for the ID.\n"
+            master_data_prompt += "If the input mentions a project, vendor, cost code, or location, you MUST fuzzy match it against the following lists and output the EXACT ID/Name. If no match is found, output the exact text the user provided (do not use null unless it was never mentioned).\n"
             
             if projects:
                 master_data_prompt += f"\n- PROJECTS: {projects}\n"
@@ -279,19 +279,20 @@ You MUST return a JSON OBJECT containing an "events" array. Separate distinct ev
                 cost_codes = company.get('procore_cost_codes')
                 locations = company.get('procore_locations')
                 
-                master_data_prompt = "\n\n## MASTER DATA (CRITICAL STRICT MATCHING):\n"
-                master_data_prompt += "Map any identified company, cost code, and location to ONE of the exact names/codes provided below. If there is absolutely no reasonable match, use null.\n"
-                master_data_prompt += "\nCRITICAL: 'log_type' MUST be exactly one of these 17 types: weather, manpower, notes, timecards, equipment, visitors, phone_calls, inspections, delivery, safety, accidents, quantity, productivity, dumpster, waste, scheduled_work, delays, photos. DO NOT invent new types (e.g., no 'WASTE_MANAGEMENT', use 'waste').\n"
-                
+                md = ""
                 if vendors and vendors != "[]":
-                    master_data_prompt += f"- VALID VENDORS: {vendors}\n"
+                    md += f"\n- VALID VENDORS: {vendors}"
                 if cost_codes and cost_codes != "[]":
-                    master_data_prompt += f"- VALID COST CODES: {cost_codes}\n"
+                    md += f"\n- VALID COST CODES: {cost_codes}"
                 if locations and locations != "[]":
-                    master_data_prompt += f"- VALID LOCATIONS: {locations}\n"
+                    md += f"\n- VALID LOCATIONS: {locations}"
                     
-                if "- VALID" not in master_data_prompt and "CRITICAL" not in master_data_prompt:
-                    master_data_prompt = ""
+                if md:
+                    master_data_prompt = "\n\n## MASTER DATA (CRITICAL STRICT MATCHING):\n"
+                    master_data_prompt += "Map any identified company, cost code, and location to ONE of the exact names/codes provided below IF POSSIBLE. If there is no reasonable match, output the exact text the user provided (do not use null unless it was never mentioned).\n"
+                    master_data_prompt += md + "\n"
+                    
+                master_data_prompt += "\nCRITICAL: 'log_type' MUST be exactly one of these 17 types: weather, manpower, notes, timecards, equipment, visitors, phone_calls, inspections, delivery, safety, accidents, quantity, productivity, dumpster, waste, scheduled_work, delays, photos. DO NOT invent new types.\n"
             
             system_prompt = f"""You are an expert US construction site data parser.
 The user previously sent a report, but they either provided incomplete information, OR they want to make an edit/correction.

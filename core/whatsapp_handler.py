@@ -240,14 +240,15 @@ def _get_or_create_button_sid():
         auth_token = os.getenv('TWILIO_AUTH_TOKEN')
         url = "https://content.twilio.com/v1/Content"
         payload = {
-            "friendly_name": "Fieldflow Action Buttons",
+            "friendly_name": "Fieldflow Action Buttons v2",
             "language": "en",
             "types": {
                 "twilio/quick-reply": {
                     "body": "What would you like to do?",
                     "actions": [
                         {"title": "👍 Send", "id": "send"},
-                        {"title": "✏️ Edit", "id": "edit"}
+                        {"title": "✏️ Edit", "id": "edit"},
+                        {"title": "🛑 Stop", "id": "cancel"}
                     ]
                 }
             }
@@ -342,10 +343,26 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
     cleaned_text = cleaned_text.replace('"', '').replace("'", "").replace("“", "").replace("”", "").replace("‘", "").replace("’", "").strip()
     
     # --- INTERACTIVE BUTTON HANDLERS ---
-    is_approve = cleaned_text in ['👍 send', 'send', '👍 dashboard\'a gönder', '1', '1.', '1)', 'onayla', 'approve', 'yes', 'y', 'bir', 'one']
+    is_approve = cleaned_text in ['👍 send', 'send', '👍 dashboard\'a gönder', 'onayla', 'approve', 'yes', 'y', 'evet']
+    is_reject = cleaned_text in ['reddet', 'hayır', 'hayir', 'reject', 'no', 'n']
     is_edit_btn = cleaned_text in ['✏️ edit', 'edit', '✏️ düzenle', 'düzenle']
+    is_cancel = cleaned_text in ['🛑 stop', 'stop', '🛑 cancel', 'cancel', 'iptal', 'vazgeç']
     
     all_pending = db.get_all_pending_reports_for_user(reporter_str) or db.get_all_pending_reports_for_user(from_number)
+    
+    import json
+    if is_cancel and all_pending:
+        deleted_count = 0
+        with db.get_connection() as conn:
+            for r in all_pending:
+                p = json.loads(r['parsed_data']) if isinstance(r['parsed_data'], str) else (r['parsed_data'] or {})
+                if not p.get('locked'):
+                    db._execute(conn, "DELETE FROM site_reports WHERE id=?", (r['id'],))
+                    deleted_count += 1
+        if deleted_count > 0:
+            return {'company_name': company['name'], 'direct_reply': f"🛑 {deleted_count} pending report(s) have been discarded."}
+        else:
+            return {'company_name': company['name'], 'direct_reply': "No pending reports found to stop."}
     
     # If user clicked Edit button
     if is_edit_btn and all_pending:
@@ -430,13 +447,12 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
                 incomplete_report = specific_report
                 text = correction_text
                 is_approve = False
+                is_reject = False
                 cleaned_text = text.strip().lower()
             else:
                 return {'company_name': company['name'], 'direct_reply': f"[ERROR] Report #{report_id} not found or you don't have permission to edit it."}
         else:
             return {'company_name': company['name'], 'direct_reply': f"[ERROR] Report #{report_id} not found."}
-    else:
-        is_reject = cleaned_text in ['2', '2.', '2)', 'reddet', 'hayır', 'hayir', 'reject', 'no', 'n', 'iki', 'two']
 
     if is_approve or is_reject:
         if all_pending:

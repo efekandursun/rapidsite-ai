@@ -35,7 +35,7 @@ def main():
                 print("="*50 + "\n")
                 
                 # Bot her mesajın sonuna butonları ekler
-                print("What would you like to do?\n[👍 Send]\n[✏️ Edit]\n")
+                print("What would you like to do?\n[👍 Send]\n[✏️ Edit]\n[🛑 Stop]\n")
                 
         except KeyboardInterrupt:
             break

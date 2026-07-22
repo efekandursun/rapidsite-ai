@@ -554,8 +554,10 @@ def dashboard():
         import json
         try:
             parsed = json.loads(r['parsed_data']) if isinstance(r['parsed_data'], str) else r['parsed_data']
+            r['parsed_data'] = parsed
         except:
             parsed = {}
+            r['parsed_data'] = {}
             
         t = str(r.get('log_type') or parsed.get('log_type') or 'notes').lower()
         if t == 'materials': t = 'quantity'

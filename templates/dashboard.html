@@ -539,8 +539,11 @@
                             </div>
                             
                             {% if p.translated_transcript %}
-                            <div style="margin-top: 0.5rem;">
-                                <button onclick="showTranslationModal('{{ p.translated_transcript | replace("'", "\'") | forceescape }}')" style="background: none; border: none; color: var(--accent-primary); text-decoration: underline; cursor: pointer; font-size: 0.85rem; padding: 0;">🇬🇧 Click to see English translation</button>
+                            <div style="margin-top: 0.75rem;">
+                                <button onclick="showTranslationModal(this.nextElementSibling.textContent)" style="background: var(--accent-primary); color: white; border: none; padding: 0.4rem 0.8rem; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.85rem; display: inline-flex; align-items: center; gap: 0.4rem; transition: background 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.1);" onmouseover="this.style.filter='brightness(1.1)'" onmouseout="this.style.filter='brightness(1)'">
+                                    <span style="font-size: 1.1rem;">🇬🇧</span> Translation
+                                </button>
+                                <div style="display:none;">{{ p.translated_transcript }}</div>
                             </div>
                             {% endif %}
                         </div>
@@ -569,9 +572,96 @@
                             {% endif %}
                             
                             <!-- Extracted Data -->
-                            <div class="report-data" style="background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 6px; flex-grow: 1; overflow-x: auto;">
-                                <strong style="color: #94a3b8; display: block; margin-bottom: 0.5rem; font-size: 0.8rem; text-transform: uppercase;">Extracted JSON Data</strong>
-                                <pre style="font-size: 0.8rem; margin: 0; white-space: pre-wrap; font-family: monospace;">{% if p %}{% set d = p.copy() %}{% set _ = d.pop('locked', None) %}{% set _ = d.pop('procore_ready', None) %}{{ d | tojson(indent=2) }}{% else %}{{ r.parsed_data if r.parsed_data is string else '' }}{% endif %}</pre>
+                            <div class="dest-panel" style="flex-grow: 1; border: 1px solid var(--border-light); border-radius: 6px; margin-top: 0.5rem;">
+                                <div class="dest-label">Extracted Data <span class="dest-log-badge">{{ p.log_type | default('Unknown') | upper }}</span></div>
+                                <div class="dest-grid">
+                                    {% if p.log_type == 'manpower' %}
+                                        {% set crew = p.crew | default({}) %}
+                                        <div class="dest-field"><div class="dest-field-label">Company</div><div class="dest-field-value">{{ crew.company_name | default('-', true) }}</div></div>
+                                        <div class="dest-field"><div class="dest-field-label">Workers</div><div class="dest-field-value">{{ crew.count | default(p.quantity, true) | default('-', true) }}</div></div>
+                                        <div class="dest-field"><div class="dest-field-label">Hours</div><div class="dest-field-value">{{ crew.hours | default('-', true) }}</div></div>
+                                        <div class="dest-field"><div class="dest-field-label">Trade</div><div class="dest-field-value">{{ crew.trade | default('-', true) }}</div></div>
+                                        
+                                    {% elif p.log_type == 'waste' %}
+                                        {% set det = p.waste_details | default({}) %}
+                                        <div class="dest-field"><div class="dest-field-label">Material</div><div class="dest-field-value">{{ det.material | default('-', true) }}</div></div>
+                                        <div class="dest-field"><div class="dest-field-label">Disposed By</div><div class="dest-field-value">{{ det.disposed_by | default('-', true) }}</div></div>
+                                        <div class="dest-field"><div class="dest-field-label">Method</div><div class="dest-field-value">{{ det.method_of_disposal | default('-', true) }}</div></div>
+                                        <div class="dest-field"><div class="dest-field-label">Quantity</div><div class="dest-field-value">{{ det.approximate_quantity | default('-', true) }}</div></div>
+                                        
+                                    {% elif p.log_type == 'dumpster' %}
+                                        {% set det = p.dumpster_details | default({}) %}
+                                        <div class="dest-field"><div class="dest-field-label">Company</div><div class="dest-field-value">{{ det.company | default('-', true) }}</div></div>
+                                        <div class="dest-field"><div class="dest-field-label"># Delivered</div><div class="dest-field-value">{{ det.delivered | default('-', true) }}</div></div>
+                                        <div class="dest-field"><div class="dest-field-label"># Removed</div><div class="dest-field-value">{{ det.removed | default('-', true) }}</div></div>
+                                        
+                                    {% elif p.log_type == 'equipment' %}
+                                        {% set det = p.equipment_details | default({}) %}
+                                        <div class="dest-field"><div class="dest-field-label">Equipment Name</div><div class="dest-field-value">{{ p.item | default('-', true) }}</div></div>
+                                        <div class="dest-field"><div class="dest-field-label">Hours Operating</div><div class="dest-field-value">{{ det.hours_operating | default('-', true) }}</div></div>
+                                        <div class="dest-field"><div class="dest-field-label">Hours Idle</div><div class="dest-field-value">{{ det.hours_idle | default('-', true) }}</div></div>
+                                        <div class="dest-field"><div class="dest-field-label">Inspected</div><div class="dest-field-value">{{ 'Yes' if det.inspected else 'No' }}</div></div>
+                                        
+                                    {% elif p.log_type == 'visitors' %}
+                                        {% set det = p.visitor_details | default({}) %}
+                                        <div class="dest-field"><div class="dest-field-label">Visitor</div><div class="dest-field-value">{{ det.visitor | default('-', true) }}</div></div>
+                                        <div class="dest-field"><div class="dest-field-label">Time</div><div class="dest-field-value">{{ det.start | default('?', true) }} - {{ det.end | default('?', true) }}</div></div>
+                                        
+                                    {% elif p.log_type == 'inspections' %}
+                                        {% set det = p.inspection_details | default({}) %}
+                                        <div class="dest-field"><div class="dest-field-label">Type</div><div class="dest-field-value">{{ det.inspection_type | default('-', true) }}</div></div>
+                                        <div class="dest-field"><div class="dest-field-label">Inspector Name</div><div class="dest-field-value">{{ det.inspector_name | default('-', true) }}</div></div>
+                                        <div class="dest-field"><div class="dest-field-label">Area</div><div class="dest-field-value">{{ det.inspection_area | default('-', true) }}</div></div>
+                                        
+                                    {% elif p.log_type in ['deliveries', 'delivery'] %}
+                                        {% set det = p.delivery_details | default({}) %}
+                                        <div class="dest-field"><div class="dest-field-label">From</div><div class="dest-field-value">{{ det.delivery_from | default('-', true) }}</div></div>
+                                        <div class="dest-field"><div class="dest-field-label">Contents</div><div class="dest-field-value">{{ det.contents | default('-', true) }}</div></div>
+                                        
+                                    {% elif p.log_type in ['safety', 'safety_violations'] %}
+                                        {% set det = p.safety_details | default({}) %}
+                                        <div class="dest-field"><div class="dest-field-label">Subject</div><div class="dest-field-value">{{ p.item | default('-', true) }}</div></div>
+                                        <div class="dest-field"><div class="dest-field-label">Notice</div><div class="dest-field-value">{{ det.safety_notice | default('-', true) }}</div></div>
+                                        <div class="dest-field"><div class="dest-field-label">Issued To</div><div class="dest-field-value">{{ det.issued_to | default('-', true) }}</div></div>
+                                        
+                                    {% elif p.log_type == 'accidents' %}
+                                        {% set det = p.accident_details | default({}) %}
+                                        <div class="dest-field"><div class="dest-field-label">Party Involved</div><div class="dest-field-value">{{ det.party_involved | default('-', true) }}</div></div>
+                                        <div class="dest-field"><div class="dest-field-label">Company</div><div class="dest-field-value">{{ det.company_involved | default('-', true) }}</div></div>
+                                        
+                                    {% elif p.log_type == 'productivity' %}
+                                        {% set det = p.productivity_details | default({}) %}
+                                        <div class="dest-field"><div class="dest-field-label">Company</div><div class="dest-field-value">{{ det.company | default('-', true) }}</div></div>
+                                        <div class="dest-field"><div class="dest-field-label">Delivered</div><div class="dest-field-value">{{ det.quantity_delivered | default('-', true) }}</div></div>
+                                        <div class="dest-field"><div class="dest-field-label">Put-in-Place</div><div class="dest-field-value">{{ det.quantity_put_in_place | default('-', true) }}</div></div>
+                                        
+                                    {% elif p.log_type == 'delays' %}
+                                        {% set det = p.delay_details | default({}) %}
+                                        <div class="dest-field"><div class="dest-field-label">Type</div><div class="dest-field-value">{{ det.delay_type | default('-', true) }}</div></div>
+                                        <div class="dest-field"><div class="dest-field-label">Duration (hrs)</div><div class="dest-field-value">{{ det.duration_hours | default('-', true) }}</div></div>
+                                        
+                                    {% elif p.log_type == 'weather' %}
+                                        {% set det = p.weather_details | default({}) %}
+                                        <div class="dest-field"><div class="dest-field-label">Sky</div><div class="dest-field-value">{{ det.sky | default('-', true) }}</div></div>
+                                        <div class="dest-field"><div class="dest-field-label">Temp</div><div class="dest-field-value">{{ det.temperature | default('-', true) }}</div></div>
+                                        <div class="dest-field"><div class="dest-field-label">Wind</div><div class="dest-field-value">{{ det.wind | default('-', true) }}</div></div>
+                                        <div class="dest-field"><div class="dest-field-label">Ground</div><div class="dest-field-value">{{ det.ground_sea | default('-', true) }}</div></div>
+
+                                    {% else %}
+                                        <div class="dest-field"><div class="dest-field-label">Item</div><div class="dest-field-value">{{ p.item | default('-', true) }}</div></div>
+                                        <div class="dest-field"><div class="dest-field-label">Quantity</div><div class="dest-field-value">{{ p.quantity | default('-', true) }} {{ p.unit | default('', true) }}</div></div>
+                                    {% endif %}
+                                    
+                                    {% set loc_name = p.location.name if p.location is mapping else p.location %}
+                                    <div class="dest-field"><div class="dest-field-label">Location</div><div class="dest-field-value">{{ loc_name | default('-', true) }}</div></div>
+                                    <div class="dest-field"><div class="dest-field-label">Cost Code</div><div class="dest-field-value"><span class="dest-code">{{ p.cost_code | default('N/A', true) }}</span></div></div>
+                                </div>
+                                <div style="margin-top: 1rem; text-align: right;">
+                                    <button onclick="toggleRawJson('json-{{ r.id }}')" style="background: none; border: none; font-size: 0.75rem; color: var(--text-muted); cursor: pointer; text-decoration: underline;">View Raw JSON</button>
+                                </div>
+                                <div id="json-{{ r.id }}" style="display: none; margin-top: 0.5rem; background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 6px; overflow-x: auto;">
+                                    <pre style="font-size: 0.75rem; margin: 0; font-family: monospace;">{% if p %}{% set d = p.copy() %}{% set _ = d.pop('locked', None) %}{% set _ = d.pop('procore_ready', None) %}{{ d | tojson(indent=2) }}{% else %}{{ r.parsed_data if r.parsed_data is string else '' }}{% endif %}</pre>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -601,6 +691,18 @@
         <div style="display:flex; justify-content:flex-end; gap:0.75rem; padding-top:1rem; border-top:1px solid var(--border-light);">
             <button class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
             <button class="btn btn-primary" onclick="saveEditedData()">Save Changes</button>
+        </div>
+    </div>
+</div>
+
+<!-- Translation Modal -->
+<div id="translationModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
+    <div style="background:white; width:90%; max-width:500px; border-radius:var(--radius-md); box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); padding:2rem; position:relative;">
+        <button onclick="closeTranslationModal()" style="position: absolute; top: 1.5rem; right: 1.5rem; background: none; border: none; font-size: 1.5rem; color: var(--text-muted); cursor: pointer; line-height: 1;">&times;</button>
+        <h3 style="margin-bottom:1rem; color:var(--text-primary); font-size:1.1rem; display: flex; align-items: center; gap: 0.5rem;"><span style="font-size: 1.3rem;">🇬🇧</span> English Translation</h3>
+        <div id="translationText" style="padding: 1rem; background: #f8fafc; border-radius: 6px; font-size: 0.95rem; color: #1e293b; font-style: italic; white-space: pre-wrap; line-height: 1.5;"></div>
+        <div style="text-align:right; margin-top: 1.5rem;">
+            <button class="btn btn-secondary" onclick="closeTranslationModal()">Close</button>
         </div>
     </div>
 </div>
@@ -810,6 +912,24 @@
     function closeEditModal() {
         document.getElementById('editModal').style.display = 'none';
         currentEditReportId = null;
+    }
+
+    function showTranslationModal(text) {
+        document.getElementById('translationText').textContent = text;
+        document.getElementById('translationModal').style.display = 'flex';
+    }
+
+    function closeTranslationModal() {
+        document.getElementById('translationModal').style.display = 'none';
+    }
+
+    function toggleRawJson(elementId) {
+        const el = document.getElementById(elementId);
+        if (el.style.display === 'none') {
+            el.style.display = 'block';
+        } else {
+            el.style.display = 'none';
+        }
     }
 
     function setNestedValue(obj, path, value) {
