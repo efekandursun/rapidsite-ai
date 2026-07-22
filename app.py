@@ -50,10 +50,13 @@ from flask_limiter.util import get_remote_address
 redis_url = os.getenv('REDIS_URL')
 limiter_storage = redis_url if redis_url else "memory://"
 
+# Disable Rate Limiter to prevent blocking user testing
+app.config["RATELIMIT_ENABLED"] = False
+
 limiter = Limiter(
     get_remote_address,
     app=app,
-    default_limits=["5000 per day", "1000 per hour"],
+    default_limits=["50000 per day", "10000 per hour"],
     storage_uri=limiter_storage
 )
 
@@ -552,7 +555,7 @@ def dashboard():
         except:
             parsed = {}
             
-        t = parsed.get('log_type', 'notes').lower()
+        t = str(r.get('log_type') or parsed.get('log_type') or 'notes').lower()
         if t == 'materials': t = 'quantity'
         if t == 'production': t = 'productivity'
         

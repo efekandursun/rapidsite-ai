@@ -516,7 +516,7 @@
         <tbody>
             {% for r in reports_by_type['weather'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set w = p.weather_details if p.weather_details is mapping else {} %}
             <tr>
-                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
+                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span><br><span style="font-size:0.75rem; color:#64748b; margin-top:0.25rem; display:block;">👤 {{ r.reported_by | default('Unknown', true) }}</span></td>
                 <td>{{ w.time_observed | default('—', true) }}</td>
                 <td>{{ w.sky | default('—', true) }}</td>
                 <td>{{ w.temperature | default('—', true) }}</td>
@@ -540,7 +540,7 @@
         <tbody>
             {% for r in reports_by_type['manpower'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set c = p.crew if p.crew is mapping else {} %}
             <tr>
-                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
+                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span><br><span style="font-size:0.75rem; color:#64748b; margin-top:0.25rem; display:block;">👤 {{ r.reported_by | default('Unknown', true) }}</span></td>
                 <td><strong>{{ c.company_name | default('—', true) }}</strong><br><span style="color:#64748b; font-size:0.75rem;">{{ c.trade | default('', true) }}</span></td>
                 <td>{{ c.count | default(p.quantity, true) | default('—', true) }}</td>
                 <td>{{ c.hours | default('—', true) }}</td>
@@ -562,7 +562,7 @@
         <tbody>
             {% for r in reports_by_type['notes'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}
             <tr>
-                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
+                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span><br><span style="font-size:0.75rem; color:#64748b; margin-top:0.25rem; display:block;">👤 {{ r.reported_by | default('Unknown', true) }}</span></td>
                 <td><strong>{{ p.item | default('—', true) }}</strong></td>
                 <td>{{ p.location.name if p.location is mapping else p.location | default('—', true) }}</td>
                 <td>{{ 'Yes' if p.issue else 'No' }}</td>
@@ -583,7 +583,7 @@
         <tbody>
             {% for r in reports_by_type['timecards'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set t = p.timecard_details if p.timecard_details is mapping else {} %}
             <tr>
-                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
+                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span><br><span style="font-size:0.75rem; color:#64748b; margin-top:0.25rem; display:block;">👤 {{ r.reported_by | default('Unknown', true) }}</span></td>
                 <td><strong>{{ t.employee | default('—', true) }}</strong></td>
                 <td>{{ p.cost_code | default('—', true) }}</td>
                 <td>{{ t.type | default('—', true) }}</td>
@@ -605,7 +605,7 @@
         <tbody>
             {% for r in reports_by_type['equipment'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set e = p.equipment_details if p.equipment_details is mapping else {} %}
             <tr>
-                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
+                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span><br><span style="font-size:0.75rem; color:#64748b; margin-top:0.25rem; display:block;">👤 {{ r.reported_by | default('Unknown', true) }}</span></td>
                 <td><strong>{{ p.item | default('—', true) }}</strong></td>
                 <td>{{ e.hours_operating | default('—', true) }}</td>
                 <td>{{ e.hours_idle | default('—', true) }}</td>
@@ -628,7 +628,7 @@
         <tbody>
             {% for r in reports_by_type['visitors'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set v = p.visitor_details if p.visitor_details is mapping else {} %}
             <tr>
-                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
+                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span><br><span style="font-size:0.75rem; color:#64748b; margin-top:0.25rem; display:block;">👤 {{ r.reported_by | default('Unknown', true) }}</span></td>
                 <td><strong>{{ v.visitor | default('—', true) }}</strong></td>
                 <td>{{ v.start | default('—', true) }}</td>
                 <td>{{ v.end | default('—', true) }}</td>
@@ -649,7 +649,7 @@
         <tbody>
             {% for r in reports_by_type['phone_calls'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set c = p.call_details if p.call_details is mapping else {} %}
             <tr>
-                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
+                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span><br><span style="font-size:0.75rem; color:#64748b; margin-top:0.25rem; display:block;">👤 {{ r.reported_by | default('Unknown', true) }}</span></td>
                 <td><strong>{{ c.call_from | default('—', true) }}</strong></td>
                 <td>{{ c.call_to | default('—', true) }}</td>
                 <td>{{ c.start | default('—', true) }}</td>
@@ -671,7 +671,7 @@
         <tbody>
             {% for r in reports_by_type['inspections'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set i = p.inspection_details if p.inspection_details is mapping else {} %}
             <tr>
-                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
+                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span><br><span style="font-size:0.75rem; color:#64748b; margin-top:0.25rem; display:block;">👤 {{ r.reported_by | default('Unknown', true) }}</span></td>
                 <td>{{ i.start | default('--', true) }} - {{ i.end | default('--', true) }}</td>
                 <td>{{ i.inspection_type | default('—', true) }}</td>
                 <td>{{ i.inspecting_entity | default('—', true) }}</td>
@@ -694,7 +694,7 @@
         <tbody>
             {% for r in reports_by_type['delivery'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set d = p.delivery_details if p.delivery_details is mapping else {} %}
             <tr>
-                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
+                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span><br><span style="font-size:0.75rem; color:#64748b; margin-top:0.25rem; display:block;">👤 {{ r.reported_by | default('Unknown', true) }}</span></td>
                 <td>{{ d.time | default('—', true) }}</td>
                 <td><strong>{{ d.delivery_from | default('—', true) }}</strong></td>
                 <td>{{ d.tracking_number | default('—', true) }}</td>
@@ -716,7 +716,7 @@
         <tbody>
             {% for r in reports_by_type['safety'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set s = p.safety_details if p.safety_details is mapping else {} %}
             <tr>
-                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
+                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span><br><span style="font-size:0.75rem; color:#64748b; margin-top:0.25rem; display:block;">👤 {{ r.reported_by | default('Unknown', true) }}</span></td>
                 <td>{{ s.time | default('—', true) }}</td>
                 <td><strong>{{ p.item | default('—', true) }}</strong></td>
                 <td>{{ s.safety_notice | default('—', true) }}</td>
@@ -738,7 +738,7 @@
         <tbody>
             {% for r in reports_by_type['accidents'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set a = p.accident_details if p.accident_details is mapping else {} %}
             <tr>
-                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
+                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span><br><span style="font-size:0.75rem; color:#64748b; margin-top:0.25rem; display:block;">👤 {{ r.reported_by | default('Unknown', true) }}</span></td>
                 <td>{{ a.time | default('—', true) }}</td>
                 <td>{{ a.party_involved | default('—', true) }}</td>
                 <td><strong>{{ a.company_involved | default('—', true) }}</strong></td>
@@ -759,7 +759,7 @@
         <tbody>
             {% for r in reports_by_type['quantity'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}
             <tr>
-                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
+                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span><br><span style="font-size:0.75rem; color:#64748b; margin-top:0.25rem; display:block;">👤 {{ r.reported_by | default('Unknown', true) }}</span></td>
                 <td>{{ p.cost_code | default('—', true) }}</td>
                 <td>{{ p.quantity | default('—', true) }}</td>
                 <td>{{ p.unit | default('—', true) }}</td>
@@ -781,7 +781,7 @@
         <tbody>
             {% for r in reports_by_type['productivity'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set pd = p.productivity_details if p.productivity_details is mapping else {} %}
             <tr>
-                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
+                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span><br><span style="font-size:0.75rem; color:#64748b; margin-top:0.25rem; display:block;">👤 {{ r.reported_by | default('Unknown', true) }}</span></td>
                 <td><strong>{{ pd.company | default('—', true) }}</strong></td>
                 <td>{{ pd.contract | default('—', true) }}<br><span style="color:#64748b; font-size:0.75rem;">{{ pd.line_item | default('', true) }}</span></td>
                 <td>{{ pd.quantity_delivered | default('—', true) }}</td>
@@ -802,7 +802,7 @@
         <tbody>
             {% for r in reports_by_type['dumpster'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set d = p.dumpster_details if p.dumpster_details is mapping else {} %}
             <tr>
-                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
+                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span><br><span style="font-size:0.75rem; color:#64748b; margin-top:0.25rem; display:block;">👤 {{ r.reported_by | default('Unknown', true) }}</span></td>
                 <td><strong>{{ d.company | default('—', true) }}</strong></td>
                 <td>{{ d.delivered | default('—', true) }}</td>
                 <td>{{ d.removed | default('—', true) }}</td>
@@ -823,7 +823,7 @@
         <tbody>
             {% for r in reports_by_type['waste'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set w = p.waste_details if p.waste_details is mapping else {} %}
             <tr>
-                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
+                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span><br><span style="font-size:0.75rem; color:#64748b; margin-top:0.25rem; display:block;">👤 {{ r.reported_by | default('Unknown', true) }}</span></td>
                 <td>{{ w.time | default('—', true) }}</td>
                 <td>{{ w.material | default('—', true) }}</td>
                 <td>{{ w.disposed_by | default('—', true) }}</td>
@@ -845,7 +845,7 @@
         <tbody>
             {% for r in reports_by_type['scheduled_work'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set s = p.scheduled_work_details if p.scheduled_work_details is mapping else {} %}
             <tr>
-                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
+                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span><br><span style="font-size:0.75rem; color:#64748b; margin-top:0.25rem; display:block;">👤 {{ r.reported_by | default('Unknown', true) }}</span></td>
                 <td>{{ s.resource | default('—', true) }}</td>
                 <td>{{ s.scheduled_tasks | default('—', true) }}</td>
                 <td>{{ s.showed | default('—', true) }}</td>
@@ -867,7 +867,7 @@
         <tbody>
             {% for r in reports_by_type['delays'] %}{% set p = r.parsed_data if r.parsed_data is mapping else {} %}{% set d = p.delay_details if p.delay_details is mapping else {} %}
             <tr>
-                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span></td>
+                <td><strong>#{{ r.id }}</strong><br><span class="badge badge-{{ r.status }}" style="margin-top:0.25rem;">{{ r.status|upper }}</span><br><span style="font-size:0.75rem; color:#64748b; margin-top:0.25rem; display:block;">👤 {{ r.reported_by | default('Unknown', true) }}</span></td>
                 <td><strong>{{ d.delay_type | default('—', true) }}</strong></td>
                 <td>{{ d.start_time | default('—', true) }}</td>
                 <td>{{ d.end_time | default('—', true) }}</td>
