@@ -11,7 +11,7 @@
             background: var(--bg-dark);
             display: flex;
             flex-direction: column;
-            align-items: flex-start;
+            align-items: center;
             justify-content: center;
             min-height: 100vh;
             padding: 1.5rem;
@@ -185,11 +185,10 @@
         {% endwith %}
 
         <form method="POST" class="auth-form">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
             <div class="form-group">
                 <label class="form-label">Email Address</label>
-                <input type="email" name="email" class="form-control" value="{{ email }}" placeholder="your@email.com" required {% if not email %}autofocus{% endif %}>
+                <input type="email" name="email" class="form-control" value="{{ email }}" placeholder="your@email.com" required {% if not email %}autofocus{% else %}readonly style="background-color: #f1f5f9; color: #64748b; cursor: not-allowed; user-select: none;"{% endif %}>
             </div>
 
             <div class="form-group">
