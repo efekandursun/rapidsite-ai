@@ -539,11 +539,8 @@
                             </div>
                             
                             {% if p.translated_transcript %}
-                            <div>
-                                <strong style="color: #334155; font-size: 0.9rem;">🇺🇸 English Translation:</strong>
-                                <div style="padding: 0.75rem; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 6px; font-size: 0.95rem; color: #166534; margin-top: 0.25rem;">
-                                    "{{ p.translated_transcript }}"
-                                </div>
+                            <div style="margin-top: 0.5rem;">
+                                <button onclick="showTranslationModal('{{ p.translated_transcript | replace("'", "\'") | forceescape }}')" style="background: none; border: none; color: var(--accent-primary); text-decoration: underline; cursor: pointer; font-size: 0.85rem; padding: 0;">🇬🇧 Click to see English translation</button>
                             </div>
                             {% endif %}
                         </div>
@@ -563,10 +560,18 @@
                                 {% endif %}
                             </div>
                             
+                            <!-- Summary -->
+                            {% if p.description %}
+                            <div style="margin-bottom: 1rem; padding: 0.75rem; background: #fffbeb; border-left: 4px solid #f59e0b; border-radius: 4px;">
+                                <strong style="color: #b45309; font-size: 0.85rem; display: block; margin-bottom: 0.25rem;">📋 Summary</strong>
+                                <span style="font-size: 0.9rem; color: #78350f;">{{ p.description }}</span>
+                            </div>
+                            {% endif %}
+                            
                             <!-- Extracted Data -->
                             <div class="report-data" style="background: #1e293b; color: #e2e8f0; padding: 1rem; border-radius: 6px; flex-grow: 1; overflow-x: auto;">
                                 <strong style="color: #94a3b8; display: block; margin-bottom: 0.5rem; font-size: 0.8rem; text-transform: uppercase;">Extracted JSON Data</strong>
-                                <pre style="font-size: 0.8rem; margin: 0; white-space: pre-wrap; font-family: monospace;">{{ p | tojson(indent=2) if p else (r.parsed_data if r.parsed_data is string else '') }}</pre>
+                                <pre style="font-size: 0.8rem; margin: 0; white-space: pre-wrap; font-family: monospace;">{% if p %}{% set d = p.copy() %}{% set _ = d.pop('locked', None) %}{% set _ = d.pop('procore_ready', None) %}{{ d | tojson(indent=2) }}{% else %}{{ r.parsed_data if r.parsed_data is string else '' }}{% endif %}</pre>
                             </div>
                         </div>
                     </div>
