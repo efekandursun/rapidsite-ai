@@ -594,9 +594,9 @@ def _process_text_with_memory(text: str, project_id: str, from_number: str, comp
                 company_id=company_id,
                 media_paths=media_json
             )
-            if s == 'incomplete':
-                with db.get_connection() as conn:
-                    db._execute(conn, "UPDATE site_reports SET status='incomplete' WHERE id=?", (rid,))
+            # create_report forces status to 'staged', so we manually override it to 'pending'
+            with db.get_connection() as conn:
+                db._execute(conn, "UPDATE site_reports SET status=%s WHERE id=%s", (s, rid))
             report_ids.append(rid)
             parsed_data_list.append(item)
             
